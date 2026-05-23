@@ -1,0 +1,82 @@
+.custom-select {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.select-trigger {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #d5dfeb;
+  background: white;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  gap: 8px;
+}
+
+.select-trigger:hover {
+  border-color: #cbd5e1;
+}
+
+.select-trigger svg {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.select-menu {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 50;
+  box-shadow: 0 10px 25px rgba(10, 31, 68, 0.12);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.select-option {
+  width: 100%;
+  min-height: 36px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 0 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.select-option:hover {
+  background: #f1f5f9;
+}
+
+.select-option.active {
+  background: #149d94;
+  color: white;
+  font-weight: 500;
+}
+
+.select-option.active:hover {
+  background: #128a82;
+}
+
+.select-option svg {
+  flex-shrink: 0;
+}
