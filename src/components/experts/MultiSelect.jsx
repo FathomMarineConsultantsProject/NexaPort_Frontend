@@ -1,83 +1,93 @@
-import { ChevronDown } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { ChevronDown, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import "./MultiSelect.css";
 
 export default function MultiSelect({
-  options,
+  options = [],
   value,
   onChange,
-  placeholder,
+  placeholder = "Select...",
   multiSelect = false,
+  labelKey = null,
 }) {
   const [open, setOpen] = useState(false);
-  const selectRef = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (selectRef.current && !selectRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    };
+  const getLabel = (item) => {
+    if (!item) return "";
+    return labelKey && typeof item === "object" ? item[labelKey] : item;
+  };
 
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+  const getValue = (item) => {
+    if (!item) return "";
+    return typeof item === "object" ? item.id : item;
+  };
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [open]);
+  const selectedItems = multiSelect ? value || [] : value ? [value] : [];
+
+  const availableOptions = useMemo(() => {
+    if (!multiSelect) return options;
+
+    return options.filter(
+      (option) =>
+        !selectedItems.some(
+          (selected) => getValue(selected) === getValue(option)
+        )
+    );
+  }, [options, selectedItems, multiSelect]);
 
   const handleSelect = (option) => {
     if (multiSelect) {
-      const isSelected = value.includes(option);
-      if (isSelected) {
-        onChange(value.filter((v) => v !== option));
-      } else {
-        onChange([...value, option]);
-      }
+      onChange([...(value || []), option]);
     } else {
       onChange(option);
       setOpen(false);
     }
   };
 
-  const displayText = () => {
-    if (multiSelect) {
-      return value.length > 0 ? `${value.length} selected` : placeholder;
-    }
-    return value || placeholder;
+  const handleRemove = (itemToRemove) => {
+    onChange(
+      (value || []).filter(
+        (item) => getValue(item) !== getValue(itemToRemove)
+      )
+    );
   };
 
   return (
-    <div className="multi-select" ref={selectRef}>
+    <div className="multi-select">
+      {multiSelect && selectedItems.length > 0 && (
+        <div className="selected-tags">
+          {selectedItems.map((item) => (
+            <span className="selected-tag" key={getValue(item)}>
+              {getLabel(item)}
+              <button type="button" onClick={() => handleRemove(item)}>
+                <X size={13} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <button
         type="button"
-        onClick={() => setOpen(!open)}
         className="multi-select-trigger"
+        onClick={() => setOpen(!open)}
       >
-        <span>{displayText()}</span>
+        <span>{!multiSelect && value ? getLabel(value) : placeholder}</span>
         <ChevronDown size={18} />
       </button>
 
       {open && (
         <div className="multi-select-menu">
-          {options.map((option) => {
-            const isSelected = multiSelect
-              ? value.includes(option)
-              : value === option;
-
-            return (
-              <button
-                key={option}
-                type="button"
-                className={`multi-select-option ${isSelected ? "active" : ""}`}
-                onClick={() => handleSelect(option)}
-              >
-                {option}
-              </button>
-            );
-          })}
+          {availableOptions.map((option) => (
+            <button
+              type="button"
+              className="multi-select-option"
+              key={getValue(option)}
+              onClick={() => handleSelect(option)}
+            >
+              {getLabel(option)}
+            </button>
+          ))}
         </div>
       )}
     </div>
