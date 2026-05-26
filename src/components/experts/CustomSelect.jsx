@@ -24,7 +24,11 @@ export default function CustomSelect({ value, options, onChange, width }) {
 
   return (
     <div className="custom-select" style={{ width }} ref={selectRef}>
-      <button onClick={() => setOpen(!open)} className="select-trigger">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="select-trigger"
+      >
         <span>{value}</span>
         <ChevronDown size={16} />
       </button>
@@ -33,6 +37,7 @@ export default function CustomSelect({ value, options, onChange, width }) {
         <div className="select-menu">
           {options.map((option) => (
             <button
+              type="button"
               key={option}
               className={`select-option ${value === option ? "active" : ""}`}
               onClick={() => {
