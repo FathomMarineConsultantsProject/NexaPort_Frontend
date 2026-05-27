@@ -1,7 +1,7 @@
 .requests-page {
   min-height: calc(100vh - 120px);
   background: #f8fafc;
-  padding: 38px 18px 64px;
+  padding: 38px 40px 48px;
 }
 
 /* =========================
@@ -18,7 +18,7 @@
 .requests-header-content h1 {
   margin: 0 0 4px;
   color: #071b39;
-  font-size: 32px;
+  font-size: 36px;
   line-height: 1.1;
   font-weight: 700;
   letter-spacing: -0.7px;
