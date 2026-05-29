@@ -5,48 +5,48 @@
 }
 
 .ports-header {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .ports-header h1 {
   margin: 0 0 6px;
-  font-size: 36px;
+  font-size: 34px;
   line-height: 1.15;
   color: #0a1929;
-  font-weight: 700;
-  letter-spacing: -0.6px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
 }
 
 .ports-header p {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   color: #526c9d;
-  font-weight: 400;
 }
 
 .ports-toolbar {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 
 .ports-search {
-  height: 44px;
+  height: 42px;
   flex: 1;
-  max-width: 820px;
+  min-width: 360px;
   border: 1px solid #d5dfeb;
   border-radius: 8px;
   background: white;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
+  gap: 10px;
+  padding: 0 14px;
   box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
 }
 
 .ports-search svg {
   color: #526c9d;
+  flex-shrink: 0;
 }
 
 .ports-search input {
@@ -55,7 +55,7 @@
   outline: none;
   background: transparent;
   font-family: inherit;
-  font-size: 17px;
+  font-size: 15px;
   color: #0a1929;
 }
 
@@ -67,20 +67,22 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 .region-pill {
-  height: 44px;
+  height: 40px;
   border: 1px solid #d5dfeb;
-  background: transparent;
+  background: white;
   color: #526c9d;
   border-radius: 999px;
-  padding: 0 18px;
-  font-size: 17px;
-  font-weight: 500;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .region-pill.active {
@@ -99,8 +101,8 @@
   background: white;
   border: 1px solid #d5dfeb;
   border-radius: 12px;
-  padding: 30px;
-  min-height: 430px;
+  padding: 26px;
+  min-height: 370px;
   box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
 }
 
@@ -108,12 +110,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .port-icon {
-  width: 45px;
-  height: 45px;
+  width: 42px;
+  height: 42px;
   border-radius: 8px;
   background: #e9edf2;
   color: #001b3f;
@@ -122,13 +124,13 @@
 }
 
 .risk-badge {
-  height: 27px;
+  height: 26px;
   border-radius: 7px;
-  padding: 0 12px;
+  padding: 0 11px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -148,11 +150,10 @@
 }
 
 .port-card h3 {
-  margin: 0 0 13px;
+  margin: 0 0 12px;
   color: #00132d;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .port-location {
@@ -160,23 +161,23 @@
   align-items: center;
   gap: 7px;
   color: #526c9d;
-  font-size: 15px;
-  margin-bottom: 10px;
+  font-size: 14px;
+  margin-bottom: 14px;
 }
 
 .port-description {
   color: #526c9d;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.55;
-  min-height: 50px;
-  margin: 0 0 10px;
+  min-height: 48px;
+  margin: 0 0 12px;
 }
 
 .port-section-label {
   color: #526c9d;
   font-size: 12px;
   font-weight: 700;
-  margin: 14px 0 8px;
+  margin: 13px 0 8px;
 }
 
 .port-tags {
@@ -186,9 +187,9 @@
 }
 
 .port-tags span {
-  height: 27px;
+  height: 25px;
   border-radius: 6px;
-  padding: 0 11px;
+  padding: 0 10px;
   font-size: 12px;
   font-weight: 500;
   display: inline-flex;
@@ -216,15 +217,15 @@
 .experts-nearby {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   color: #526c9d;
   font-size: 14px;
 }
 
 .dot-green,
 .dot-orange {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
 }
 
@@ -243,7 +244,7 @@
   padding: 60px;
   text-align: center;
   color: #526c9d;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 @media (max-width: 1200px) {
@@ -252,8 +253,9 @@
     align-items: stretch;
   }
 
-  .region-pills {
-    overflow-x: auto;
+  .ports-search {
+    max-width: none;
+    min-width: 0;
   }
 
   .ports-grid {
@@ -262,7 +264,70 @@
 }
 
 @media (max-width: 760px) {
+  .ports-page {
+    padding: 28px 18px 40px;
+  }
+
   .ports-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.ports-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.port-add-btn {
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #149d94;
+  color: white;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.port-add-btn:hover {
+  background: #128a82;
+}
+
+.port-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.port-actions button {
+  height: 34px;
+  border-radius: 7px;
+  border: 1px solid #d5dfeb;
+  background: white;
+  color: #001b3f;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.port-actions button:hover {
+  background: #f8fafc;
+}
+
+.port-actions button.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.port-actions button.danger:hover {
+  background: #fff5f5;
 }

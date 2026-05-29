@@ -1,0 +1,285 @@
+.landing-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════
+   PUBLIC NAVBAR
+══════════════════════════════ */
+.landing-navbar {
+  height: 60px;
+  background: #0a1929;
+  display: flex;
+  align-items: center;
+  padding: 0 80px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.landing-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.landing-nav-logo {
+  width: 36px;
+  height: 36px;
+  background: #14b8a6;
+  color: white;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.landing-nav-text {
+  font-size: 21px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.landing-nav-text span {
+  color: #14b8a6;
+}
+
+.landing-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.landing-nav-links button {
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s;
+}
+
+.landing-nav-links button:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.landing-nav-signin {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.landing-nav-signin:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.landing-nav-register {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  background: #14b8a6;
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.landing-nav-register:hover {
+  background: #0d9488;
+}
+
+/* ══════════════════════════════
+   HERO
+══════════════════════════════ */
+.landing-hero {
+  position: relative;
+  background: #0d1f35;
+  margin: 20px 20px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 72px 80px 80px;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+}
+
+/* dot grid pattern — pure CSS */
+.landing-hero-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.landing-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 620px;
+}
+
+.landing-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px;
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  border-radius: 100px;
+  color: #5eead4;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 28px;
+}
+
+.landing-hero-h1 {
+  font-size: 56px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0px 20px;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+}
+
+.landing-hero-accent {
+  color: #14b8a6;
+}
+
+.landing-hero-sub {
+  font-size: 17px;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin: 0 0 36px;
+  max-width: 520px;
+}
+
+.landing-hero-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.landing-btn-primary {
+  height: 48px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 8px;
+  background: #14b8a6;
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.landing-btn-primary:hover {
+  background: #0d9488;
+}
+
+.landing-btn-secondary {
+  height: 48px;
+  padding: 0 24px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.landing-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* ══════════════════════════════
+   FEATURES STRIP
+══════════════════════════════ */
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 32px 20px 40px;
+}
+
+.landing-feature {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 22px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.18s;
+}
+
+.landing-feature:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.landing-feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f0fdfb;
+  color: #14b8a6;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.landing-feature h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #071b39;
+  margin: 0 0 5px;
+}
+
+.landing-feature p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}

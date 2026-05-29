@@ -1,6 +1,7 @@
-import { Anchor, MapPin, Search, Ship, AlertTriangle } from "lucide-react";
+import { Anchor, AlertTriangle, Edit, MapPin, Search, Ship, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getPorts } from "../api/portApi";
+import { deletePort, getPorts } from "../api/portApi";
+import { isSuperAdmin } from "../utils/auth";
 import "./PortDirectory.css";
 
 const regions = [
@@ -18,6 +19,8 @@ export default function PortDirectory() {
   const [search, setSearch] = useState("");
   const [region, setRegion] = useState("All Regions");
   const [loading, setLoading] = useState(false);
+
+  const canManagePorts = isSuperAdmin();
 
   useEffect(() => {
     loadPorts();
@@ -41,6 +44,24 @@ export default function PortDirectory() {
     loadPorts(value);
   };
 
+  const handleDeletePort = async (id) => {
+    const confirmDelete = window.confirm("Delete this port?");
+    if (!confirmDelete) return;
+
+    try {
+      await deletePort(id);
+      loadPorts();
+    } catch (error) {
+      console.error("Failed to delete port:", error);
+      alert("Failed to delete port.");
+    }
+  };
+
+  const handleEditPort = (port) => {
+    console.log("Edit port:", port);
+    alert("Edit port form can be added next.");
+  };
+
   const visiblePorts = useMemo(() => ports, [ports]);
 
   const riskClass = (risk) => {
@@ -53,11 +74,19 @@ export default function PortDirectory() {
   return (
     <main className="ports-page">
       <section className="ports-header">
-        <h1>Port Directory</h1>
-        <p>
-          Global port intelligence — PSC risk levels, local expert availability,
-          and service coverage.
-        </p>
+        <div>
+          <h1>Port Directory</h1>
+          <p>
+            Global port intelligence — PSC risk levels, local expert availability,
+            and service coverage.
+          </p>
+        </div>
+
+        {canManagePorts && (
+          <button className="port-add-btn">
+            + Add Port
+          </button>
+        )}
       </section>
 
       <section className="ports-toolbar">
@@ -143,6 +172,20 @@ export default function PortDirectory() {
                 {port.experts_available || 0}{" "}
                 {(port.experts_available || 0) === 1 ? "expert" : "experts"} available nearby
               </div>
+
+              {canManagePorts && (
+                <div className="port-actions">
+                  <button onClick={() => handleEditPort(port)}>
+                    <Edit size={14} />
+                    Edit
+                  </button>
+
+                  <button className="danger" onClick={() => handleDeletePort(port.id)}>
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </section>
