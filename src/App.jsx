@@ -20,31 +20,55 @@ import ServiceRequests from "./pages/ServiceRequests";
 
 import Dashboard from "./pages/Dashboard";
 
+import { getRoleId } from "./utils/auth";
+
 import "./App.css";
 
-// Bounce unauthenticated users to /login
 function RequireAuth({ children }) {
   const token = localStorage.getItem("np_token");
   if (!token) return <Navigate to="/login" replace />;
   return children;
 }
 
-// Bounce already-logged-in users away from public-only pages
 function GuestOnly({ children }) {
   const token = localStorage.getItem("np_token");
   if (token) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
+function AdminOnly({ children }) {
+  if (getRoleId() !== 1) {
+    return (
+      <Navigate
+        to="/requests"
+        replace
+        state={{ notice: "You do not have access to that page." }}
+      />
+    );
+  }
+
+  return children;
+}
+
+function HideFromClient({ children }) {
+  if (getRoleId() === 3) {
+    return (
+      <Navigate
+        to="/requests"
+        replace
+        state={{ notice: "Clients cannot access the Experts page." }}
+      />
+    );
+  }
+
+  return children;
+}
+
 export default function App() {
   return (
     <Routes>
-      {/* ── Public pages (no Navbar/Footer) ── */}
-
-      {/* Landing — root always shows landing */}
       <Route path="/" element={<Landing />} />
 
-      {/* Login/Register — only if NOT logged in */}
       <Route
         path="/login"
         element={
@@ -54,44 +78,58 @@ export default function App() {
         }
       />
 
-      {/* ── All authenticated pages (Navbar + Footer) ── */}
       <Route
         path="/*"
         element={
           <RequireAuth>
             <div className="app-shell">
               <Navbar />
+
               <main className="app-main">
                 <Routes>
-                  {/* Default logged-in entry point */}
-                  <Route path="/app" element={<Navigate to="/requests" />} />
+                  <Route path="/app" element={<Navigate to="/dashboard" replace />} />
 
-                  {/* Service Requests */}
+                  <Route path="/dashboard" element={<Dashboard />} />
+
                   <Route path="/requests" element={<ServiceRequests />} />
                   <Route path="/requests/new" element={<PostServiceRequest />} />
                   <Route path="/requests/:id" element={<ServiceRequestDetails />} />
 
-                  {/* Experts */}
-                  <Route path="/experts" element={<ExpertDirectory />} />
-                  <Route path="/experts/register" element={<RegisterExpert />} />
-                  <Route path="/experts/:id" element={<ExpertProfile />} />
+                  <Route
+                    path="/experts"
+                    element={
+                      <HideFromClient>
+                        <ExpertDirectory />
+                      </HideFromClient>
+                    }
+                  />
 
-                  {/* Fleet */}
+                  <Route
+                    path="/experts/register"
+                    element={
+                      <AdminOnly>
+                        <RegisterExpert />
+                      </AdminOnly>
+                    }
+                  />
+
+                  <Route
+                    path="/experts/:id"
+                    element={
+                      <HideFromClient>
+                        <ExpertProfile />
+                      </HideFromClient>
+                    }
+                  />
+
                   <Route path="/fleet" element={<FleetManagement />} />
-
-                  {/* Ports */}
                   <Route path="/ports" element={<PortDirectory />} />
-
-                  {/* Dashboard */}
-                  <Route path="/dashboard" element={<Dashboard />} />
-
-                  {/* User Profile */}
                   <Route path="/profile" element={<UserProfile />} />
 
-                  {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/requests" />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </main>
+
               <Footer />
             </div>
           </RequireAuth>

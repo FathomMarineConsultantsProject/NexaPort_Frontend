@@ -479,3 +479,25 @@
     margin-top: 20px;
   }
 }
+
+.access-notice {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.request-access-notice {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 14px;
+  font-weight: 700;
+}

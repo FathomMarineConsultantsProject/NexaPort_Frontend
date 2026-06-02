@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { getRoleId } from "../../utils/auth";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -17,18 +18,20 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Read user from localStorage
   const storedUser = localStorage.getItem("np_user");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const initial = user?.full_name?.trim()?.[0]?.toUpperCase() || "U";
 
-  // Close dropdown when clicking outside
+  const roleId = getRoleId();
+  const isClient = roleId === 3;
+
   useEffect(() => {
     const handleOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
       }
     };
+
     if (menuOpen) document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [menuOpen]);
@@ -41,7 +44,6 @@ export default function Navbar() {
 
   return (
     <header className="np-navbar">
-      {/* Brand */}
       <div className="np-brand" onClick={() => navigate("/")} role="button">
         <div className="np-logo">
           <Anchor size={22} />
@@ -51,26 +53,30 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Nav links */}
       <nav className="np-navlinks">
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
-        <NavLink to="/experts">
-          <Users size={17} /> Experts
-        </NavLink>
+
+        {!isClient && (
+          <NavLink to="/experts">
+            <Users size={17} /> Experts
+          </NavLink>
+        )}
+
         <NavLink to="/fleet">
           <Ship size={17} /> Fleet
         </NavLink>
+
         <NavLink to="/ports">
           <MapPin size={17} /> Ports
         </NavLink>
+
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
       </nav>
 
-      {/* Profile avatar + dropdown */}
       <div className="np-profile-wrap" ref={menuRef}>
         <button
           className="np-avatar-btn"
@@ -78,7 +84,9 @@ export default function Navbar() {
           title={user?.full_name || "Account"}
         >
           <span className="np-avatar-initial">{initial}</span>
-          <span className="np-avatar-name">{user?.full_name?.split(" ")[0] || "Account"}</span>
+          <span className="np-avatar-name">
+            {user?.full_name?.split(" ")[0] || "Account"}
+          </span>
         </button>
 
         {menuOpen && (
@@ -95,7 +103,10 @@ export default function Navbar() {
 
             <button
               className="np-profile-menu-item"
-              onClick={() => { navigate("/profile"); setMenuOpen(false); }}
+              onClick={() => {
+                navigate("/profile");
+                setMenuOpen(false);
+              }}
             >
               <User size={15} />
               View Profile

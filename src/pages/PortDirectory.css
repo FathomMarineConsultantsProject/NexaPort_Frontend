@@ -331,3 +331,155 @@
 .port-actions button.danger:hover {
   background: #fff5f5;
 }
+
+.ports-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.port-add-btn {
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #149d94;
+  color: white;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.port-form-card {
+  background: white;
+  border: 1px solid #d5dfeb;
+  border-radius: 12px;
+  padding: 26px;
+  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
+  margin-bottom: 26px;
+}
+
+.port-form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.port-form-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #001b3f;
+}
+
+.port-form-head button {
+  border: none;
+  background: transparent;
+  color: #526c9d;
+  cursor: pointer;
+}
+
+.port-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.port-form-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #001b3f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.port-form-card input,
+.port-form-card select,
+.port-form-card textarea {
+  width: 100%;
+  border: 1px solid #d5dfeb;
+  border-radius: 8px;
+  background: white;
+  font-family: inherit;
+  font-size: 14px;
+  color: #001b3f;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
+}
+
+.port-form-card input,
+.port-form-card select {
+  height: 42px;
+  padding: 0 13px;
+}
+
+.port-form-card textarea {
+  min-height: 92px;
+  padding: 12px 13px;
+  resize: vertical;
+}
+
+.port-full-field {
+  margin-top: 18px;
+}
+
+.port-save-btn {
+  margin-top: 20px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #149d94;
+  color: white;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.port-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.port-card-actions button {
+  height: 34px;
+  border: 1px solid #d5dfeb;
+  border-radius: 7px;
+  background: white;
+  color: #001b3f;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.port-card-actions button.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+@media (max-width: 900px) {
+  .port-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ports-header {
+    flex-direction: column;
+  }
+}

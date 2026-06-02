@@ -1,15 +1,12 @@
-export const getCurrentUser = () => {
+export const getStoredUser = () => {
   try {
-    const storedUser = localStorage.getItem("np_user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    return JSON.parse(localStorage.getItem("np_user") || "{}");
   } catch {
-    return null;
+    return {};
   }
 };
 
-export const getRoleId = () => {
-  return Number(getCurrentUser()?.role_id);
-};
+export const getRoleId = () => Number(getStoredUser()?.role_id || 0);
 
 export const isSuperAdmin = () => getRoleId() === 1;
 export const isExpert = () => getRoleId() === 2;

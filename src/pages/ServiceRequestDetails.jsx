@@ -3,7 +3,6 @@ import {
   Briefcase,
   CalendarDays,
   CheckCircle2,
-  DollarSign,
   Flag,
   MapPin,
   Ship,
@@ -11,21 +10,24 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getExperts } from "../api/expertApi";
+// import { getExperts } from "../api/expertApi";
+import { acceptQuotation, createQuotation } from "../api/quotationApi";
 import { getServiceRequestById } from "../api/serviceRequestApi";
-import { createQuotation, updateQuotationStatus } from "../api/quotationApi";
+import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import "./ServiceRequestDetails.css";
 
 export default function ServiceRequestDetails() {
   const { id } = useParams();
 
   const [request, setRequest] = useState(null);
-  const [experts, setExperts] = useState([]);
+  // const [experts, setExperts] = useState([]);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [markupByQuote, setMarkupByQuote] = useState({});
 
   const [quoteForm, setQuoteForm] = useState({
-    expertId: "",
+    // expertId: "",
     totalQuoteUsd: "",
     attendanceDays: "",
     travelCost: "",
@@ -40,13 +42,13 @@ export default function ServiceRequestDetails() {
   }, [id]);
 
   const loadPage = async () => {
-    const [requestRes, expertRes] = await Promise.all([
-      getServiceRequestById(id),
-      getExperts(),
-    ]);
-
-    setRequest(requestRes.data);
-    setExperts(expertRes.data || []);
+    try {
+      const requestRes = await getServiceRequestById(id);
+      setRequest(requestRes.data);
+    } catch (error) {
+      console.error("Failed to load request:", error);
+      setRequest(null);
+    }
   };
 
   const formatDate = (date) => {
@@ -76,59 +78,108 @@ export default function ServiceRequestDetails() {
   const submitQuotation = async (e) => {
     e.preventDefault();
 
-    await createQuotation({
-      serviceRequestId: Number(id),
-      expertId: Number(quoteForm.expertId),
-      totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
-      attendanceDays: Number(quoteForm.attendanceDays || 0),
-      travelCost: Number(quoteForm.travelCost || 0),
-      accommodationCost: Number(quoteForm.accommodationCost || 0),
-      reportFee: Number(quoteForm.reportFee || 0),
-      urgencySurcharge: Number(quoteForm.urgencySurcharge || 0),
-      coverLetter: quoteForm.coverLetter,
-    });
+    try {
+      const payload = {
+        serviceRequestId: Number(id),
+        totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
+        attendanceDays: Number(quoteForm.attendanceDays || 0),
+        travelCost: Number(quoteForm.travelCost || 0),
+        accommodationCost: Number(quoteForm.accommodationCost || 0),
+        reportFee: Number(quoteForm.reportFee || 0),
+        urgencySurcharge: Number(quoteForm.urgencySurcharge || 0),
+        coverLetter: quoteForm.coverLetter,
+      };
 
-    setShowQuoteForm(false);
-    setQuoteForm({
-      expertId: "",
-      totalQuoteUsd: "",
-      attendanceDays: "",
-      travelCost: "",
-      accommodationCost: "",
-      reportFee: "",
-      urgencySurcharge: "",
-      coverLetter: "",
-    });
+      // if (isSuperAdmin()) {
+      //   payload.expertId = Number(quoteForm.expertId);
+      // }
 
-    setToast("Quotation submitted");
-    loadPage();
+      await createQuotation({
+        serviceRequestId: Number(id),
+        totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
+        attendanceDays: Number(quoteForm.attendanceDays || 0),
+        travelCost: Number(quoteForm.travelCost || 0),
+        accommodationCost: Number(quoteForm.accommodationCost || 0),
+        reportFee: Number(quoteForm.reportFee || 0),
+        urgencySurcharge: Number(quoteForm.urgencySurcharge || 0),
+        coverLetter: quoteForm.coverLetter,
+      });
+
+      setToast("Quotation submitted successfully.");
+      loadPage();
+      setTimeout(() => setToast(""), 3000);
+    } catch (error) {
+      console.error("Failed to submit quotation:", error);
+      setToast(error.response?.data?.message || "Failed to submit quotation.");
+      setTimeout(() => setToast(""), 3000);
+    }
   };
 
-  const changeStatus = async (quotationId, status) => {
-    const res = await updateQuotationStatus(quotationId, status);
+  const handleAcceptQuotation = async (quotationId) => {
+    try {
+      const adminMarkupUsd = Number(markupByQuote[quotationId] || 0);
 
-    setToast(res.message || `Quotation ${status}`);
-    loadPage();
+      const res = await acceptQuotation(quotationId, {
+        adminMarkupUsd,
+      });
 
-    setTimeout(() => setToast(""), 3000);
+      setToast(res.message || "Quotation accepted and client price finalized.");
+      loadPage();
+      setTimeout(() => setToast(""), 3000);
+    } catch (error) {
+      console.error("Failed to accept quotation:", error);
+      setToast(error.response?.data?.message || "Failed to accept quotation.");
+      setTimeout(() => setToast(""), 3000);
+    }
   };
+
+  if (loading) {
+    return <main className="request-details-page">Loading request...</main>;
+  }
 
   if (!request) {
-    return <main className="request-details-page">Loading...</main>;
+    return <main className="request-details-page">Request not found.</main>;
   }
+
+  const quotations = request?.quotations || [];
+  const vessel = request?.vessel || {};
+  const port = request?.port || {};
+
+  const canSubmitQuote = isExpert();
+  const canAcceptQuote = isSuperAdmin();
+  const canSeeQuotations = isSuperAdmin() || isExpert() || quotations.some((q) => q.status === "accepted");
+  const getQuotePrice = (quote) => {
+    if (isClient()) {
+      return quote.clientTotalUsd || quote.client_total_usd || 0;
+    }
+
+    return quote.totalQuoteUsd || quote.total_quote_usd || 0;
+  };
+
+  const getExpertQuote = (quote) => {
+    return quote.totalQuoteUsd || quote.total_quote_usd || 0;
+  };
+
+  const getAdminMarkup = (quote) => {
+    return quote.adminMarkupUsd || quote.admin_markup_usd || 0;
+  };
+
+  const getClientTotal = (quote) => {
+    return quote.clientTotalUsd || quote.client_total_usd || 0;
+  };
 
   return (
     <main className="request-details-page">
       <section className="request-details-head">
         <div>
           <div className="request-tags">
-            <span className="outline-tag">{request.serviceType}</span>
-            <span className="outline-tag">{request.serviceCategory}</span>
-            <span className={`urgency-tag ${request.urgency}`}>
-              {request.urgency}
+            <span className="outline-tag">{request.serviceType || "Service"}</span>
+            <span className="outline-tag">{request.serviceCategory || "General"}</span>
+            <span className={`urgency-tag ${request.urgency || ""}`}>
+              {request.urgency || "routine"}
             </span>
-            <span className={`status-tag ${request.status}`}>
-              {request.status}
+            <span className={`status-tag ${request.status || ""}`}>
+              {request.status || "open"}
             </span>
           </div>
 
@@ -137,7 +188,7 @@ export default function ServiceRequestDetails() {
           <div className="request-meta-line">
             <span>
               <MapPin size={17} />
-              {request.port?.locationSummary || request.port?.name}
+              {port.locationSummary || port.name || port.port_name || "Port not added"}
             </span>
 
             <span>
@@ -150,8 +201,10 @@ export default function ServiceRequestDetails() {
         <div className="budget-block">
           <strong>${money(request.budgetUsd)}</strong>
           <span>
-            {request.quotationCount}{" "}
-            {request.quotationCount === 1 ? "quotation" : "quotations"}
+            {Number(request.quotationCount || quotations.length || 0)}{" "}
+            {Number(request.quotationCount || quotations.length || 0) === 1
+              ? "quotation"
+              : "quotations"}
           </span>
         </div>
       </section>
@@ -160,41 +213,62 @@ export default function ServiceRequestDetails() {
         <div className="request-main-col">
           <div className="details-card">
             <h2>Scope of Work</h2>
-            <p>{request.scopeOfWork}</p>
+            <p>{request.scopeOfWork || "No scope added."}</p>
           </div>
 
           <div className="quotation-head">
-            <h2>Quotations ({request.quotations?.length || 0})</h2>
-
-            <button
-              className="submit-quote-toggle"
-              onClick={() => setShowQuoteForm(!showQuoteForm)}
-            >
-              <Briefcase size={17} />
-              Submit Quotation
-            </button>
+            <h2>
+              {isClient() ? "Accepted Quote" : `Quotations (${visibleQuotations.length})`}
+            </h2>
+            {isClient() && !acceptedQuote && (
+              <div className="details-card">
+                <h2>Awaiting admin approval</h2>
+                <p>Your request is being reviewed. Expert and quotation details will appear after admin approval.</p>
+              </div>
+            )}
+            {canSubmitQuote && (
+              <button
+                className="submit-quote-toggle"
+                onClick={() => setShowQuoteForm(!showQuoteForm)}
+              >
+                <Briefcase size={17} />
+                Submit Quotation
+              </button>
+            )}
           </div>
 
-          {showQuoteForm && (
+          {isClient() && !canSeeQuotations && (
+            <div className="details-card">
+              <p>
+                Quotations are under admin review. Accepted expert details will be visible once a quote is approved.
+              </p>
+            </div>
+          )}
+
+          {showQuoteForm && canSubmitQuote && (
             <form className="quote-form-card" onSubmit={submitQuotation}>
               <h3>Submit Quotation</h3>
-              <p>Provide a detailed cost breakdown to improve your selection chances.</p>
+              <p>Provide a detailed cost breakdown for this service request.</p>
 
-              <label>Expert / Surveyor</label>
-              <select
-                value={quoteForm.expertId}
-                onChange={(e) =>
-                  setQuoteForm({ ...quoteForm, expertId: e.target.value })
-                }
-                required
-              >
-                <option value="">Select expert...</option>
-                {experts.map((expert) => (
-                  <option key={expert.id} value={expert.id}>
-                    {expert.full_name}
-                  </option>
-                ))}
-              </select>
+              {/* {isSuperAdmin() && (
+                <>
+                  <label>Expert / Surveyor</label>
+                  <select
+                    value={quoteForm.expertId}
+                    onChange={(e) =>
+                      setQuoteForm({ ...quoteForm, expertId: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="">Select expert...</option>
+                    {experts.map((expert) => (
+                      <option key={expert.id} value={expert.id}>
+                        {expert.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )} */}
 
               <div className="quote-two-grid">
                 <div>
@@ -202,10 +276,7 @@ export default function ServiceRequestDetails() {
                   <input
                     value={quoteForm.totalQuoteUsd}
                     onChange={(e) =>
-                      setQuoteForm({
-                        ...quoteForm,
-                        totalQuoteUsd: e.target.value,
-                      })
+                      setQuoteForm({ ...quoteForm, totalQuoteUsd: e.target.value })
                     }
                     placeholder="3500"
                     required
@@ -213,70 +284,55 @@ export default function ServiceRequestDetails() {
                 </div>
 
                 <div>
-                  <label>Attendance Days (opt.)</label>
+                  <label>Attendance Days</label>
                   <input
                     value={quoteForm.attendanceDays}
                     onChange={(e) =>
-                      setQuoteForm({
-                        ...quoteForm,
-                        attendanceDays: e.target.value,
-                      })
+                      setQuoteForm({ ...quoteForm, attendanceDays: e.target.value })
                     }
                     placeholder="1"
                   />
                 </div>
 
                 <div>
-                  <label>Travel Cost (opt.)</label>
+                  <label>Travel Cost</label>
                   <input
                     value={quoteForm.travelCost}
                     onChange={(e) =>
-                      setQuoteForm({
-                        ...quoteForm,
-                        travelCost: e.target.value,
-                      })
+                      setQuoteForm({ ...quoteForm, travelCost: e.target.value })
                     }
                     placeholder="0"
                   />
                 </div>
 
                 <div>
-                  <label>Accommodation (opt.)</label>
+                  <label>Accommodation</label>
                   <input
                     value={quoteForm.accommodationCost}
                     onChange={(e) =>
-                      setQuoteForm({
-                        ...quoteForm,
-                        accommodationCost: e.target.value,
-                      })
+                      setQuoteForm({ ...quoteForm, accommodationCost: e.target.value })
                     }
                     placeholder="0"
                   />
                 </div>
 
                 <div>
-                  <label>Report Fee (opt.)</label>
+                  <label>Report Fee</label>
                   <input
                     value={quoteForm.reportFee}
                     onChange={(e) =>
-                      setQuoteForm({
-                        ...quoteForm,
-                        reportFee: e.target.value,
-                      })
+                      setQuoteForm({ ...quoteForm, reportFee: e.target.value })
                     }
                     placeholder="0"
                   />
                 </div>
 
                 <div>
-                  <label>Urgency Surcharge (opt.)</label>
+                  <label>Urgency Surcharge</label>
                   <input
                     value={quoteForm.urgencySurcharge}
                     onChange={(e) =>
-                      setQuoteForm({
-                        ...quoteForm,
-                        urgencySurcharge: e.target.value,
-                      })
+                      setQuoteForm({ ...quoteForm, urgencySurcharge: e.target.value })
                     }
                     placeholder="0"
                   />
@@ -287,12 +343,9 @@ export default function ServiceRequestDetails() {
               <textarea
                 value={quoteForm.coverLetter}
                 onChange={(e) =>
-                  setQuoteForm({
-                    ...quoteForm,
-                    coverLetter: e.target.value,
-                  })
+                  setQuoteForm({ ...quoteForm, coverLetter: e.target.value })
                 }
-                placeholder="Describe your relevant experience, availability, and approach..."
+                placeholder="Describe your experience, availability, and approach..."
               />
 
               <div className="quote-actions">
@@ -311,75 +364,97 @@ export default function ServiceRequestDetails() {
             </form>
           )}
 
-          {request.quotations?.map((quote) => (
-            <article
-              key={quote.id}
-              className={`quotation-card ${quote.status === "accepted" ? "accepted" : ""}`}
-            >
-              <div className="quotation-top">
-                <div>
-                  <h3>
-                    {quote.expertName}
-                    <span>
-                      <Star size={16} fill="#149d94" color="#149d94" />
-                      {quote.expertRating}
+          {canSeeQuotations &&
+            quotations.map((quote) => (
+              <article
+                key={quote.id}
+                className={`quotation-card ${quote.status === "accepted" ? "accepted" : ""}`}
+              >
+                <div className="quotation-top">
+                  <div>
+                    <h3>
+                      {isClient() && quote.status !== "accepted"
+                        ? "Expert details hidden"
+                        : quote.expertName || "Expert"}
+                      <span>
+                        <Star size={16} fill="#149d94" color="#149d94" />
+                        {quote.expertRating || 0}
+                      </span>
+                    </h3>
+
+                    <p>{formatDateTime(quote.createdAt)}</p>
+                  </div>
+
+                  <div className="quotation-price">
+                    <strong>${money(getQuotePrice(quote))}</strong>
+                    <span className={`quote-status ${quote.status}`}>
+                      {quote.status}
                     </span>
-                  </h3>
-
-                  <p>{formatDateTime(quote.createdAt)}</p>
+                    {isSuperAdmin() && quote.status === "accepted" && (
+                      <small className="admin-price-breakdown">
+                        Expert: ${money(getExpertQuote(quote))} · Markup: $
+                        {money(getAdminMarkup(quote))} · Client: ${money(getClientTotal(quote))}
+                      </small>
+                    )}
+                  </div>
                 </div>
 
-                <div className="quotation-price">
-                  <strong>${money(quote.totalQuoteUsd)}</strong>
-                  <span className={`quote-status ${quote.status}`}>
-                    {quote.status}
-                  </span>
-                </div>
-              </div>
+                {!isClient() && (
+                  <div className="quote-cost-grid">
+                    <div>
+                      <span>Days</span>
+                      <strong>{quote.attendanceDays || 0}d</strong>
+                    </div>
+                    <div>
+                      <span>Travel</span>
+                      <strong>${money(quote.travelCost)}</strong>
+                    </div>
+                    <div>
+                      <span>Accomm.</span>
+                      <strong>${money(quote.accommodationCost)}</strong>
+                    </div>
+                    <div>
+                      <span>Report</span>
+                      <strong>${money(quote.reportFee)}</strong>
+                    </div>
+                  </div>
+                )}
 
-              <div className="quote-cost-grid">
-                <div>
-                  <span>Days</span>
-                  <strong>{quote.attendanceDays || 0}d</strong>
-                </div>
-                <div>
-                  <span>Travel</span>
-                  <strong>${money(quote.travelCost)}</strong>
-                </div>
-                <div>
-                  <span>Accomm.</span>
-                  <strong>${money(quote.accommodationCost)}</strong>
-                </div>
-                <div>
-                  <span>Report</span>
-                  <strong>${money(quote.reportFee)}</strong>
-                </div>
-              </div>
+                {quote.coverLetter && <blockquote>“{quote.coverLetter}”</blockquote>}
 
-              {quote.coverLetter && (
-                <blockquote>“{quote.coverLetter}”</blockquote>
-              )}
+                {canAcceptQuote && quote.status !== "accepted" && (
+                  <div className="admin-accept-box">
+                    <label>
+                      Admin Markup / Platform Fee (USD)
+                      <input
+                        type="number"
+                        value={markupByQuote[quote.id] || ""}
+                        onChange={(e) =>
+                          setMarkupByQuote((prev) => ({
+                            ...prev,
+                            [quote.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="500"
+                      />
+                    </label>
 
-              {quote.status !== "accepted" && (
-                <div className="quotation-actions">
-                  <button
-                    className="accept-btn"
-                    onClick={() => changeStatus(quote.id, "accepted")}
-                  >
-                    <CheckCircle2 size={16} />
-                    Accept
-                  </button>
+                    <div className="client-total-preview">
+                      Client Final Price: $
+                      {money(Number(getExpertQuote(quote)) + Number(markupByQuote[quote.id] || 0))}
+                    </div>
 
-                  <button
-                    className="reject-btn"
-                    onClick={() => changeStatus(quote.id, "rejected")}
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-            </article>
-          ))}
+                    <button
+                      className="accept-btn"
+                      onClick={() => handleAcceptQuotation(quote.id)}
+                    >
+                      <CheckCircle2 size={16} />
+                      Accept Quote
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))}
         </div>
 
         <aside className="request-side-col">
@@ -389,10 +464,14 @@ export default function ServiceRequestDetails() {
               Vessel Particulars
             </h3>
 
-            <Info label="Name" value={request.vessel?.name} />
-            <Info label="IMO" value={request.vessel?.imoNumber} />
-            <Info label="Type" value={request.vessel?.type} />
-            <Info label="Flag" value={request.vessel?.flagState} icon={<Flag size={14} />} />
+            <Info label="Name" value={vessel.name || vessel.vessel_name} />
+            <Info label="IMO" value={vessel.imoNumber || vessel.imo_number} />
+            <Info label="Type" value={vessel.type || vessel.vessel_type} />
+            <Info
+              label="Flag"
+              value={vessel.flagState || vessel.flag_state}
+              icon={<Flag size={14} />}
+            />
           </div>
 
           <div className="side-info-card">
@@ -401,9 +480,9 @@ export default function ServiceRequestDetails() {
               Port & Schedule
             </h3>
 
-            <Info label="Port" value={request.port?.name} />
-            <Info label="Country" value={request.port?.country} />
-            <Info label="ETA" value={formatDate(request.port?.eta)} />
+            <Info label="Port" value={port.name || port.port_name} />
+            <Info label="Country" value={port.country} />
+            <Info label="ETA" value={formatDate(port.eta)} />
             <Info label="Deadline" value={formatDate(request.requiredBy)} />
           </div>
 
@@ -416,17 +495,18 @@ export default function ServiceRequestDetails() {
             <p>{request.requiredCertification || "-"}</p>
           </div>
 
-          <div className="side-info-card">
-            <h3>Requested By</h3>
-            <p>{request.requesterName || "-"}</p>
-          </div>
+          {!isExpert() && (
+            <div className="side-info-card">
+              <h3>Requested By</h3>
+              <p>{request.requesterName || "-"}</p>
+            </div>
+          )}
         </aside>
       </section>
 
       {toast && (
         <div className="request-toast">
           <strong>{toast}</strong>
-          <span>The quotation has been updated.</span>
         </div>
       )}
     </main>

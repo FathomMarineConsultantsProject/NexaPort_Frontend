@@ -10,6 +10,13 @@ export default function FleetManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const storedUser = localStorage.getItem("np_user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const roleId = Number(user?.role_id);
+
+  const canManageVessels = roleId === 1 || roleId === 3;
+  const isExpert = roleId === 2;
+
   // Form state
   const [formData, setFormData] = useState({
     vessel_name: "",
@@ -32,7 +39,7 @@ export default function FleetManagement() {
     setLoading(true);
     try {
       const response = await getVessels(searchQuery);
-      setVessels(response.vessels || []);
+      setVessels(response.data || response.vessels || []);
     } catch (err) {
       console.error("Failed to load vessels:", err);
       setError("Failed to load vessels");
@@ -58,6 +65,11 @@ export default function FleetManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!canManageVessels) {
+      setError("You do not have permission to register vessels.");
+      return;
+    }
 
     if (!formData.vessel_name || !formData.imo_number || !formData.vessel_type || !formData.flag_state) {
       setError("Vessel Name, IMO Number, Vessel Type, and Flag State are required");
@@ -142,10 +154,12 @@ export default function FleetManagement() {
           <h1>Fleet Management</h1>
           <p>Register and manage vessels in your fleet for service requests.</p>
         </div>
-        <button onClick={() => setShowRegisterForm(true)} className="register-vessel-btn">
-          <Plus size={18} />
-          Register Vessel
-        </button>
+        {canManageVessels && (
+          <button onClick={() => setShowRegisterForm(true)} className="register-vessel-btn">
+            <Plus size={18} />
+            Register Vessel
+          </button>
+        )}
       </div>
 
       <div className="fleet-search">
@@ -168,7 +182,11 @@ export default function FleetManagement() {
       ) : vessels.length === 0 ? (
         <div className="empty-state">
           <Ship size={64} />
-          <p>No vessels found. Register your first vessel to get started.</p>
+          <p>
+            {isExpert
+              ? "No vessels found."
+              : "No vessels found. Register your first vessel to get started."}
+          </p>
         </div>
       ) : (
         <div className="vessel-grid">
@@ -232,7 +250,7 @@ export default function FleetManagement() {
       )}
 
       {/* Register Vessel Modal */}
-      {showRegisterForm && (
+      {canManageVessels && showRegisterForm && (
         <div className="register-modal-overlay" onClick={(e) => {
           if (e.target.className === "register-modal-overlay") {
             setShowRegisterForm(false);
