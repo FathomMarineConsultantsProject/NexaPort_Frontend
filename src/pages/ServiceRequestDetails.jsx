@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-// import { getExperts } from "../api/expertApi";
 import { acceptQuotation, createQuotation } from "../api/quotationApi";
 import { getServiceRequestById } from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
@@ -20,14 +19,12 @@ export default function ServiceRequestDetails() {
   const { id } = useParams();
 
   const [request, setRequest] = useState(null);
-  // const [experts, setExperts] = useState([]);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [markupByQuote, setMarkupByQuote] = useState({});
 
   const [quoteForm, setQuoteForm] = useState({
-    // expertId: "",
     totalQuoteUsd: "",
     attendanceDays: "",
     travelCost: "",
@@ -90,10 +87,6 @@ export default function ServiceRequestDetails() {
         coverLetter: quoteForm.coverLetter,
       };
 
-      // if (isSuperAdmin()) {
-      //   payload.expertId = Number(quoteForm.expertId);
-      // }
-
       await createQuotation({
         serviceRequestId: Number(id),
         totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
@@ -147,7 +140,16 @@ export default function ServiceRequestDetails() {
 
   const canSubmitQuote = isExpert();
   const canAcceptQuote = isSuperAdmin();
-  const canSeeQuotations = isSuperAdmin() || isExpert() || quotations.some((q) => q.status === "accepted");
+  const acceptedQuote = quotations.find((q) => q.status === "accepted");
+
+  const visibleQuotations = isClient()
+    ? acceptedQuote
+      ? [acceptedQuote]
+      : []
+    : quotations;
+
+  const canSeeQuotations =
+    isSuperAdmin() || isExpert() || Boolean(acceptedQuote);
   const getQuotePrice = (quote) => {
     if (isClient()) {
       return quote.clientTotalUsd || quote.client_total_usd || 0;
@@ -237,7 +239,7 @@ export default function ServiceRequestDetails() {
             )}
           </div>
 
-          {isClient() && !canSeeQuotations && (
+          {isClient() && !acceptedQuote && (
             <div className="details-card">
               <p>
                 Quotations are under admin review. Accepted expert details will be visible once a quote is approved.
@@ -249,26 +251,6 @@ export default function ServiceRequestDetails() {
             <form className="quote-form-card" onSubmit={submitQuotation}>
               <h3>Submit Quotation</h3>
               <p>Provide a detailed cost breakdown for this service request.</p>
-
-              {/* {isSuperAdmin() && (
-                <>
-                  <label>Expert / Surveyor</label>
-                  <select
-                    value={quoteForm.expertId}
-                    onChange={(e) =>
-                      setQuoteForm({ ...quoteForm, expertId: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="">Select expert...</option>
-                    {experts.map((expert) => (
-                      <option key={expert.id} value={expert.id}>
-                        {expert.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )} */}
 
               <div className="quote-two-grid">
                 <div>
@@ -365,7 +347,7 @@ export default function ServiceRequestDetails() {
           )}
 
           {canSeeQuotations &&
-            quotations.map((quote) => (
+            visibleQuotations.map((quote) => (
               <article
                 key={quote.id}
                 className={`quotation-card ${quote.status === "accepted" ? "accepted" : ""}`}
