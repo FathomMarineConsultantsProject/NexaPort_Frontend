@@ -1,3 +1,4 @@
+// D:\Fathhom Marine\FMC\NexaPort\NexaPort_Frontend\src\pages\ServiceRequestDetails.jsx
 import {
   Award,
   Briefcase,
@@ -39,12 +40,16 @@ export default function ServiceRequestDetails() {
   }, [id]);
 
   const loadPage = async () => {
+    setLoading(true);
+
     try {
       const requestRes = await getServiceRequestById(id);
       setRequest(requestRes.data);
     } catch (error) {
       console.error("Failed to load request:", error);
       setRequest(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,16 +81,6 @@ export default function ServiceRequestDetails() {
     e.preventDefault();
 
     try {
-      const payload = {
-        serviceRequestId: Number(id),
-        totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
-        attendanceDays: Number(quoteForm.attendanceDays || 0),
-        travelCost: Number(quoteForm.travelCost || 0),
-        accommodationCost: Number(quoteForm.accommodationCost || 0),
-        reportFee: Number(quoteForm.reportFee || 0),
-        urgencySurcharge: Number(quoteForm.urgencySurcharge || 0),
-        coverLetter: quoteForm.coverLetter,
-      };
 
       await createQuotation({
         serviceRequestId: Number(id),
@@ -137,17 +132,24 @@ export default function ServiceRequestDetails() {
   const quotations = request?.quotations || [];
   const vessel = request?.vessel || {};
   const port = request?.port || {};
-
   const canSubmitQuote = isExpert();
   const canAcceptQuote = isSuperAdmin();
   const acceptedQuote = quotations.find((q) => q.status === "accepted");
+  const currentUser = getStoredUser();
 
   const visibleQuotations = isClient()
     ? acceptedQuote
       ? [acceptedQuote]
       : []
-    : quotations;
+    : isExpert()
+      ? quotations.filter((q) => {
+        const quoteExpertId = Number(q.expertId || q.expert_id);
+        const userExpertId = Number(currentUser?.expert_id || currentUser?.expertId);
+        const userId = Number(currentUser?.id);
 
+        return quoteExpertId === userExpertId || quoteExpertId === userId;
+      })
+      : quotations;
   const canSeeQuotations =
     isSuperAdmin() || isExpert() || Boolean(acceptedQuote);
   const getQuotePrice = (quote) => {
@@ -222,12 +224,6 @@ export default function ServiceRequestDetails() {
             <h2>
               {isClient() ? "Accepted Quote" : `Quotations (${visibleQuotations.length})`}
             </h2>
-            {isClient() && !acceptedQuote && (
-              <div className="details-card">
-                <h2>Awaiting admin approval</h2>
-                <p>Your request is being reviewed. Expert and quotation details will appear after admin approval.</p>
-              </div>
-            )}
             {canSubmitQuote && (
               <button
                 className="submit-quote-toggle"
@@ -355,8 +351,10 @@ export default function ServiceRequestDetails() {
                 <div className="quotation-top">
                   <div>
                     <h3>
-                      {isClient() && quote.status !== "accepted"
-                        ? "Expert details hidden"
+                      {isClient()
+                        ? quote.status === "accepted"
+                          ? quote.expertName || "Expert"
+                          : "Expert details hidden"
                         : quote.expertName || "Expert"}
                       <span>
                         <Star size={16} fill="#149d94" color="#149d94" />
@@ -403,6 +401,12 @@ export default function ServiceRequestDetails() {
                 )}
 
                 {quote.coverLetter && <blockquote>“{quote.coverLetter}”</blockquote>}
+
+                {isClient() && quote.status === "accepted" && (
+                  <button type="button" className="primary-btn">
+                    Rate & Review Expert
+                  </button>
+                )}
 
                 {canAcceptQuote && quote.status !== "accepted" && (
                   <div className="admin-accept-box">
