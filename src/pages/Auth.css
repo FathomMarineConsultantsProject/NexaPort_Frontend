@@ -1,0 +1,289 @@
+/* =============================================
+   AUTH PAGE — matches NexaPort #f8fafc theme
+============================================= */
+
+.auth-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* Logo at top */
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  text-decoration: none;
+}
+
+.auth-logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: #14b8a6;
+  display: grid;
+  place-items: center;
+  color: white;
+}
+
+.auth-logo-text {
+  font-size: 22px;
+  font-weight: 800;
+  color: #071b39;
+  letter-spacing: -0.5px;
+}
+
+.auth-logo-text span {
+  color: #14b8a6;
+}
+
+/* Card */
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: white;
+  border: 1px solid #dbe4ee;
+  border-radius: 16px;
+  padding: 36px 36px 32px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.auth-card-head {
+  margin-bottom: 28px;
+}
+
+.auth-card-head h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #071b39;
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
+}
+
+.auth-card-head p {
+  font-size: 15px;
+  color: #59709a;
+  margin: 0;
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.auth-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #071b39;
+}
+
+.auth-field label .opt {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.auth-input {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid #d5dfeb;
+  border-radius: 9px;
+  background: white;
+  font-family: inherit;
+  font-size: 15px;
+  color: #071b39;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.auth-input::placeholder {
+  color: #94a3b8;
+}
+
+.auth-input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+/* Role selector */
+.role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.role-option {
+  position: relative;
+}
+
+.role-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 1.5px solid #d5dfeb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: white;
+  text-align: center;
+}
+
+.role-card:hover {
+  border-color: #14b8a6;
+  background: #f0fdfb;
+}
+
+.role-option input[type="radio"]:checked + .role-card {
+  border-color: #14b8a6;
+  background: #f0fdfb;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+.role-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: grid;
+  place-items: center;
+  color: #475569;
+  transition: all 0.18s;
+}
+
+.role-option input[type="radio"]:checked + .role-card .role-card-icon {
+  background: #14b8a6;
+  color: white;
+}
+
+.role-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #071b39;
+}
+
+.role-card-desc {
+  font-size: 11px;
+  color: #7c8dab;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+/* Submit button */
+.auth-submit-btn {
+  height: 48px;
+  border: none;
+  border-radius: 9px;
+  background: #14b8a6;
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+  margin-top: 4px;
+  letter-spacing: -0.2px;
+}
+
+.auth-submit-btn:hover {
+  background: #0d9488;
+}
+
+.auth-submit-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Error */
+.auth-error {
+  padding: 12px 14px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Divider */
+.auth-divider {
+  text-align: center;
+  font-size: 14px;
+  color: #7c8dab;
+  margin-top: 22px;
+}
+
+.auth-divider a {
+  color: #14b8a6;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-divider a:hover {
+  text-decoration: underline;
+}
+
+/* Tabs (Login / Register toggle) */
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 28px;
+}
+
+.auth-tab {
+  height: 38px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7c8dab;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.auth-tab.active {
+  background: white;
+  color: #071b39;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+}
+
+/* Two-col grid for name + username */
+.auth-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Footer note */
+.auth-footer-note {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}

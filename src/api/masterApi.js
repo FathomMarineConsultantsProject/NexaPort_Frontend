@@ -14,3 +14,11 @@ export const getCertifications = async () => {
   const res = await axiosClient.get("/master/certifications");
   return res.data;
 };
+
+export const getServiceRequestDropdowns = async () => {
+  const res = await axiosClient.get(
+    "/master/service-request-dropdowns"
+  );
+
+  return res.data;
+};

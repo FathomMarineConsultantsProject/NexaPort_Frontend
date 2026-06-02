@@ -1,0 +1,26 @@
+.np-footer {
+  height: 74px;
+  background: #0a1929;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: auto;
+}
+
+.np-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.np-footer-left svg {
+  color: #14b8a6;
+}
+
+.np-footer-right {
+  letter-spacing: 0.2px;
+}

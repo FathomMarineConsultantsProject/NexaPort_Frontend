@@ -1,0 +1,260 @@
+.psr-page {
+  background: #f8fafc;
+  padding: 42px 24px 48px;
+}
+
+.psr-wrap {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.psr-head {
+  margin-bottom: 32px;
+}
+
+.psr-head h1 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #0a1929;
+  margin: 0 0 8px;
+  letter-spacing: -0.8px;
+}
+
+.psr-head p {
+  max-width: 860px;
+  font-size: 19px;
+  color: #526c9d;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.psr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.psr-card {
+  background: white;
+  border: 1px solid #d5dfeb;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
+}
+
+.psr-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.psr-card-header svg {
+  color: #149d94;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.psr-card-header-content h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #001b3f;
+  margin: 0 0 6px;
+}
+
+.psr-card-header-content p {
+  font-size: 16px;
+  color: #526c9d;
+  margin: 0;
+}
+
+.psr-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.psr-row.three-col {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.psr-row.full {
+  grid-template-columns: 1fr;
+}
+
+.psr-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.psr-group label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #001b3f;
+  margin-bottom: 7px;
+  line-height: 1.2;
+}
+
+.psr-group label .opt {
+  color: #526c9d;
+  font-weight: 400;
+}
+
+.psr-control,
+.psr-select {
+  width: 100%;
+  height: 48px;
+  padding: 0 15px;
+  border: 1px solid #d5dfeb;
+  border-radius: 10px;
+  background-color: white;
+  font-family: inherit;
+  font-size: 16px;
+  color: #001b3f;
+  outline: none;
+  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
+}
+
+.psr-control::placeholder,
+.psr-textarea::placeholder {
+  color: #526c9d;
+}
+
+.psr-control:focus,
+.psr-select:focus,
+.psr-textarea:focus {
+  border-color: #149d94;
+}
+
+.psr-textarea {
+  width: 100%;
+  min-height: 132px;
+  padding: 13px 15px;
+  border: 1px solid #d5dfeb;
+  border-radius: 10px;
+  background: white;
+  font-family: inherit;
+  font-size: 16px;
+  color: #001b3f;
+  outline: none;
+  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.psr-submit-btn {
+  width: 100%;
+  height: 47px;
+  border: none;
+  border-radius: 6px;
+  background: #149d94;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.psr-error-alert {
+  padding: 14px;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 7px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.psr-success-alert {
+  padding: 14px;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 7px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* =========================
+   SELECT / DROPDOWN STYLING
+========================= */
+
+.psr-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-color: #ffffff;
+  color: #0f172a;
+
+  border: 1px solid #d6dee8;
+  border-radius: 10px;
+
+  height: 48px;
+  width: 100%;
+
+  padding: 0 46px 0 16px;
+
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 14px;
+}
+
+.psr-select:hover {
+  border-color: #b8c5d6;
+}
+
+.psr-select:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+/* dropdown menu options */
+.psr-select option {
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 15px;
+  padding: 12px;
+}
+
+/* selected option */
+.psr-select option:checked {
+  background: #14b8a6;
+  color: #ffffff;
+}
+
+/* firefox fix */
+.psr-select:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #0f172a;
+}
+
+/* remove old IE arrow */
+.psr-select::-ms-expand {
+  display: none;
+}
+
+.psr-select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.psr-select option:hover,
+.psr-select option:focus,
+.psr-select option:checked {
+  background: #149d94 linear-gradient(0deg, #149d94 0%, #149d94 100%);
+  color: #ffffff;
+}
