@@ -5,7 +5,7 @@ import Navbar from "./components/layout/Navbar";
 
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
-import UserProfile from "./pages/UserProfile";
+import UserProfile from "./pages/Userprofile";
 
 import ExpertDirectory from "./pages/ExpertDirectory";
 import ExpertProfile from "./pages/ExpertProfile";
