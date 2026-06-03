@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useState } from "react";
-import "./Taginput.css";
+import "./TagInput.css";
 
 export default function TagInput({ tags, onChange, placeholder }) {
   const [inputValue, setInputValue] = useState("");
