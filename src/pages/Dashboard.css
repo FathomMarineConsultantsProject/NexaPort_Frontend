@@ -397,3 +397,42 @@
   color: #64748b;
   font-weight: 500;
 }
+
+.experts-card-blurred {
+  position: relative;
+}
+
+.experts-card-blurred .expert-row {
+  cursor: default;
+  pointer-events: none;
+}
+
+.experts-card-blurred .expert-row-info,
+.experts-card-blurred .expert-row-right,
+.experts-card-blurred .expert-avatar-sm {
+  filter: blur(4px);
+  opacity: 0.65;
+  user-select: none;
+}
+
+.experts-card-blurred::after {
+  content: "Experts are hidden until access is approved";
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  background:#f8fafc;
+  color: rgb(0, 0, 0);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.view-all-experts-btn.locked {
+  color: #7c8dab;
+  cursor: default;
+  background: #f8fafc;
+}

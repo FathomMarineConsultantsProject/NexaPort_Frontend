@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDashboardStats } from "../api/Dashboardapi";
+import { isClient, isExpert } from "../utils/auth";
 import "./Dashboard.css";
 
 // Maps status string → CSS class (handles "in progress" with a space)
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const blurExperts = isClient() || isExpert();
 
   useEffect(() => {
     loadDashboard();
@@ -182,7 +184,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="experts-card">
+        <div className={`experts-card ${blurExperts ? "experts-card-blurred" : ""}`}>
           <div className="experts-card-header"><h2>Top-Rated Experts</h2></div>
 
           {topExperts.map((expert) => {
@@ -192,7 +194,9 @@ export default function Dashboard() {
               <div
                 key={expert.id}
                 className="expert-row"
-                onClick={() => navigate(`/experts/${expert.id}`)}
+                onClick={() => {
+                  if (!blurExperts) navigate(`/experts/${expert.id}`);
+                }}
               >
                 <div className="expert-avatar-sm">{initial}</div>
                 <div className="expert-row-info">
@@ -213,9 +217,15 @@ export default function Dashboard() {
             );
           })}
 
-          <Link to="/experts" className="view-all-experts-btn">
-            View All Experts <ArrowRight size={16} />
-          </Link>
+          {blurExperts ? (
+            <div className="view-all-experts-btn locked">
+              Expert access available after accepted request <ArrowRight size={16} />
+            </div>
+          ) : (
+            <Link to="/experts" className="view-all-experts-btn">
+              View All Experts <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
       </div>
 
