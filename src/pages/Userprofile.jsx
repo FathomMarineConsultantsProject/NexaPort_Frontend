@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyProfile, updateMyProfile } from "../api/userApi";
-import "./Userprofile.css";
+import "./UserProfile.css";
 
 export default function UserProfile() {
   const navigate = useNavigate();
