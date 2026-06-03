@@ -9,13 +9,11 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 
 import { getExpertById } from "../api/expertApi";
-import {
-  createExpertReview,
-  getExpertReviews,
-} from "../api/reviewApi";
+import { createExpertReview, getExpertReviews } from "../api/reviewApi";
+import { isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
 import "./ExpertProfile.css";
 
@@ -24,7 +22,6 @@ export default function ExpertProfile() {
 
   const [expert, setExpert] = useState(null);
   const [reviews, setReviews] = useState([]);
-
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   const [reviewForm, setReviewForm] = useState({
@@ -49,6 +46,7 @@ export default function ExpertProfile() {
       setReviews(reviewRes.data || []);
     } catch (error) {
       console.error("Failed loading expert profile:", error);
+      setExpert(null);
     }
   };
 
@@ -66,19 +64,24 @@ export default function ExpertProfile() {
       });
 
       setShowReviewForm(false);
-
       loadPage();
     } catch (error) {
       console.error("Failed submitting review:", error);
     }
   };
 
+  if (isClient()) {
+    return <Navigate to="/requests" replace />;
+  }
+
   if (!expert) {
     return <div className="expert-profile-page">Loading...</div>;
   }
 
-  const initials =
-    expert.full_name?.charAt(0)?.toUpperCase() || "E";
+  const initials = expert.full_name?.charAt(0)?.toUpperCase() || "E";
+
+  const canWriteReview = false;
+  // Keep reviews visible, but review submission should happen from accepted request flow later.
 
   return (
     <main className="expert-profile-page">
@@ -86,9 +89,7 @@ export default function ExpertProfile() {
         <div className="expert-profile-banner" />
 
         <div className="expert-profile-header">
-          <div className="expert-profile-avatar">
-            {initials}
-          </div>
+          <div className="expert-profile-avatar">{initials}</div>
 
           <div className="expert-profile-info">
             <h1>{expert.full_name}</h1>
@@ -97,13 +98,9 @@ export default function ExpertProfile() {
               <div className="rating-row">
                 <Star size={18} fill="#14b8a6" color="#14b8a6" />
 
-                <strong>
-                  {Number(expert.rating || 0).toFixed(1)}
-                </strong>
+                <strong>{Number(expert.rating || 0).toFixed(1)}</strong>
 
-                <span>
-                  ({expert.review_count || 0} reviews)
-                </span>
+                <span>({expert.review_count || 0} reviews)</span>
               </div>
 
               <div className="location-row">
@@ -111,22 +108,16 @@ export default function ExpertProfile() {
                 {expert.base_location}, {expert.country}
               </div>
 
-              <div>
-                {expert.years_experience || 0} yrs experience
-              </div>
+              <div>{expert.years_experience || 0} yrs experience</div>
             </div>
           </div>
 
           <div className="expert-status-row">
             {expert.is_premium && (
-              <span className="premium-badge">
-                ◎ Premium Expert
-              </span>
+              <span className="premium-badge">◎ Premium Expert</span>
             )}
 
-            <span className="available-badge">
-              {expert.availability}
-            </span>
+            <span className="available-badge">{expert.availability}</span>
           </div>
         </div>
       </section>
@@ -135,10 +126,7 @@ export default function ExpertProfile() {
         <div className="left-column">
           <div className="profile-card">
             <h3>Professional Biography</h3>
-
-            <p>
-              {expert.biography || "No biography added yet."}
-            </p>
+            <p>{expert.biography || "No biography added yet."}</p>
           </div>
 
           <div className="profile-card">
@@ -146,8 +134,8 @@ export default function ExpertProfile() {
 
             <div className="tag-list">
               {expert.specialties?.map((item) => (
-                <span key={item.id} className="soft-tag">
-                  {item.name}
+                <span key={item.id || item.name} className="soft-tag">
+                  {item.name || item}
                 </span>
               ))}
             </div>
@@ -158,35 +146,30 @@ export default function ExpertProfile() {
 
             <div className="cert-list">
               {expert.certifications?.map((item) => (
-                <div key={item.id} className="cert-item">
+                <div key={item.id || item.name} className="cert-item">
                   <CheckCircle2 size={18} />
-                  {item.name}
+                  {item.name || item}
                 </div>
               ))}
             </div>
           </div>
 
           <div className="reviews-header">
-            <h2>
-              Reviews ({reviews.length})
-            </h2>
+            <h2>Reviews ({reviews.length})</h2>
 
-            <button
-              className="write-review-btn"
-              onClick={() =>
-                setShowReviewForm(!showReviewForm)
-              }
-            >
-              <MessageSquare size={16} />
-              Write Review
-            </button>
+            {canWriteReview && (
+              <button
+                className="write-review-btn"
+                onClick={() => setShowReviewForm(!showReviewForm)}
+              >
+                <MessageSquare size={16} />
+                Write Review
+              </button>
+            )}
           </div>
 
-          {showReviewForm && (
-            <form
-              className="review-form"
-              onSubmit={submitReview}
-            >
+          {showReviewForm && canWriteReview && (
+            <form className="review-form" onSubmit={submitReview}>
               <div className="form-group">
                 <label>Job Name</label>
 
@@ -261,19 +244,14 @@ export default function ExpertProfile() {
               </div>
 
               <div className="review-form-actions">
-                <button
-                  type="submit"
-                  className="submit-review-btn"
-                >
+                <button type="submit" className="submit-review-btn">
                   Submit Review
                 </button>
 
                 <button
                   type="button"
                   className="cancel-review-btn"
-                  onClick={() =>
-                    setShowReviewForm(false)
-                  }
+                  onClick={() => setShowReviewForm(false)}
                 >
                   Cancel
                 </button>
@@ -283,33 +261,20 @@ export default function ExpertProfile() {
 
           <div className="reviews-list">
             {reviews.map((review) => (
-              <div
-                key={review.id}
-                className="review-card"
-              >
+              <div key={review.id} className="review-card">
                 <div className="review-top">
                   <div>
-                    <h4>
-                      {review.reviewer_name ||
-                        "Anonymous"}
-                    </h4>
-
+                    <h4>{review.reviewer_name || "Anonymous"}</h4>
                     <p>{review.job_name}</p>
                   </div>
 
-                  <div className="review-stars">
-                    {"★".repeat(review.rating)}
-                  </div>
+                  <div className="review-stars">{"★".repeat(review.rating)}</div>
                 </div>
 
-                <blockquote>
-                  “{review.comment}”
-                </blockquote>
+                <blockquote>“{review.comment}”</blockquote>
 
                 <span className="review-date">
-                  {new Date(
-                    review.created_at
-                  ).toLocaleDateString()}
+                  {new Date(review.created_at).toLocaleDateString()}
                 </span>
               </div>
             ))}
@@ -326,8 +291,7 @@ export default function ExpertProfile() {
             </div>
 
             <div className="side-row">
-              <Shield size={18} />
-              ${expert.day_rate_usd}/day
+              <Shield size={18} />${expert.day_rate_usd}/day
             </div>
           </div>
 
@@ -336,11 +300,8 @@ export default function ExpertProfile() {
 
             <div className="tag-list">
               {expert.vessel_types?.map((item) => (
-                <span
-                  key={item.id}
-                  className="vessel-tag"
-                >
-                  {item.name}
+                <span key={item.id || item.name} className="vessel-tag">
+                  {item.name || item}
                 </span>
               ))}
             </div>
@@ -351,11 +312,8 @@ export default function ExpertProfile() {
 
             <div className="tag-list">
               {expert.ports?.map((item) => (
-                <span
-                  key={item.id}
-                  className="soft-tag"
-                >
-                  {item.port_name}
+                <span key={item.id || item.port_name} className="soft-tag">
+                  {item.port_name || item.name || item}
                 </span>
               ))}
             </div>
@@ -366,19 +324,12 @@ export default function ExpertProfile() {
 
             <div className="tag-list">
               {expert.languages?.map((item) => (
-                <span
-                  key={item.id}
-                  className="soft-tag"
-                >
-                  {item.language_name}
+                <span key={item.id || item.language_name} className="soft-tag">
+                  {item.language_name || item.name || item}
                 </span>
               ))}
             </div>
           </div>
-
-          <button className="request-expert-btn">
-            Request This Expert
-          </button>
         </div>
       </section>
     </main>

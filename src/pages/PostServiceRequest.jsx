@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getServiceRequestDropdowns } from "../api/masterApi";
 import { createServiceRequest } from "../api/serviceRequestApi";
-import "./Postservicerequest.css";
+import "./PostServiceRequest.css";
 import CustomSelect from "../components/experts/CustomSelect";
 
 export default function PostServiceRequest() {
