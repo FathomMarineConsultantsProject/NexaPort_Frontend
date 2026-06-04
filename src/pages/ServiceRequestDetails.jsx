@@ -154,7 +154,15 @@ export default function ServiceRequestDetails() {
     isSuperAdmin() || isExpert() || Boolean(acceptedQuote);
   const getQuotePrice = (quote) => {
     if (isClient()) {
-      return quote.clientTotalUsd || quote.client_total_usd || 0;
+      return (
+        quote.finalTotalUsd ||
+        quote.final_total_usd ||
+        quote.clientTotalUsd ||
+        quote.client_total_usd ||
+        quote.totalQuoteUsd ||
+        quote.total_quote_usd ||
+        0
+      );
     }
 
     return quote.totalQuoteUsd || quote.total_quote_usd || 0;
@@ -203,7 +211,14 @@ export default function ServiceRequestDetails() {
         </div>
 
         <div className="budget-block">
-          <strong>${money(request.budgetUsd)}</strong>
+          <strong>
+            $
+            {money(
+              isClient() && acceptedQuote
+                ? getQuotePrice(acceptedQuote)
+                : request.budgetUsd
+            )}
+          </strong>
           <span>
             {Number(request.quotationCount || quotations.length || 0)}{" "}
             {Number(request.quotationCount || quotations.length || 0) === 1
