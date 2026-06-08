@@ -372,3 +372,39 @@
   font-size: 16px;
   margin: 0;
 }
+
+.vessel-admin-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.vessel-edit-btn {
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #0a1929;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vessel-delete-btn {
+  border: 1px solid #fecaca;
+  background: white;
+  color: #dc2626;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vessel-edit-btn:hover {
+  background: #f8fafc;
+}
+
+.vessel-delete-btn:hover {
+  background: #fef2f2;
+}
