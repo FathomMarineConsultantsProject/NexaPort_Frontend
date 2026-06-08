@@ -1,7 +1,13 @@
 import { Anchor, Flag, Plus, Search, Ship, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { createVessel, getVessels } from "../api/vesselApi";
+import {
+  getVessels,
+  createVessel,
+  updateVessel,
+  deleteVessel,
+} from "../api/vesselApi";
 import "./FleetManagement.css";
+import { isSuperAdmin } from "../utils/auth";
 
 export default function FleetManagement() {
   const [vessels, setVessels] = useState([]);
@@ -9,12 +15,13 @@ export default function FleetManagement() {
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editingVessel, setEditingVessel] = useState(null);
 
   const storedUser = localStorage.getItem("np_user");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const roleId = Number(user?.role_id);
 
-  const canManageVessels = roleId === 1 || roleId === 3;
+  const canManageVessels = isSuperAdmin();
   const isExpert = roleId === 2;
 
   // Form state
@@ -37,12 +44,16 @@ export default function FleetManagement() {
 
   const loadVessels = async (searchQuery = "") => {
     setLoading(true);
+    setError("");
+
     try {
       const response = await getVessels(searchQuery);
+
       setVessels(response.data || response.vessels || []);
     } catch (err) {
       console.error("Failed to load vessels:", err);
-      setError("Failed to load vessels");
+      setError(err.response?.data?.message || "Failed to load vessels");
+      setVessels([]);
     } finally {
       setLoading(false);
     }
@@ -60,6 +71,51 @@ export default function FleetManagement() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      vessel_name: "",
+      imo_number: "",
+      vessel_type: "",
+      flag_state: "",
+      class_subtype: "",
+      dwt: "",
+      gt: "",
+      year_built: "",
+      trading_area: "",
+      owner_manager: "",
+    });
+    setEditingVessel(null);
+  };
+
+  const handleEditVessel = (vessel) => {
+    setEditingVessel(vessel);
+    setFormData({
+      vessel_name: vessel.vessel_name || "",
+      imo_number: vessel.imo_number || "",
+      vessel_type: vessel.vessel_type || "",
+      flag_state: vessel.flag_state || "",
+      class_subtype: vessel.class_subtype || "",
+      dwt: vessel.dwt || "",
+      gt: vessel.gt || "",
+      year_built: vessel.year_built || "",
+      trading_area: vessel.trading_area || "",
+      owner_manager: vessel.owner_manager || "",
+    });
+    setShowRegisterForm(true);
+  };
+
+  const handleDeleteVessel = async (id) => {
+    if (!window.confirm("Delete this vessel?")) return;
+
+    try {
+      await deleteVessel(id);
+      loadVessels(search);
+    } catch (err) {
+      console.error("Failed to delete vessel:", err);
+      alert(err.response?.data?.message || "Failed to delete vessel");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -90,24 +146,33 @@ export default function FleetManagement() {
         owner_manager: formData.owner_manager || null,
       };
 
-      await createVessel(payload);
+      if (editingVessel) {
+        await updateVessel(editingVessel.id, payload);
+      } else {
+        await createVessel(payload);
+      }
 
       // Reset form
-      setFormData({
-        vessel_name: "",
-        imo_number: "",
-        vessel_type: "",
-        flag_state: "",
-        class_subtype: "",
-        dwt: "",
-        gt: "",
-        year_built: "",
-        trading_area: "",
-        owner_manager: "",
-      });
+      // setFormData({
+      //   vessel_name: "",
+      //   imo_number: "",
+      //   vessel_type: "",
+      //   flag_state: "",
+      //   class_subtype: "",
+      //   dwt: "",
+      //   gt: "",
+      //   year_built: "",
+      //   trading_area: "",
+      //   owner_manager: "",
+      // });
 
+      // setShowRegisterForm(false);
+      // loadVessels(search);
+
+      resetForm();
       setShowRegisterForm(false);
       loadVessels(search);
+
     } catch (err) {
       console.error("Failed to create vessel:", err);
       setError(err.response?.data?.message || "Failed to register vessel");
@@ -244,6 +309,25 @@ export default function FleetManagement() {
                   <div className="vessel-info-value">{vessel.owner_manager || "—"}</div>
                 </div>
               </div>
+              {canManageVessels && (
+                <div className="vessel-admin-actions">
+                  <button
+                    type="button"
+                    className="vessel-edit-btn"
+                    onClick={() => handleEditVessel(vessel)}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    className="vessel-delete-btn"
+                    onClick={() => handleDeleteVessel(vessel.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -259,7 +343,9 @@ export default function FleetManagement() {
           <div className="register-modal">
             <div className="register-modal-header">
               <div className="register-modal-title">
-                <h2>Register New Vessel</h2>
+                <h2>
+                  {editingVessel ? "Edit Vessel" : "Register New Vessel"}
+                </h2>
                 <p>Add a vessel to your fleet for service request assignments.</p>
               </div>
               <button onClick={() => setShowRegisterForm(false)} className="cancel-btn">
@@ -410,8 +496,8 @@ export default function FleetManagement() {
                   </div>
                 </div>
 
-                <button type="submit" className="submit-vessel-btn">
-                  Register Vessel
+                <button type="submit" className="submit-btn">
+                  {editingVessel ? "Save Changes" : "Register Vessel"}
                 </button>
               </form>
             </div>
