@@ -10,11 +10,11 @@ import {
   Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import { acceptQuotation, createQuotation } from "../api/quotationApi";
 import { getServiceRequestById } from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import "./ServiceRequestDetails.css";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function ServiceRequestDetails() {
   const { id } = useParams();
@@ -24,6 +24,7 @@ export default function ServiceRequestDetails() {
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [markupByQuote, setMarkupByQuote] = useState({});
+  const navigate = useNavigate();
 
   const [quoteForm, setQuoteForm] = useState({
     totalQuoteUsd: "",
@@ -220,10 +221,14 @@ export default function ServiceRequestDetails() {
             )}
           </strong>
           <span>
-            {Number(request.quotationCount || quotations.length || 0)}{" "}
-            {Number(request.quotationCount || quotations.length || 0) === 1
-              ? "quotation"
-              : "quotations"}
+            {isClient()
+              ? acceptedQuote
+                ? "Accepted quotation"
+                : "Awaiting approval"
+              : `${Number(request.quotationCount || quotations.length || 0)} ${Number(request.quotationCount || quotations.length || 0) === 1
+                ? "quotation"
+                : "quotations"
+              }`}
           </span>
         </div>
       </section>
@@ -417,8 +422,18 @@ export default function ServiceRequestDetails() {
 
                 {quote.coverLetter && <blockquote>“{quote.coverLetter}”</blockquote>}
 
-                {isClient() && quote.status === "accepted" && (
-                  <button type="button" className="primary-btn">
+                {isClient() && acceptedQuote && (
+                  <button
+                    className="primary-btn"
+                    onClick={() =>
+                      navigate(`/experts/${acceptedQuote.expertId || acceptedQuote.expert_id}`, {
+                        state: {
+                          canReview: true,
+                          jobName: request.title,
+                        },
+                      })
+                    }
+                  >
                     Rate & Review Expert
                   </button>
                 )}

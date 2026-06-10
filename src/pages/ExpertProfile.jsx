@@ -7,9 +7,8 @@ import {
   Shield,
   Star,
 } from "lucide-react";
-
 import { useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 import { getExpertById } from "../api/expertApi";
 import { createExpertReview, getExpertReviews } from "../api/reviewApi";
@@ -18,6 +17,7 @@ import { isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import "./ExpertProfile.css";
 
 export default function ExpertProfile() {
+  const location = useLocation();
   const { id } = useParams();
 
   const [expert, setExpert] = useState(null);
@@ -25,11 +25,11 @@ export default function ExpertProfile() {
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   const [reviewForm, setReviewForm] = useState({
-    job_name: "",
-    rating: 5,
-    comment: "",
-    reviewer_name: "",
-  });
+  job_name: location.state?.jobName || "",
+  rating: 5,
+  comment: "",
+  reviewer_name: "",
+});
 
   useEffect(() => {
     loadPage();
@@ -70,17 +70,15 @@ export default function ExpertProfile() {
     }
   };
 
-  if (isClient()) {
-    return <Navigate to="/requests" replace />;
-  }
-
   if (!expert) {
     return <div className="expert-profile-page">Loading...</div>;
   }
 
   const initials = expert.full_name?.charAt(0)?.toUpperCase() || "E";
 
-  const canWriteReview = false;
+const canWriteReview =
+  isSuperAdmin() ||
+  (isClient() && location.state?.canReview);
   // Keep reviews visible, but review submission should happen from accepted request flow later.
 
   return (
