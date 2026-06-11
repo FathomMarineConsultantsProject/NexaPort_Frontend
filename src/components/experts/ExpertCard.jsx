@@ -46,7 +46,7 @@ export default function ExpertCard({ expert }) {
                 </div>
 
                 <div className="expert-badges">
-                    {expert.is_premium && <span className="premium-badge">◎ Premium Expert</span>}
+                    {expert.is_premium && <span className="premium-badge">◎ Premium Consultant</span>}
                     <span className="available-badge">
                         <Clock3 size={14} />
                         {expert.availability || "available"}

@@ -70,7 +70,7 @@ export default function Landing() {
 
             <button className="landing-btn-secondary" onClick={handleBrowseExperts}>
               <Shield size={17} />
-              Browse Experts
+              Browse Consultants
             </button>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function Landing() {
             <Users size={22} />
           </div>
           <div>
-            <h3>Verified Experts</h3>
+            <h3>Verified Consultants</h3>
             <p>OCIMF-accredited surveyors and class-approved inspectors</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function Landing() {
           </div>
           <div>
             <h3>Global Coverage</h3>
-            <p>Experts available at every major port worldwide</p>
+            <p>Consultants available at every major port worldwide</p>
           </div>
         </div>
       </section>

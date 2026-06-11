@@ -112,7 +112,7 @@ const canWriteReview =
 
           <div className="expert-status-row">
             {expert.is_premium && (
-              <span className="premium-badge">◎ Premium Expert</span>
+              <span className="premium-badge">◎ Premium Consultant</span>
             )}
 
             <span className="available-badge">{expert.availability}</span>
