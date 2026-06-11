@@ -135,7 +135,7 @@ export default function RegisterExpert() {
         <main className="register-page">
             <section className="register-wrap">
                 <div className="register-head">
-                    <h1>Register as Maritime Expert</h1>
+                    <h1>Register as Maritime Consultant </h1>
                     <p>
                         Create your professional profile to receive service requests from ship owners,
                         managers, and charterers.
@@ -334,7 +334,7 @@ export default function RegisterExpert() {
                     </section>
 
                     <button type="submit" className="submit-btn" disabled={loading}>
-                        {loading ? "Creating Profile..." : "Create Expert Profile"}
+                        {loading ? "Creating Profile..." : "Create Consultant Profile"}
                     </button>
                 </form>
             </section>
