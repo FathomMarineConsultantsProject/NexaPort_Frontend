@@ -60,7 +60,7 @@ export default function Navbar() {
 
         {!isClient && (
           <NavLink to="/experts">
-            <Users size={17} /> Experts
+            <Users size={17} /> Consultants
           </NavLink>
         )}
 

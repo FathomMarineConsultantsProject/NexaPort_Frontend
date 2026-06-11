@@ -98,7 +98,7 @@ export default function Dashboard() {
           <div className="stat-card-value">{cards.open_requests ?? 0}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-label"><Shield size={14} /> Verified Experts</div>
+          <div className="stat-card-label"><Shield size={14} /> Verified Consultants</div>
           <div className="stat-card-value">{cards.verified_experts ?? 0}</div>
         </div>
         <div className="stat-card">
@@ -185,7 +185,7 @@ export default function Dashboard() {
         </div>
 
         <div className={`experts-card ${blurExperts ? "experts-card-blurred" : ""}`}>
-          <div className="experts-card-header"><h2>Top-Rated Experts</h2></div>
+          <div className="experts-card-header"><h2>Top-Rated Consultants</h2></div>
 
           {topExperts.map((expert) => {
             const initial = expert.full_name?.trim()?.[0]?.toUpperCase() || "E";
@@ -219,11 +219,11 @@ export default function Dashboard() {
 
           {blurExperts ? (
             <div className="view-all-experts-btn locked">
-              Expert access available after accepted request <ArrowRight size={16} />
+              Consultant access available after accepted request <ArrowRight size={16} />
             </div>
           ) : (
             <Link to="/experts" className="view-all-experts-btn">
-              View All Experts <ArrowRight size={16} />
+              View All Consultants <ArrowRight size={16} />
             </Link>
           )}
         </div>

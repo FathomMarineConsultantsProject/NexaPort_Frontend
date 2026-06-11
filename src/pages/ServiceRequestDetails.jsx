@@ -11,10 +11,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { acceptQuotation, createQuotation } from "../api/quotationApi";
+import { createExpertReview } from "../api/reviewApi";
 import { getServiceRequestById } from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import "./ServiceRequestDetails.css";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 export default function ServiceRequestDetails() {
   const { id } = useParams();
@@ -24,7 +25,13 @@ export default function ServiceRequestDetails() {
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [markupByQuote, setMarkupByQuote] = useState({});
-  const navigate = useNavigate();
+
+  const [reviewQuoteId, setReviewQuoteId] = useState(null);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    comment: "",
+    reviewer_name: "",
+  });
 
   const [quoteForm, setQuoteForm] = useState({
     totalQuoteUsd: "",
@@ -125,6 +132,44 @@ export default function ServiceRequestDetails() {
   if (loading) {
     return <main className="request-details-page">Loading request...</main>;
   }
+
+  const submitReview = async (quote) => {
+    try {
+      const expertId = quote.expertId || quote.expert_id;
+
+      if (!expertId) {
+        setToast("Expert ID missing for this accepted quote.");
+        setTimeout(() => setToast(""), 3000);
+        return;
+      }
+
+      await createExpertReview(expertId, {
+        serviceRequestId: Number(request.id || id),
+        job_name: request.title,
+        rating: Number(reviewForm.rating),
+        comment: reviewForm.comment,
+        reviewer_name:
+          reviewForm.reviewer_name ||
+          currentUser?.full_name ||
+          currentUser?.username ||
+          "Client",
+      });
+
+      setToast("Review submitted successfully.");
+      setReviewQuoteId(null);
+      setReviewForm({
+        rating: 5,
+        comment: "",
+        reviewer_name: "",
+      });
+
+      setTimeout(() => setToast(""), 3000);
+    } catch (error) {
+      console.error("Failed to submit review:", error);
+      setToast(error.response?.data?.message || "Failed to submit review.");
+      setTimeout(() => setToast(""), 3000);
+    }
+  };
 
   if (!request) {
     return <main className="request-details-page">Request not found.</main>;
@@ -258,7 +303,7 @@ export default function ServiceRequestDetails() {
           {isClient() && !acceptedQuote && (
             <div className="details-card">
               <p>
-                Quotations are under admin review. Accepted expert details will be visible once a quote is approved.
+                Quotations are under admin review. Accepted consultant details will be visible once a quote is approved.
               </p>
             </div>
           )}
@@ -422,20 +467,79 @@ export default function ServiceRequestDetails() {
 
                 {quote.coverLetter && <blockquote>“{quote.coverLetter}”</blockquote>}
 
-                {isClient() && acceptedQuote && (
-                  <button
-                    className="primary-btn"
-                    onClick={() =>
-                      navigate(`/experts/${acceptedQuote.expertId || acceptedQuote.expert_id}`, {
-                        state: {
-                          canReview: true,
-                          jobName: request.title,
-                        },
-                      })
-                    }
-                  >
-                    Rate & Review Expert
-                  </button>
+                {(isClient() || isSuperAdmin()) && quote.status === "accepted" && (
+                  <>
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={() =>
+                        setReviewQuoteId(reviewQuoteId === quote.id ? null : quote.id)
+                      }
+                    >
+                      Rate & Review Consultant
+                    </button>
+
+                    {reviewQuoteId === quote.id && (
+                      <div className="inline-review-card">
+                        <h3>Submit Review</h3>
+
+                        <label>Rating (1-5)</label>
+                        <div className="rating-buttons">
+                          {[1, 2, 3, 4, 5].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              className={reviewForm.rating === num ? "active" : ""}
+                              onClick={() =>
+                                setReviewForm({ ...reviewForm, rating: num })
+                              }
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+
+                        <label>Comment (opt.)</label>
+                        <textarea
+                          value={reviewForm.comment}
+                          onChange={(e) =>
+                            setReviewForm({ ...reviewForm, comment: e.target.value })
+                          }
+                          placeholder="Describe your experience working with this consultant..."
+                        />
+
+                        <label>Your Name / Company (opt.)</label>
+                        <input
+                          value={reviewForm.reviewer_name}
+                          onChange={(e) =>
+                            setReviewForm({
+                              ...reviewForm,
+                              reviewer_name: e.target.value,
+                            })
+                          }
+                          placeholder="Your name or company"
+                        />
+
+                        <div className="review-actions">
+                          <button
+                            type="button"
+                            className="primary-btn"
+                            onClick={() => submitReview(quote)}
+                          >
+                            Submit Review
+                          </button>
+
+                          <button
+                            type="button"
+                            className="secondary-btn"
+                            onClick={() => setReviewQuoteId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {canAcceptQuote && quote.status !== "accepted" && (
