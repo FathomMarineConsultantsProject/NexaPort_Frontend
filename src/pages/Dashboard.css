@@ -416,7 +416,7 @@
 }
 
 .experts-card-blurred::after {
-  content: "Experts are hidden until access is approved";
+  content: "Consultants are hidden until access is approved";
   position: absolute;
   left: 50%;
   top: 52%;

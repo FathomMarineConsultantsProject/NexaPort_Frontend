@@ -10,7 +10,7 @@ export default function Footer() {
       </div>
 
       <div className="np-footer-right">
-        © 2026 · Verified Maritime Experts. Anywhere. Anytime.
+        © 2026 · Verified Maritime Consultants. Anywhere. Anytime.
       </div>
     </footer>
   );

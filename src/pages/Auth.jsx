@@ -234,7 +234,7 @@ export default function Auth() {
                       </div>
                       <div className="role-card-title">Client</div>
                       <div className="role-card-desc">
-                        Post service requests & hire experts
+                        Post service requests & hire Consultants
                       </div>
                     </div>
                   </label>
@@ -251,9 +251,9 @@ export default function Auth() {
                       <div className="role-card-icon">
                         <Ship size={20} />
                       </div>
-                      <div className="role-card-title">Expert</div>
+                      <div className="role-card-title">Consultant</div>
                       <div className="role-card-desc">
-                        Offer maritime surveys & inspections
+                        Offer maritime consultancy, surveys & inspections
                       </div>
                     </div>
                   </label>
@@ -370,7 +370,7 @@ export default function Auth() {
         )}
 
         <div className="auth-footer-note">
-          Verified Maritime Experts. Anywhere. Anytime.
+          Verified Maritime Consultants. Anywhere. Anytime.
         </div>
       </div>
     </div>

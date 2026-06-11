@@ -78,17 +78,17 @@ export default function ExpertDirectory() {
     <main className="expert-page">
       <section className="expert-header">
         <div>
-          <h1>{isExpert() ? "My Expert Profile" : "Expert Directory"}</h1>
+          <h1>{isExpert() ? "My Consultant Profile" : "Consultant Directory"}</h1>
           <p>
             {isExpert()
-              ? "View your maritime expert profile."
+              ? "View your maritime consultant profile."
               : "OCIMF-accredited surveyors, class-approved inspectors, and ISM auditors."}
           </p>
         </div>
 
         {isSuperAdmin() && (
           <Link to="/experts/register" className="register-btn">
-            Register as Expert
+            Register as Consultant
           </Link>
         )}
       </section>
@@ -100,7 +100,7 @@ export default function ExpertDirectory() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search experts by name..."
+              placeholder="Search consultants by name..."
             />
           </div>
 
@@ -121,9 +121,9 @@ export default function ExpertDirectory() {
       )}
 
       {loading ? (
-        <div className="experts-empty">Loading experts...</div>
+        <div className="experts-empty">Loading consultants...</div>
       ) : filteredExperts.length === 0 ? (
-        <div className="experts-empty">No expert profile found.</div>
+        <div className="experts-empty">No consultant profile found.</div>
       ) : (
         <section className="expert-grid">
           {filteredExperts.map((expert) => (
