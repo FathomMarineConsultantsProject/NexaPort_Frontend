@@ -7,7 +7,7 @@ import {
   deleteVessel,
 } from "../api/vesselApi";
 import "./FleetManagement.css";
-import { isSuperAdmin } from "../utils/auth";
+import { isClient, isSuperAdmin } from "../utils/auth";
 
 export default function FleetManagement() {
   const [vessels, setVessels] = useState([]);
@@ -21,7 +21,7 @@ export default function FleetManagement() {
   const user = storedUser ? JSON.parse(storedUser) : null;
   const roleId = Number(user?.role_id);
 
-  const canManageVessels = isSuperAdmin();
+  const canManageVessels = isSuperAdmin() || isClient();
   const isExpert = roleId === 2;
 
   // Form state

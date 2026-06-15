@@ -10,11 +10,20 @@ import {
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
-import { getExpertById } from "../api/expertApi";
+import { getExpertById, updateExpert } from "../api/expertApi";
 import { createExpertReview, getExpertReviews } from "../api/reviewApi";
-import { isClient, isExpert, isSuperAdmin } from "../utils/auth";
+import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
 import "./ExpertProfile.css";
+
+const listToText = (list = []) =>
+  list.map((item) => item.name || item.port_name || item.language_name || item).join(", ");
+
+const textToList = (value = "") =>
+  value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 export default function ExpertProfile() {
   const location = useLocation();
@@ -24,12 +33,33 @@ export default function ExpertProfile() {
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editTab, setEditTab] = useState("basic");
+
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    biography: "",
+    base_location: "",
+    country: "",
+    day_rate_usd: "",
+    years_experience: "",
+    availability: "available",
+    is_premium: false,
+
+    specialties: "",
+    certifications: "",
+    vessel_types: "",
+    ports: "",
+    languages: "",
+  });
+
   const [reviewForm, setReviewForm] = useState({
-  job_name: location.state?.jobName || "",
-  rating: 5,
-  comment: "",
-  reviewer_name: "",
-});
+    job_name: location.state?.jobName || "",
+    rating: 5,
+    comment: "",
+    reviewer_name: "",
+  });
 
   useEffect(() => {
     loadPage();
@@ -43,10 +73,58 @@ export default function ExpertProfile() {
       ]);
 
       setExpert(expertRes.data);
+
+      setEditForm({
+        full_name: expertRes.data.full_name || "",
+        biography: expertRes.data.biography || "",
+        base_location: expertRes.data.base_location || "",
+        country: expertRes.data.country || "",
+        day_rate_usd: expertRes.data.day_rate_usd || "",
+        years_experience: expertRes.data.years_experience || "",
+        availability: expertRes.data.availability || "available",
+        is_premium: Boolean(expertRes.data.is_premium),
+
+        specialties: listToText(expertRes.data.specialties || []),
+        certifications: listToText(expertRes.data.certifications || []),
+        vessel_types: listToText(expertRes.data.vessel_types || []),
+        ports: listToText(expertRes.data.ports || []),
+        languages: listToText(expertRes.data.languages || []),
+      });
       setReviews(reviewRes.data || []);
     } catch (error) {
-      console.error("Failed loading expert profile:", error);
+      console.error("Failed loading consultant profile:", error);
       setExpert(null);
+    }
+  };
+
+  const submitProfileUpdate = async (e) => {
+    e.preventDefault();
+
+    try {
+      setSavingProfile(true);
+      await updateExpert(expert.id, {
+        full_name: editForm.full_name,
+        biography: editForm.biography,
+        base_location: editForm.base_location,
+        country: editForm.country,
+        day_rate_usd: Number(editForm.day_rate_usd || 0),
+        years_experience: Number(editForm.years_experience || 0),
+        availability: editForm.availability,
+        is_premium: editForm.is_premium,
+
+        specialties: textToList(editForm.specialties),
+        certifications: textToList(editForm.certifications),
+        vessel_types: textToList(editForm.vessel_types),
+        ports: textToList(editForm.ports),
+        languages: textToList(editForm.languages),
+      });
+      setIsEditing(false);
+      await loadPage();
+    } catch (error) {
+      console.error("Failed updating consultant profile:", error);
+      alert(error.response?.data?.message || "Failed to update consultant profile");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -76,9 +154,15 @@ export default function ExpertProfile() {
 
   const initials = expert.full_name?.charAt(0)?.toUpperCase() || "E";
 
-const canWriteReview =
-  isSuperAdmin() ||
-  (isClient() && location.state?.canReview);
+  const currentUser = getStoredUser();
+
+  const canEditProfile =
+    isSuperAdmin() ||
+    (isExpert() && Number(expert.user_id) === Number(currentUser?.id));
+
+  const canWriteReview =
+    isSuperAdmin() ||
+    (isClient() && location.state?.canReview);
   // Keep reviews visible, but review submission should happen from accepted request flow later.
 
   return (
@@ -115,10 +199,223 @@ const canWriteReview =
               <span className="premium-badge">◎ Premium Consultant</span>
             )}
 
-            <span className="available-badge">{expert.availability}</span>
+            <span className={`available-badge ${(expert.availability || "").toLowerCase()}`}>
+              {expert.availability}
+            </span>
+
+            {canEditProfile && (
+              <button
+                className="edit-profile-btn"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {isEditing ? "Cancel Edit" : "Edit Profile"}
+              </button>
+            )}
           </div>
         </div>
       </section>
+
+      {isEditing && canEditProfile && (
+        <form className="profile-edit-card" onSubmit={submitProfileUpdate}>
+          <h3>Edit Consultant Profile</h3>
+
+          <div className="profile-edit-tabs">
+            <button
+              type="button"
+              className={editTab === "basic" ? "active" : ""}
+              onClick={() => setEditTab("basic")}
+            >
+              Basic Info
+            </button>
+
+            {/* <button
+              type="button"
+              className={editTab === "pricing" ? "active" : ""}
+              onClick={() => setEditTab("pricing")}
+            >
+              Pricing & Availability
+            </button>
+
+            <button
+              type="button"
+              className={editTab === "bio" ? "active" : ""}
+              onClick={() => setEditTab("bio")}
+            >
+              Biography
+            </button> */}
+
+            <button
+              type="button"
+              className={editTab === "expertise" ? "active" : ""}
+              onClick={() => setEditTab("expertise")}
+            >
+              Expertise
+            </button>
+
+          </div>
+
+          <div className="profile-edit-grid">
+            <label>
+              Full Name
+              <input
+                value={editForm.full_name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, full_name: e.target.value })
+                }
+              />
+            </label>
+
+            <label>
+              Availability
+              <select
+                value={editForm.availability}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, availability: e.target.value })
+                }
+              >
+                <option value="available">Available</option>
+                <option value="busy">Busy</option>
+                <option value="unavailable">Unavailable</option>
+              </select>
+            </label>
+
+            <label>
+              Base Location
+              <input
+                value={editForm.base_location}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, base_location: e.target.value })
+                }
+              />
+            </label>
+
+            <label>
+              Country
+              <input
+                value={editForm.country}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, country: e.target.value })
+                }
+              />
+            </label>
+
+            <label>
+              Day Rate USD
+              <input
+                type="number"
+                value={editForm.day_rate_usd}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, day_rate_usd: e.target.value })
+                }
+              />
+            </label>
+
+            <label>
+              Years Experience
+              <input
+                type="number"
+                value={editForm.years_experience}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, years_experience: e.target.value })
+                }
+              />
+            </label>
+          </div>
+
+          <label className="profile-edit-bio">
+            Biography
+            <textarea
+              rows={4}
+              value={editForm.biography}
+              onChange={(e) =>
+                setEditForm({ ...editForm, biography: e.target.value })
+              }
+            />
+          </label>
+
+          {editTab === "expertise" && (
+            <div className="profile-edit-grid">
+              <label>
+                Specialties
+                <input
+                  value={editForm.specialties}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, specialties: e.target.value })
+                  }
+                  placeholder="Pre-PSC Inspection, ISM Audit"
+                />
+              </label>
+
+              <label>
+                Certifications
+                <input
+                  value={editForm.certifications}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, certifications: e.target.value })
+                  }
+                  placeholder="COC Master, SIRE Inspector"
+                />
+              </label>
+
+              <label>
+                Vessel Expertise
+                <input
+                  value={editForm.vessel_types}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, vessel_types: e.target.value })
+                  }
+                  placeholder="Tanker, Container"
+                />
+              </label>
+
+              <label>
+                Ports Covered
+                <input
+                  value={editForm.ports}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, ports: e.target.value })
+                  }
+                  placeholder="Port of Singapore, Jebel Ali Port"
+                />
+              </label>
+
+              <label>
+                Languages
+                <input
+                  value={editForm.languages}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, languages: e.target.value })
+                  }
+                  placeholder="English, Hindi"
+                />
+              </label>
+            </div>
+          )}
+
+          {isSuperAdmin() && (
+            <label className="profile-premium-check">
+              <input
+                type="checkbox"
+                checked={editForm.is_premium}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, is_premium: e.target.checked })
+                }
+              />
+              Premium Consultant
+            </label>
+          )}
+
+          <div className="profile-edit-actions">
+            <button type="submit" disabled={savingProfile}>
+              {savingProfile ? "Saving..." : "Save Changes"}
+            </button>
+
+            <button type="button" onClick={() => setIsEditing(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       <section className="expert-profile-grid">
         <div className="left-column">
