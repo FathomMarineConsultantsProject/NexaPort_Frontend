@@ -30,7 +30,6 @@ const emptyForm = {
   region: "Asia Pacific",
   description: "",
   psc_risk_level: "Medium",
-  experts_available: 0,
   vessel_types: "",
   services: "",
 };
@@ -84,7 +83,6 @@ export default function PortDirectory() {
       region: port.region || "Asia Pacific",
       description: port.description || "",
       psc_risk_level: port.psc_risk_level || "Medium",
-      experts_available: port.experts_available || 0,
       vessel_types: (port.vessel_types || []).join(", "),
       services: (port.services || []).join(", "),
     });
@@ -108,7 +106,6 @@ export default function PortDirectory() {
     region: form.region,
     description: form.description,
     psc_risk_level: form.psc_risk_level,
-    experts_available: Number(form.experts_available || 0),
     vessel_types: form.vessel_types
       .split(",")
       .map((item) => item.trim())
@@ -242,17 +239,6 @@ export default function PortDirectory() {
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                 </select>
-              </label>
-
-              <label>
-                Experts Available
-                <input
-                  name="experts_available"
-                  type="number"
-                  value={form.experts_available}
-                  onChange={handleFormChange}
-                  placeholder="2"
-                />
               </label>
 
               <label>

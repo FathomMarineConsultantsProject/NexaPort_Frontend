@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { createExpert } from "../api/expertApi";
 import { getSpecialties, getVesselTypes, getCertifications } from "../api/masterApi";
 import MultiSelect from "../components/experts/MultiSelect";
+import PortSearchMultiSelect from "../components/experts/PortSearchMultiSelect";
 import TagInput from "../components/experts/TagInput";
 import "./RegisterExpert.css";
 
@@ -105,7 +106,7 @@ export default function RegisterExpert() {
                 certification_ids: selectedCertifications.map((item) => item.id),
                 vessel_type_ids: selectedVesselTypes.map((item) => item.id),
 
-                ports,
+                ports: ports.map((port) => port.port_name),
                 languages,
             };
 
@@ -316,10 +317,10 @@ export default function RegisterExpert() {
 
                         <div className="form-group">
                             <label>Ports Covered</label>
-                            <TagInput
-                                tags={ports}
+                            <PortSearchMultiSelect
+                                value={ports}
                                 onChange={setPorts}
-                                placeholder="e.g. Rotterdam, Singapore..."
+                                placeholder="Search existing ports..."
                             />
                         </div>
 
