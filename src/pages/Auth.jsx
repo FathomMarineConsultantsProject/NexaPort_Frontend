@@ -1,6 +1,6 @@
-import { Anchor, Briefcase, Eye, EyeOff, Ship } from "lucide-react";
+import { Anchor, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../api/Auth";
 import "./Auth.css";
 
@@ -77,7 +77,7 @@ export default function Auth() {
     try {
       const res = await registerUser({
         ...registerForm,
-        role_id: Number(registerForm.role_id),
+        role_id: 3,
       });
 
       if (res.success) {
@@ -216,50 +216,6 @@ export default function Auth() {
             {error && <div className="auth-error">{error}</div>}
 
             <form className="auth-form" onSubmit={handleRegisterSubmit}>
-              {/* Role picker */}
-              <div className="auth-field">
-                <label>I am a</label>
-                <div className="role-options">
-                  <label className="role-option">
-                    <input
-                      type="radio"
-                      name="role_id"
-                      value={3}
-                      checked={Number(registerForm.role_id) === 3}
-                      onChange={handleRegisterChange}
-                    />
-                    <div className="role-card">
-                      <div className="role-card-icon">
-                        <Briefcase size={20} />
-                      </div>
-                      <div className="role-card-title">Client</div>
-                      <div className="role-card-desc">
-                        Post service requests & hire Consultants
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="role-option">
-                    <input
-                      type="radio"
-                      name="role_id"
-                      value={2}
-                      checked={Number(registerForm.role_id) === 2}
-                      onChange={handleRegisterChange}
-                    />
-                    <div className="role-card">
-                      <div className="role-card-icon">
-                        <Ship size={20} />
-                      </div>
-                      <div className="role-card-title">Consultant</div>
-                      <div className="role-card-desc">
-                        Offer maritime consultancy, surveys & inspections
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
               {/* Name + Username */}
               <div className="auth-two-col">
                 <div className="auth-field">
@@ -365,6 +321,14 @@ export default function Auth() {
               <a onClick={() => switchTab("login")} style={{ cursor: "pointer" }}>
                 Sign in
               </a>
+            </div>
+
+            <div className="auth-divider auth-consultant-link">
+              Looking to join as a consultant?{" "}
+              <Link to="/register-consultant">
+                Register as a Consultant here
+              </Link>
+              .
             </div>
           </>
         )}

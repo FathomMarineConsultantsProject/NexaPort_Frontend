@@ -51,6 +51,7 @@
   border-radius: 16px;
   padding: 36px 36px 32px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
 }
 
 .auth-card-head {
@@ -82,6 +83,7 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
+  min-width: 0;
 }
 
 .auth-field label {
@@ -96,6 +98,7 @@
 }
 
 .auth-input {
+  width: 100%;
   height: 46px;
   padding: 0 14px;
   border: 1px solid #d5dfeb;
@@ -107,6 +110,8 @@
   outline: none;
   transition: border-color 0.18s, box-shadow 0.18s;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .auth-input::placeholder {
@@ -233,6 +238,10 @@
   margin-top: 22px;
 }
 
+.auth-consultant-link {
+  margin-top: 10px;
+}
+
 .auth-divider a {
   color: #14b8a6;
   font-weight: 600;
@@ -276,8 +285,19 @@
 /* Two-col grid for name + username */
 .auth-two-col {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .auth-card {
+    padding: 30px 24px 28px;
+  }
+
+  .auth-two-col {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Footer note */

@@ -5,6 +5,7 @@ import Navbar from "./components/layout/Navbar";
 
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
+import RegisterConsultant from "./pages/RegisterConsultant";
 import UserProfile from "./pages/Userprofile";
 
 import ExpertDirectory from "./pages/ExpertDirectory";
@@ -68,6 +69,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/register-consultant" element={<RegisterConsultant />} />
 
       <Route
         path="/login"

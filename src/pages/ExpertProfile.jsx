@@ -1,17 +1,17 @@
 import {
   Briefcase,
   CheckCircle2,
-  Globe,
   MapPin,
   MessageSquare,
   Shield,
   Star,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
 import { getExpertById, updateExpert } from "../api/expertApi";
 import { createExpertReview, getExpertReviews } from "../api/reviewApi";
+import PortSearchMultiSelect from "../components/experts/PortSearchMultiSelect";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
 import "./ExpertProfile.css";
@@ -24,6 +24,66 @@ const textToList = (value = "") =>
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+
+const arrayValue = (value) => (Array.isArray(value) ? value : []);
+const isFilled = (value) => {
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === "object") return Object.keys(value).length > 0;
+  return String(value ?? "").trim() !== "";
+};
+const formatExperience = (exp = {}) => {
+  const parts = [
+    exp.years ? `${exp.years} years` : "",
+    exp.months ? `${exp.months} months` : "",
+    exp.days ? `${exp.days} days` : "",
+  ].filter(Boolean);
+  return parts.join(" ") || "";
+};
+const toPortObjects = (ports = []) =>
+  ports.map((port, index) => ({
+    id: port.id || port.port_name || port.name || index,
+    port_name: port.port_name || port.name || port,
+  }));
+const initialRegistrationEdit = {
+  phone_number: "",
+  mobile_number: "",
+  nationality: "",
+  employment_status: "",
+  company_name: "",
+  dob_dd: "",
+  dob_mm: "",
+  dob_yyyy: "",
+  year_started: "",
+  heard_about: "",
+  street1: "",
+  street2: "",
+  city: "",
+  postal_code: "",
+  country: "",
+  state_region: "",
+  discipline: "",
+  rank: "",
+  discipline_other: "",
+  rank_other: "",
+  qualifications_other: "",
+  vessel_types_other: "",
+  shoreside_experience_other: "",
+  surveying_experience_other: "",
+  vessel_type_surveying_experience_other: "",
+  accreditations_other: "",
+  courses_completed_other: "",
+  qualifications: [],
+  experience_by_qualification: {},
+  vessel_types: [],
+  shoreside_experience: [],
+  surveying_experience: [],
+  vessel_type_surveying_experience: [],
+  accreditations: [],
+  courses_completed: [],
+  refs: [],
+  inspection_cost: "",
+  marketing_consent: false,
+};
 
 export default function ExpertProfile() {
   const location = useLocation();
@@ -50,8 +110,9 @@ export default function ExpertProfile() {
     specialties: "",
     certifications: "",
     vessel_types: "",
-    ports: "",
+    ports: [],
     languages: "",
+    registration_details: null,
   });
 
   const [reviewForm, setReviewForm] = useState({
@@ -61,11 +122,7 @@ export default function ExpertProfile() {
     reviewer_name: "",
   });
 
-  useEffect(() => {
-    loadPage();
-  }, [id]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
     try {
       const [expertRes, reviewRes] = await Promise.all([
         getExpertById(id),
@@ -87,15 +144,23 @@ export default function ExpertProfile() {
         specialties: listToText(expertRes.data.specialties || []),
         certifications: listToText(expertRes.data.certifications || []),
         vessel_types: listToText(expertRes.data.vessel_types || []),
-        ports: listToText(expertRes.data.ports || []),
+        ports: toPortObjects(expertRes.data.ports || []),
         languages: listToText(expertRes.data.languages || []),
+        registration_details: expertRes.data.registration_details
+          ? { ...initialRegistrationEdit, ...expertRes.data.registration_details }
+          : null,
       });
       setReviews(reviewRes.data || []);
     } catch (error) {
       console.error("Failed loading consultant profile:", error);
       setExpert(null);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadPage();
+  }, [loadPage]);
 
   const submitProfileUpdate = async (e) => {
     e.preventDefault();
@@ -115,8 +180,9 @@ export default function ExpertProfile() {
         specialties: textToList(editForm.specialties),
         certifications: textToList(editForm.certifications),
         vessel_types: textToList(editForm.vessel_types),
-        ports: textToList(editForm.ports),
+        ports: editForm.ports.map((port) => port.port_name),
         languages: textToList(editForm.languages),
+        registration_details: editForm.registration_details,
       });
       setIsEditing(false);
       await loadPage();
@@ -164,6 +230,124 @@ export default function ExpertProfile() {
     isSuperAdmin() ||
     (isClient() && location.state?.canReview);
   // Keep reviews visible, but review submission should happen from accepted request flow later.
+
+  const registrationDetails = expert.registration_details;
+
+  const updateRegistrationField = (field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      registration_details: {
+        ...initialRegistrationEdit,
+        ...(prev.registration_details || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const updateRegistrationList = (field, value) => {
+    updateRegistrationField(field, textToList(value));
+  };
+
+  const updateQualificationExperience = (qualification, field, value) => {
+    setEditForm((prev) => {
+      const details = {
+        ...initialRegistrationEdit,
+        ...(prev.registration_details || {}),
+      };
+      return {
+        ...prev,
+        registration_details: {
+          ...details,
+          experience_by_qualification: {
+            ...(details.experience_by_qualification || {}),
+            [qualification]: {
+              ...(details.experience_by_qualification?.[qualification] || {}),
+              [field]: value.replace(/\D/g, "").slice(0, 2),
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const updateReferenceEdit = (index, field, value) => {
+    setEditForm((prev) => {
+      const details = {
+        ...initialRegistrationEdit,
+        ...(prev.registration_details || {}),
+      };
+      const refs = arrayValue(details.refs);
+      const nextRefs = refs.map((ref, refIndex) =>
+        refIndex === index ? { ...ref, [field]: value } : ref
+      );
+      return {
+        ...prev,
+        registration_details: {
+          ...details,
+          refs: nextRefs,
+        },
+      };
+    });
+  };
+
+  const addReferenceEdit = () => {
+    setEditForm((prev) => {
+      const details = {
+        ...initialRegistrationEdit,
+        ...(prev.registration_details || {}),
+      };
+      return {
+        ...prev,
+        registration_details: {
+          ...details,
+          refs: [
+            ...arrayValue(details.refs),
+            { name: "", email: "", phoneNumber: "", position: "", companyName: "" },
+          ],
+        },
+      };
+    });
+  };
+
+  const renderDetailRows = (rows) => {
+    const visibleRows = rows.filter(([, value]) => isFilled(value));
+    if (!visibleRows.length) return null;
+
+    return (
+      <div className="profile-detail-list">
+        {visibleRows.map(([label, value]) => (
+          <div className="profile-detail-row" key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderTags = (items) => {
+    const values = arrayValue(items).filter(isFilled);
+    if (!values.length) return null;
+    return (
+      <div className="tag-list">
+        {values.map((item) => (
+          <span key={item} className="soft-tag">
+            {item}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  const renderRegistrationSection = (title, children) =>
+    children ? (
+      <div className="profile-card">
+        <h3>{title}</h3>
+        {children}
+      </div>
+    ) : null;
+
+  const registrationEdit = editForm.registration_details;
 
   return (
     <main className="expert-profile-page">
@@ -251,6 +435,16 @@ export default function ExpertProfile() {
             >
               Expertise
             </button>
+
+            {registrationEdit && (
+              <button
+                type="button"
+                className={editTab === "registration" ? "active" : ""}
+                onClick={() => setEditTab("registration")}
+              >
+                Registration Details
+              </button>
+            )}
 
           </div>
 
@@ -370,11 +564,9 @@ export default function ExpertProfile() {
 
               <label>
                 Ports Covered
-                <input
+                <PortSearchMultiSelect
                   value={editForm.ports}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, ports: e.target.value })
-                  }
+                  onChange={(ports) => setEditForm({ ...editForm, ports })}
                   placeholder="Port of Singapore, Jebel Ali Port"
                 />
               </label>
@@ -390,6 +582,139 @@ export default function ExpertProfile() {
                 />
               </label>
             </div>
+          )}
+
+          {editTab === "registration" && registrationEdit && (
+            <>
+              <div className="profile-edit-grid">
+                {[
+                  ["Phone number", "phone_number"],
+                  ["Mobile number", "mobile_number"],
+                  ["Nationality", "nationality"],
+                  ["Employment status", "employment_status"],
+                  ["Company name", "company_name"],
+                  ["DOB day", "dob_dd"],
+                  ["DOB month", "dob_mm"],
+                  ["DOB year", "dob_yyyy"],
+                  ["Year started", "year_started"],
+                  ["Heard about", "heard_about"],
+                  ["Street address 1", "street1"],
+                  ["Street address 2", "street2"],
+                  ["City", "city"],
+                  ["Postal code", "postal_code"],
+                  ["Country", "country"],
+                  ["State/Region", "state_region"],
+                  ["Discipline", "discipline"],
+                  ["Rank", "rank"],
+                  ["Other discipline", "discipline_other"],
+                  ["Other rank", "rank_other"],
+                  ["Other qualification", "qualifications_other"],
+                  ["Other vessel type", "vessel_types_other"],
+                  ["Other shoreside experience", "shoreside_experience_other"],
+                  ["Other surveying experience", "surveying_experience_other"],
+                  ["Other vessel type surveying experience", "vessel_type_surveying_experience_other"],
+                  ["Other accreditation", "accreditations_other"],
+                  ["Other course", "courses_completed_other"],
+                  ["Inspection cost", "inspection_cost"],
+                ].map(([label, field]) => (
+                  <label key={field}>
+                    {label}
+                    <input
+                      value={registrationEdit[field] || ""}
+                      onChange={(e) => updateRegistrationField(field, e.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="profile-edit-grid registration-list-edit">
+                {[
+                  ["Qualifications", "qualifications"],
+                  ["Vessel types", "vessel_types"],
+                  ["Shoreside experience", "shoreside_experience"],
+                  ["Surveying experience", "surveying_experience"],
+                  ["Vessel type surveying experience", "vessel_type_surveying_experience"],
+                  ["Accreditations", "accreditations"],
+                  ["Courses completed", "courses_completed"],
+                ].map(([label, field]) => (
+                  <label key={field}>
+                    {label}
+                    <textarea
+                      rows={3}
+                      value={arrayValue(registrationEdit[field]).join(", ")}
+                      onChange={(e) => updateRegistrationList(field, e.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="profile-edit-subsection">
+                <h4>Experience by qualification</h4>
+                {arrayValue(registrationEdit.qualifications).map((qualification) => {
+                  const exp = registrationEdit.experience_by_qualification?.[qualification] || {};
+                  return (
+                    <div className="profile-edit-experience" key={qualification}>
+                      <strong>{qualification}</strong>
+                      <input
+                        placeholder="Years"
+                        value={exp.years || ""}
+                        onChange={(e) => updateQualificationExperience(qualification, "years", e.target.value)}
+                      />
+                      <input
+                        placeholder="Months"
+                        value={exp.months || ""}
+                        onChange={(e) => updateQualificationExperience(qualification, "months", e.target.value)}
+                      />
+                      <input
+                        placeholder="Days"
+                        value={exp.days || ""}
+                        onChange={(e) => updateQualificationExperience(qualification, "days", e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="profile-edit-subsection">
+                <div className="profile-edit-subhead">
+                  <h4>References</h4>
+                  <button type="button" onClick={addReferenceEdit}>
+                    Add reference
+                  </button>
+                </div>
+                {arrayValue(registrationEdit.refs).map((ref, index) => (
+                  <div className="profile-edit-reference" key={index}>
+                    <strong>Reference {index + 1}</strong>
+                    <div className="profile-edit-grid">
+                      {[
+                        ["Name", "name"],
+                        ["Email", "email"],
+                        ["Phone number", "phoneNumber"],
+                        ["Position", "position"],
+                        ["Company name", "companyName"],
+                      ].map(([label, field]) => (
+                        <label key={field}>
+                          {label}
+                          <input
+                            value={ref[field] || ""}
+                            onChange={(e) => updateReferenceEdit(index, field, e.target.value)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <label className="profile-premium-check">
+                <input
+                  type="checkbox"
+                  checked={Boolean(registrationEdit.marketing_consent)}
+                  onChange={(e) => updateRegistrationField("marketing_consent", e.target.checked)}
+                />
+                Marketing consent
+              </label>
+            </>
           )}
 
           {isSuperAdmin() && (
@@ -448,6 +773,129 @@ export default function ExpertProfile() {
               ))}
             </div>
           </div>
+
+          {registrationDetails && (
+            <>
+              {renderRegistrationSection(
+                "Professional Background",
+                renderDetailRows([
+                  ["Nationality", registrationDetails.nationality],
+                  ["Employment status", registrationDetails.employment_status],
+                  ["Company name", registrationDetails.company_name],
+                  ["Discipline", registrationDetails.discipline],
+                  ["Other discipline", registrationDetails.discipline_other],
+                  ["Rank", registrationDetails.rank],
+                  ["Other rank", registrationDetails.rank_other],
+                  ["Year started", registrationDetails.year_started],
+                ])
+              )}
+
+              {renderRegistrationSection(
+                "Qualifications & Experience",
+                <>
+                  {renderTags(registrationDetails.qualifications)}
+                  {isFilled(registrationDetails.qualifications_other) && (
+                    <p className="profile-muted">Other: {registrationDetails.qualifications_other}</p>
+                  )}
+                  {isFilled(registrationDetails.experience_by_qualification) && (
+                    <div className="profile-detail-list">
+                      {Object.entries(registrationDetails.experience_by_qualification || {}).map(([qualification, exp]) => (
+                        <div className="profile-detail-row" key={qualification}>
+                          <span>{qualification}</span>
+                          <strong>{formatExperience(exp)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {renderRegistrationSection(
+                "Maritime Experience",
+                <>
+                  {renderTags(registrationDetails.vessel_types)}
+                  {isFilled(registrationDetails.vessel_types_other) && (
+                    <p className="profile-muted">Other vessel type: {registrationDetails.vessel_types_other}</p>
+                  )}
+                  {renderTags(registrationDetails.shoreside_experience)}
+                  {isFilled(registrationDetails.shoreside_experience_other) && (
+                    <p className="profile-muted">Other shoreside experience: {registrationDetails.shoreside_experience_other}</p>
+                  )}
+                </>
+              )}
+
+              {renderRegistrationSection(
+                "Surveying Expertise",
+                <>
+                  {renderTags(registrationDetails.surveying_experience)}
+                  {isFilled(registrationDetails.surveying_experience_other) && (
+                    <p className="profile-muted">Other surveying experience: {registrationDetails.surveying_experience_other}</p>
+                  )}
+                  {renderTags(registrationDetails.vessel_type_surveying_experience)}
+                  {isFilled(registrationDetails.vessel_type_surveying_experience_other) && (
+                    <p className="profile-muted">Other vessel types surveyed: {registrationDetails.vessel_type_surveying_experience_other}</p>
+                  )}
+                </>
+              )}
+
+              {renderRegistrationSection(
+                "Accreditations & Courses",
+                <>
+                  {renderTags(registrationDetails.accreditations)}
+                  {isFilled(registrationDetails.accreditations_other) && (
+                    <p className="profile-muted">Other accreditation: {registrationDetails.accreditations_other}</p>
+                  )}
+                  {renderTags(registrationDetails.courses_completed)}
+                  {isFilled(registrationDetails.courses_completed_other) && (
+                    <p className="profile-muted">Other course: {registrationDetails.courses_completed_other}</p>
+                  )}
+                </>
+              )}
+
+              {renderRegistrationSection(
+                "Registration Details",
+                <>
+                  {renderDetailRows([
+                    ["Phone", registrationDetails.phone_number],
+                    ["Mobile", registrationDetails.mobile_number],
+                    ["Email", registrationDetails.email],
+                    ["DOB", [registrationDetails.dob_dd, registrationDetails.dob_mm, registrationDetails.dob_yyyy].filter(Boolean).join("/")],
+                    ["Heard about NexaPort", registrationDetails.heard_about],
+                    ["Street address 1", registrationDetails.street1],
+                    ["Street address 2", registrationDetails.street2],
+                    ["City", registrationDetails.city],
+                    ["Postal code", registrationDetails.postal_code],
+                    ["Country", registrationDetails.country],
+                    ["State/Region", registrationDetails.state_region],
+                  ])}
+                  {arrayValue(registrationDetails.refs).length > 0 && (
+                    <div className="profile-reference-list">
+                      {registrationDetails.refs.map((ref, index) => (
+                        <div className="profile-reference-item" key={`${ref.email}-${index}`}>
+                          <strong>Reference {index + 1}</strong>
+                          <span>{[ref.name, ref.position, ref.companyName].filter(Boolean).join(" · ")}</span>
+                          <span>{[ref.email, ref.phoneNumber].filter(Boolean).join(" · ")}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {(registrationDetails.photo_s3_key || registrationDetails.cv_s3_key) && (
+                    <p className="profile-muted">
+                      Registration photo/CV are stored with the profile. Direct document links are not available in this view.
+                    </p>
+                  )}
+                </>
+              )}
+
+              {renderRegistrationSection(
+                "Inspection Information",
+                renderDetailRows([
+                  ["Inspection cost", registrationDetails.inspection_cost],
+                  ["Marketing consent", registrationDetails.marketing_consent ? "Yes" : "No"],
+                ])
+              )}
+            </>
+          )}
 
           <div className="reviews-header">
             <h2>Reviews ({reviews.length})</h2>
