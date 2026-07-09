@@ -9,8 +9,9 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
-import { getExpertById, updateExpert } from "../api/expertApi";
+import { getExpertById, getExpertCvUrl, updateExpert } from "../api/expertApi";
 import { createExpertReview, getExpertReviews } from "../api/reviewApi";
+import ConsultantAvatar from "../components/experts/ConsultantAvatar";
 import PortSearchMultiSelect from "../components/experts/PortSearchMultiSelect";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
@@ -92,6 +93,8 @@ export default function ExpertProfile() {
   const [expert, setExpert] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [cvMessage, setCvMessage] = useState("");
+  const [openingCv, setOpeningCv] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -218,8 +221,6 @@ export default function ExpertProfile() {
     return <div className="expert-profile-page">Loading...</div>;
   }
 
-  const initials = expert.full_name?.charAt(0)?.toUpperCase() || "E";
-
   const currentUser = getStoredUser();
 
   const canEditProfile =
@@ -232,6 +233,29 @@ export default function ExpertProfile() {
   // Keep reviews visible, but review submission should happen from accepted request flow later.
 
   const registrationDetails = expert.registration_details;
+
+  const openCv = async () => {
+    setCvMessage("");
+    const popup = window.open("about:blank", "_blank");
+
+    if (!popup) {
+      setCvMessage("Allow pop-ups to view the CV.");
+      return;
+    }
+
+    popup.opener = null;
+    setOpeningCv(true);
+
+    try {
+      const response = await getExpertCvUrl(expert.id);
+      popup.location.replace(response.url);
+    } catch (error) {
+      popup.close();
+      setCvMessage(error.response?.data?.message || "Unable to open CV");
+    } finally {
+      setOpeningCv(false);
+    }
+  };
 
   const updateRegistrationField = (field, value) => {
     setEditForm((prev) => ({
@@ -355,7 +379,11 @@ export default function ExpertProfile() {
         <div className="expert-profile-banner" />
 
         <div className="expert-profile-header">
-          <div className="expert-profile-avatar">{initials}</div>
+          <ConsultantAvatar
+            className="expert-profile-avatar"
+            photoUrl={expert.photo_url}
+            name={expert.full_name}
+          />
 
           <div className="expert-profile-info">
             <h1>{expert.full_name}</h1>
@@ -387,6 +415,17 @@ export default function ExpertProfile() {
               {expert.availability}
             </span>
 
+            {isSuperAdmin() && expert.has_cv && (
+              <button
+                className="edit-profile-btn"
+                type="button"
+                onClick={openCv}
+                disabled={openingCv}
+              >
+                {openingCv ? "Opening CV..." : "View CV"}
+              </button>
+            )}
+
             {canEditProfile && (
               <button
                 className="edit-profile-btn"
@@ -396,6 +435,7 @@ export default function ExpertProfile() {
               </button>
             )}
           </div>
+          {cvMessage && <p className="profile-action-message">{cvMessage}</p>}
         </div>
       </section>
 

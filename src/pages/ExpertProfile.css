@@ -43,6 +43,13 @@
   font-size: 30px;
   font-weight: 800;
   color: #001b3f;
+  overflow: hidden;
+}
+
+.profile-action-message {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 13px;
 }
 
 .expert-profile-info h1 {

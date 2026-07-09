@@ -116,6 +116,7 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .np-avatar-name {
@@ -157,6 +158,7 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .np-profile-menu-name {

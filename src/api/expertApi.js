@@ -10,6 +10,11 @@ export const getExpertById = async (id) => {
   return res.data;
 };
 
+export const getExpertCvUrl = async (id) => {
+  const res = await axiosClient.get(`/experts/${id}/cv-url`);
+  return res.data;
+};
+
 export const createExpert = async (payload) => {
   const res = await axiosClient.post("/experts", payload);
   return res.data;

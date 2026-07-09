@@ -11,6 +11,11 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { getRoleId } from "../../utils/auth";
+import ConsultantAvatar from "../experts/ConsultantAvatar";
+import {
+  clearConsultantPhotoCache,
+  getCurrentConsultantPhoto,
+} from "../../utils/consultantPhotoCache";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -20,10 +25,31 @@ export default function Navbar() {
 
   const storedUser = localStorage.getItem("np_user");
   const user = storedUser ? JSON.parse(storedUser) : null;
-  const initial = user?.full_name?.trim()?.[0]?.toUpperCase() || "U";
+  const [photoUrl, setPhotoUrl] = useState(null);
 
   const roleId = getRoleId();
   const isClient = roleId === 3;
+  const userId = user?.id;
+
+  useEffect(() => {
+    let active = true;
+
+    if (roleId !== 2) {
+      return undefined;
+    }
+
+    getCurrentConsultantPhoto({ id: userId, role_id: roleId })
+      .then((url) => {
+        if (active) setPhotoUrl(url);
+      })
+      .catch(() => {
+        if (active) setPhotoUrl(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [roleId, userId]);
 
   useEffect(() => {
     const handleOutside = (e) => {
@@ -37,6 +63,7 @@ export default function Navbar() {
   }, [menuOpen]);
 
   const handleLogout = () => {
+    clearConsultantPhotoCache(userId);
     localStorage.removeItem("np_token");
     localStorage.removeItem("np_user");
     navigate("/");
@@ -83,7 +110,12 @@ export default function Navbar() {
           onClick={() => setMenuOpen(!menuOpen)}
           title={user?.full_name || "Account"}
         >
-          <span className="np-avatar-initial">{initial}</span>
+          <ConsultantAvatar
+            className="np-avatar-initial"
+            photoUrl={photoUrl}
+            name={user?.full_name}
+            fallback="U"
+          />
           <span className="np-avatar-name">
             {user?.full_name?.split(" ")[0] || "Account"}
           </span>
@@ -92,7 +124,12 @@ export default function Navbar() {
         {menuOpen && (
           <div className="np-profile-menu">
             <div className="np-profile-menu-head">
-              <div className="np-profile-menu-avatar">{initial}</div>
+              <ConsultantAvatar
+                className="np-profile-menu-avatar"
+                photoUrl={photoUrl}
+                name={user?.full_name}
+                fallback="U"
+              />
               <div>
                 <div className="np-profile-menu-name">{user?.full_name || "User"}</div>
                 <div className="np-profile-menu-email">{user?.email || ""}</div>

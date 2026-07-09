@@ -36,6 +36,7 @@
   place-items: center;
   flex-shrink: 0;
   box-shadow: 0 3px 8px rgba(20, 184, 166, 0.22);
+  overflow: hidden;
 }
 
 .uprofile-name {

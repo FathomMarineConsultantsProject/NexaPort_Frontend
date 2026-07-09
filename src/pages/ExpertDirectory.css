@@ -134,6 +134,7 @@
   font-size: 22px;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .expert-top h3 {

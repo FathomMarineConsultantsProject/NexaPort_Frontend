@@ -13,6 +13,8 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyProfile, updateMyProfile } from "../api/userApi";
+import ConsultantAvatar from "../components/experts/ConsultantAvatar";
+import { cacheConsultantPhoto } from "../utils/consultantPhotoCache";
 import "./UserProfile.css";
 
 export default function UserProfile() {
@@ -29,27 +31,28 @@ export default function UserProfile() {
   });
 
   useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await getMyProfile();
+        const data = res.data;
+
+        setUser(data);
+        cacheConsultantPhoto(data);
+        localStorage.setItem("np_user", JSON.stringify(data));
+
+        setForm({
+          full_name: data.full_name || "",
+          username: data.username || "",
+          phone: data.phone || "",
+          profile_image: data.profile_image || "",
+        });
+      } catch {
+        navigate("/login");
+      }
+    };
+
     loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      const res = await getMyProfile();
-      const data = res.data;
-
-      setUser(data);
-      localStorage.setItem("np_user", JSON.stringify(data));
-
-      setForm({
-        full_name: data.full_name || "",
-        username: data.username || "",
-        phone: data.phone || "",
-        profile_image: data.profile_image || "",
-      });
-    } catch (err) {
-      navigate("/login");
-    }
-  };
+  }, [navigate]);
 
   const handleSave = async () => {
     try {
@@ -62,8 +65,14 @@ export default function UserProfile() {
         profile_image: form.profile_image || null,
       });
 
-      setUser(res.data);
-      localStorage.setItem("np_user", JSON.stringify(res.data));
+      const updatedUser = {
+        ...res.data,
+        expert_id: user.expert_id,
+        photo_url: user.photo_url,
+        photo_expires_at: user.photo_expires_at,
+      };
+      setUser(updatedUser);
+      localStorage.setItem("np_user", JSON.stringify(updatedUser));
       setEdit(false);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to update profile");
@@ -80,7 +89,6 @@ export default function UserProfile() {
 
   if (!user) return null;
 
-  const initial = user.full_name?.trim()?.[0]?.toUpperCase() || "U";
   const roleLabel = user.role_name || (user.role_id === 2 ? "Expert" : "Client");
   const roleIcon = user.role_id === 2 ? <Anchor size={16} /> : <Briefcase size={16} />;
 
@@ -88,7 +96,12 @@ export default function UserProfile() {
     <div className="profile-page-wrap">
       <div className="profile-page-inner">
         <div className="uprofile-head">
-          <div className="uprofile-avatar">{initial}</div>
+          <ConsultantAvatar
+            className="uprofile-avatar"
+            photoUrl={user.photo_url}
+            name={user.full_name}
+            fallback="U"
+          />
 
           <div className="uprofile-head-main">
             <h1 className="uprofile-name">{user.full_name}</h1>

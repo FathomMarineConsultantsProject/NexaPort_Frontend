@@ -1,12 +1,12 @@
 import { Clock3, MapPin, Shield, Ship, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import ConsultantAvatar from "./ConsultantAvatar";
 
 const fallbackSpecialties = ["pre-psc inspection", "sire vetting", "tanker vetting"];
 const fallbackVessels = ["Tanker", "VLCC"];
 
 export default function ExpertCard({ expert }) {
     const name = expert.full_name || "Unnamed Expert";
-    const initial = name.trim()?.[0]?.toUpperCase() || "E";
     const rating = Number(expert.rating || 0).toFixed(1);
     const reviewCount = Number(expert.review_count || 0);
 
@@ -22,7 +22,11 @@ export default function ExpertCard({ expert }) {
         <article className="expert-card">
             <div className="expert-card-main">
                 <div className="expert-top">
-                    <div className="expert-avatar">{initial}</div>
+                    <ConsultantAvatar
+                        className="expert-avatar"
+                        photoUrl={expert.photo_url}
+                        name={name}
+                    />
 
                     <div>
                         <h3>{name}</h3>
