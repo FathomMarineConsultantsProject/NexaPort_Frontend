@@ -15,6 +15,16 @@ export const getExpertCvUrl = async (id) => {
   return res.data;
 };
 
+export const createExpertPhotoUploadUrl = async (id, payload) => {
+  const res = await axiosClient.post(`/experts/${id}/photo-upload-url`, payload);
+  return res.data;
+};
+
+export const updateExpertPhoto = async (id, photoS3Key) => {
+  const res = await axiosClient.patch(`/experts/${id}/photo`, { photoS3Key });
+  return res.data;
+};
+
 export const createExpert = async (payload) => {
   const res = await axiosClient.post("/experts", payload);
   return res.data;

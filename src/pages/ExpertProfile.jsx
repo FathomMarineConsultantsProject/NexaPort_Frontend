@@ -3,16 +3,26 @@ import {
   CheckCircle2,
   MapPin,
   MessageSquare,
-  Shield,
   Star,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
-import { getExpertById, getExpertCvUrl, updateExpert } from "../api/expertApi";
-import { createExpertReview, getExpertReviews } from "../api/reviewApi";
+import {
+  createExpertPhotoUploadUrl,
+  getExpertById,
+  getExpertCvUrl,
+  updateExpert,
+  updateExpertPhoto,
+} from "../api/expertApi";
+import {
+  createExpertReview,
+  getExpertReviews,
+  updateExpertReview,
+} from "../api/reviewApi";
 import ConsultantAvatar from "../components/experts/ConsultantAvatar";
 import PortSearchMultiSelect from "../components/experts/PortSearchMultiSelect";
+import { updateConsultantPhotoCache } from "../utils/consultantPhotoCache";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
 import "./ExpertProfile.css";
@@ -93,8 +103,19 @@ export default function ExpertProfile() {
   const [expert, setExpert] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [reviewEditForm, setReviewEditForm] = useState(null);
+  const [reviewEditSaving, setReviewEditSaving] = useState(false);
+  const [reviewEditError, setReviewEditError] = useState("");
   const [cvMessage, setCvMessage] = useState("");
   const [openingCv, setOpeningCv] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
+  const [photoError, setPhotoError] = useState("");
+  const [profileSaveMessage, setProfileSaveMessage] = useState("");
+  const [profileSaveError, setProfileSaveError] = useState("");
+  const photoInputRef = useRef(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -105,7 +126,6 @@ export default function ExpertProfile() {
     biography: "",
     base_location: "",
     country: "",
-    day_rate_usd: "",
     years_experience: "",
     availability: "available",
     is_premium: false,
@@ -120,7 +140,7 @@ export default function ExpertProfile() {
 
   const [reviewForm, setReviewForm] = useState({
     job_name: location.state?.jobName || "",
-    rating: 5,
+    rating: 0,
     comment: "",
     reviewer_name: "",
   });
@@ -139,7 +159,6 @@ export default function ExpertProfile() {
         biography: expertRes.data.biography || "",
         base_location: expertRes.data.base_location || "",
         country: expertRes.data.country || "",
-        day_rate_usd: expertRes.data.day_rate_usd || "",
         years_experience: expertRes.data.years_experience || "",
         availability: expertRes.data.availability || "available",
         is_premium: Boolean(expertRes.data.is_premium),
@@ -165,17 +184,78 @@ export default function ExpertProfile() {
     loadPage();
   }, [loadPage]);
 
+  useEffect(
+    () => () => {
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    },
+    [photoPreviewUrl]
+  );
+
+  const discardSelectedPhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreviewUrl("");
+    setPhotoError("");
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
+
+  const cancelEditing = () => {
+    if (savingProfile) return;
+    discardSelectedPhoto();
+    setProfileSaveError("");
+    setIsEditing(false);
+  };
+
+  const beginEditing = () => {
+    setProfileSaveMessage("");
+    setIsEditing(true);
+  };
+
   const submitProfileUpdate = async (e) => {
     e.preventDefault();
+    if (savingProfile) return;
 
+    let confirmedPhoto = null;
     try {
       setSavingProfile(true);
-      await updateExpert(expert.id, {
+      setProfileSaveMessage("");
+      setProfileSaveError("");
+      setPhotoError("");
+
+      if (photoFile) {
+        const presign = await createExpertPhotoUploadUrl(expert.id, {
+          contentType: photoFile.type,
+          size: photoFile.size,
+        });
+        const uploadResponse = await fetch(presign.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": photoFile.type },
+          body: photoFile,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Profile photo upload failed.");
+        }
+
+        confirmedPhoto = await updateExpertPhoto(expert.id, presign.key);
+        setExpert((previous) => ({
+          ...previous,
+          photo_url: confirmedPhoto.photo_url,
+          photo_expires_at: confirmedPhoto.photo_expires_at,
+        }));
+        updateConsultantPhotoCache({
+          userId: getStoredUser().id,
+          expertId: expert.id,
+          photoUrl: confirmedPhoto.photo_url,
+          photoExpiresAt: confirmedPhoto.photo_expires_at,
+        });
+        discardSelectedPhoto();
+      }
+
+      const profileResponse = await updateExpert(expert.id, {
         full_name: editForm.full_name,
         biography: editForm.biography,
         base_location: editForm.base_location,
         country: editForm.country,
-        day_rate_usd: Number(editForm.day_rate_usd || 0),
         years_experience: Number(editForm.years_experience || 0),
         availability: editForm.availability,
         is_premium: editForm.is_premium,
@@ -187,11 +267,28 @@ export default function ExpertProfile() {
         languages: textToList(editForm.languages),
         registration_details: editForm.registration_details,
       });
+      setExpert({
+        ...profileResponse.data,
+        ...(confirmedPhoto
+          ? {
+              photo_url: confirmedPhoto.photo_url,
+              photo_expires_at: confirmedPhoto.photo_expires_at,
+            }
+          : {}),
+      });
       setIsEditing(false);
-      await loadPage();
+      setProfileSaveMessage("Profile changes saved.");
     } catch (error) {
       console.error("Failed updating consultant profile:", error);
-      alert(error.response?.data?.message || "Failed to update consultant profile");
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update consultant profile";
+      setProfileSaveError(
+        confirmedPhoto
+          ? `Profile photo updated, but other profile changes were not saved. ${message}`
+          : message
+      );
     } finally {
       setSavingProfile(false);
     }
@@ -199,13 +296,23 @@ export default function ExpertProfile() {
 
   const submitReview = async (e) => {
     e.preventDefault();
+    setReviewError("");
+
+    if (
+      !Number.isInteger(Number(reviewForm.rating)) ||
+      Number(reviewForm.rating) < 1 ||
+      Number(reviewForm.rating) > 5
+    ) {
+      setReviewError("Select a rating from 1 to 5.");
+      return;
+    }
 
     try {
       await createExpertReview(id, reviewForm);
 
       setReviewForm({
         job_name: "",
-        rating: 5,
+        rating: 0,
         comment: "",
         reviewer_name: "",
       });
@@ -214,6 +321,70 @@ export default function ExpertProfile() {
       loadPage();
     } catch (error) {
       console.error("Failed submitting review:", error);
+      setReviewError(
+        error.response?.data?.message || "Failed to submit review."
+      );
+    }
+  };
+
+  const cancelReview = () => {
+    setShowReviewForm(false);
+    setReviewError("");
+    setReviewForm({
+      job_name: location.state?.jobName || "",
+      rating: 0,
+      comment: "",
+      reviewer_name: "",
+    });
+  };
+
+  const startEditingReview = (review) => {
+    setEditingReviewId(review.id);
+    setReviewEditError("");
+    setReviewEditForm({
+      job_name: review.job_name || "",
+      rating: Number(review.rating),
+      comment: review.comment || "",
+      reviewer_name: review.reviewer_name || "",
+    });
+  };
+
+  const cancelEditingReview = () => {
+    setEditingReviewId(null);
+    setReviewEditForm(null);
+    setReviewEditError("");
+  };
+
+  const saveEditedReview = async (reviewId) => {
+    setReviewEditError("");
+    const rating = Number(reviewEditForm?.rating);
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      setReviewEditError("Select a rating from 1 to 5.");
+      return;
+    }
+
+    setReviewEditSaving(true);
+    try {
+      const response = await updateExpertReview(reviewId, {
+        ...reviewEditForm,
+        rating,
+      });
+      setReviews((current) =>
+        current.map((review) =>
+          review.id === reviewId ? response.data : review
+        )
+      );
+      const expertResponse = await getExpertById(id);
+      setExpert(expertResponse.data);
+      cancelEditingReview();
+    } catch (error) {
+      console.error("Failed updating review:", error);
+      setReviewEditError(
+        error.response?.data?.message || "Failed to update review."
+      );
+    } finally {
+      setReviewEditSaving(false);
     }
   };
 
@@ -228,11 +399,40 @@ export default function ExpertProfile() {
     (isExpert() && Number(expert.user_id) === Number(currentUser?.id));
 
   const canWriteReview =
-    isSuperAdmin() ||
-    (isClient() && location.state?.canReview);
+    isSuperAdmin() || (isClient() && location.state?.canReview);
   // Keep reviews visible, but review submission should happen from accepted request flow later.
 
   const registrationDetails = expert.registration_details;
+  const canChangeProfilePhoto =
+    isExpert() &&
+    Number(expert.user_id) === Number(currentUser?.id) &&
+    Boolean(registrationDetails);
+
+  const selectProfilePhoto = (event) => {
+    const file = event.target.files?.[0] || null;
+    setPhotoError("");
+    setProfileSaveError("");
+
+    if (!file) {
+      discardSelectedPhoto();
+      return;
+    }
+
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      discardSelectedPhoto();
+      setPhotoError("Photo must be PNG, JPEG or WEBP.");
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      discardSelectedPhoto();
+      setPhotoError("Photo must be 3MB or less.");
+      return;
+    }
+
+    setPhotoFile(file);
+    setPhotoPreviewUrl(URL.createObjectURL(file));
+  };
 
   const openCv = async () => {
     setCvMessage("");
@@ -372,16 +572,52 @@ export default function ExpertProfile() {
     ) : null;
 
   const registrationEdit = editForm.registration_details;
+  const hasSpecialties = arrayValue(expert.specialties).length > 0;
+  const hasCertifications = arrayValue(expert.certifications).length > 0;
+  const hasVesselExpertise = arrayValue(expert.vessel_types).length > 0;
+  const hasPorts = arrayValue(expert.ports).length > 0;
+  const hasLanguages = arrayValue(expert.languages).length > 0;
+  const hasQualifications =
+    isFilled(registrationDetails?.qualifications) ||
+    isFilled(registrationDetails?.qualifications_other) ||
+    Object.values(
+      registrationDetails?.experience_by_qualification || {}
+    ).some((experience) => isFilled(formatExperience(experience)));
+  const hasMaritimeExperience =
+    isFilled(registrationDetails?.vessel_types) ||
+    isFilled(registrationDetails?.vessel_types_other) ||
+    isFilled(registrationDetails?.shoreside_experience) ||
+    isFilled(registrationDetails?.shoreside_experience_other);
+  const hasSurveyingExpertise =
+    isFilled(registrationDetails?.surveying_experience) ||
+    isFilled(registrationDetails?.surveying_experience_other) ||
+    isFilled(registrationDetails?.vessel_type_surveying_experience) ||
+    isFilled(registrationDetails?.vessel_type_surveying_experience_other);
+  const hasAccreditations =
+    isFilled(registrationDetails?.accreditations) ||
+    isFilled(registrationDetails?.accreditations_other) ||
+    isFilled(registrationDetails?.courses_completed) ||
+    isFilled(registrationDetails?.courses_completed_other);
+  const professionalBackground = registrationDetails
+    ? renderDetailRows([
+        ["Nationality", registrationDetails.nationality],
+        ["Employment status", registrationDetails.employment_status],
+        ["Company name", registrationDetails.company_name],
+        ["Discipline", registrationDetails.discipline],
+        ["Other discipline", registrationDetails.discipline_other],
+        ["Rank", registrationDetails.rank],
+        ["Other rank", registrationDetails.rank_other],
+        ["Year started", registrationDetails.year_started],
+      ])
+    : null;
 
   return (
     <main className="expert-profile-page">
-      <section className="expert-profile-hero">
-        <div className="expert-profile-banner" />
-
+      <section className="expert-profile-identity">
         <div className="expert-profile-header">
           <ConsultantAvatar
             className="expert-profile-avatar"
-            photoUrl={expert.photo_url}
+            photoUrl={photoPreviewUrl || expert.photo_url}
             name={expert.full_name}
           />
 
@@ -429,7 +665,9 @@ export default function ExpertProfile() {
             {canEditProfile && (
               <button
                 className="edit-profile-btn"
-                onClick={() => setIsEditing(!isEditing)}
+                type="button"
+                onClick={isEditing ? cancelEditing : beginEditing}
+                disabled={savingProfile}
               >
                 {isEditing ? "Cancel Edit" : "Edit Profile"}
               </button>
@@ -438,10 +676,38 @@ export default function ExpertProfile() {
           {cvMessage && <p className="profile-action-message">{cvMessage}</p>}
         </div>
       </section>
+      {profileSaveMessage && (
+        <p className="profile-save-status success">{profileSaveMessage}</p>
+      )}
 
       {isEditing && canEditProfile && (
         <form className="profile-edit-card" onSubmit={submitProfileUpdate}>
           <h3>Edit Consultant Profile</h3>
+
+          {canChangeProfilePhoto && (
+            <section className="profile-photo-edit">
+              <label htmlFor="expert-profile-photo">Change Profile Photo</label>
+              <div className="profile-photo-edit-controls">
+                <input
+                  ref={photoInputRef}
+                  id="expert-profile-photo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={selectProfilePhoto}
+                  disabled={savingProfile}
+                />
+              </div>
+              <small>PNG, JPEG or WEBP. Maximum 3MB.</small>
+              {photoFile && (
+                <p className="profile-photo-selection">
+                  Selected: {photoFile.name}. Save Changes to upload.
+                </p>
+              )}
+              {photoError && (
+                <p className="profile-photo-message error">{photoError}</p>
+              )}
+            </section>
+          )}
 
           <div className="profile-edit-tabs">
             <button
@@ -529,17 +795,6 @@ export default function ExpertProfile() {
                 value={editForm.country}
                 onChange={(e) =>
                   setEditForm({ ...editForm, country: e.target.value })
-                }
-              />
-            </label>
-
-            <label>
-              Day Rate USD
-              <input
-                type="number"
-                value={editForm.day_rate_usd}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, day_rate_usd: e.target.value })
                 }
               />
             </label>
@@ -775,345 +1030,507 @@ export default function ExpertProfile() {
               {savingProfile ? "Saving..." : "Save Changes"}
             </button>
 
-            <button type="button" onClick={() => setIsEditing(false)}>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              disabled={savingProfile}
+            >
               Cancel
             </button>
           </div>
+          {profileSaveError && (
+            <p className="profile-save-status error">{profileSaveError}</p>
+          )}
         </form>
       )}
 
       <section className="expert-profile-grid">
         <div className="left-column">
-          <div className="profile-card">
+          <article className="profile-card">
             <h3>Professional Biography</h3>
             <p>{expert.biography || "No biography added yet."}</p>
-          </div>
+          </article>
 
-          <div className="profile-card">
-            <h3>Specialties</h3>
-
-            <div className="tag-list">
-              {expert.specialties?.map((item) => (
-                <span key={item.id || item.name} className="soft-tag">
-                  {item.name || item}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="profile-card">
-            <h3>Certifications & Accreditations</h3>
-
-            <div className="cert-list">
-              {expert.certifications?.map((item) => (
-                <div key={item.id || item.name} className="cert-item">
-                  <CheckCircle2 size={18} />
-                  {item.name || item}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {registrationDetails && (
-            <>
-              {renderRegistrationSection(
-                "Professional Background",
-                renderDetailRows([
-                  ["Nationality", registrationDetails.nationality],
-                  ["Employment status", registrationDetails.employment_status],
-                  ["Company name", registrationDetails.company_name],
-                  ["Discipline", registrationDetails.discipline],
-                  ["Other discipline", registrationDetails.discipline_other],
-                  ["Rank", registrationDetails.rank],
-                  ["Other rank", registrationDetails.rank_other],
-                  ["Year started", registrationDetails.year_started],
-                ])
-              )}
-
-              {renderRegistrationSection(
-                "Qualifications & Experience",
-                <>
-                  {renderTags(registrationDetails.qualifications)}
-                  {isFilled(registrationDetails.qualifications_other) && (
-                    <p className="profile-muted">Other: {registrationDetails.qualifications_other}</p>
-                  )}
-                  {isFilled(registrationDetails.experience_by_qualification) && (
-                    <div className="profile-detail-list">
-                      {Object.entries(registrationDetails.experience_by_qualification || {}).map(([qualification, exp]) => (
-                        <div className="profile-detail-row" key={qualification}>
-                          <span>{qualification}</span>
-                          <strong>{formatExperience(exp)}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {renderRegistrationSection(
-                "Maritime Experience",
-                <>
-                  {renderTags(registrationDetails.vessel_types)}
-                  {isFilled(registrationDetails.vessel_types_other) && (
-                    <p className="profile-muted">Other vessel type: {registrationDetails.vessel_types_other}</p>
-                  )}
-                  {renderTags(registrationDetails.shoreside_experience)}
-                  {isFilled(registrationDetails.shoreside_experience_other) && (
-                    <p className="profile-muted">Other shoreside experience: {registrationDetails.shoreside_experience_other}</p>
-                  )}
-                </>
-              )}
-
-              {renderRegistrationSection(
-                "Surveying Expertise",
-                <>
-                  {renderTags(registrationDetails.surveying_experience)}
-                  {isFilled(registrationDetails.surveying_experience_other) && (
-                    <p className="profile-muted">Other surveying experience: {registrationDetails.surveying_experience_other}</p>
-                  )}
-                  {renderTags(registrationDetails.vessel_type_surveying_experience)}
-                  {isFilled(registrationDetails.vessel_type_surveying_experience_other) && (
-                    <p className="profile-muted">Other vessel types surveyed: {registrationDetails.vessel_type_surveying_experience_other}</p>
-                  )}
-                </>
-              )}
-
-              {renderRegistrationSection(
-                "Accreditations & Courses",
-                <>
-                  {renderTags(registrationDetails.accreditations)}
-                  {isFilled(registrationDetails.accreditations_other) && (
-                    <p className="profile-muted">Other accreditation: {registrationDetails.accreditations_other}</p>
-                  )}
-                  {renderTags(registrationDetails.courses_completed)}
-                  {isFilled(registrationDetails.courses_completed_other) && (
-                    <p className="profile-muted">Other course: {registrationDetails.courses_completed_other}</p>
-                  )}
-                </>
-              )}
-
-              {renderRegistrationSection(
-                "Registration Details",
-                <>
-                  {renderDetailRows([
-                    ["Phone", registrationDetails.phone_number],
-                    ["Mobile", registrationDetails.mobile_number],
-                    ["Email", registrationDetails.email],
-                    ["DOB", [registrationDetails.dob_dd, registrationDetails.dob_mm, registrationDetails.dob_yyyy].filter(Boolean).join("/")],
-                    ["Heard about NexaPort", registrationDetails.heard_about],
-                    ["Street address 1", registrationDetails.street1],
-                    ["Street address 2", registrationDetails.street2],
-                    ["City", registrationDetails.city],
-                    ["Postal code", registrationDetails.postal_code],
-                    ["Country", registrationDetails.country],
-                    ["State/Region", registrationDetails.state_region],
-                  ])}
-                  {arrayValue(registrationDetails.refs).length > 0 && (
-                    <div className="profile-reference-list">
-                      {registrationDetails.refs.map((ref, index) => (
-                        <div className="profile-reference-item" key={`${ref.email}-${index}`}>
-                          <strong>Reference {index + 1}</strong>
-                          <span>{[ref.name, ref.position, ref.companyName].filter(Boolean).join(" · ")}</span>
-                          <span>{[ref.email, ref.phoneNumber].filter(Boolean).join(" · ")}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {(registrationDetails.photo_s3_key || registrationDetails.cv_s3_key) && (
-                    <p className="profile-muted">
-                      Registration photo/CV are stored with the profile. Direct document links are not available in this view.
-                    </p>
-                  )}
-                </>
-              )}
-
-              {renderRegistrationSection(
-                "Inspection Information",
-                renderDetailRows([
-                  ["Inspection cost", registrationDetails.inspection_cost],
-                  ["Marketing consent", registrationDetails.marketing_consent ? "Yes" : "No"],
-                ])
-              )}
-            </>
+          {hasSpecialties && (
+            <article className="profile-card">
+              <h3>Specialties</h3>
+              <div className="tag-list">
+                {expert.specialties.map((item) => (
+                  <span key={item.id || item.name} className="soft-tag">
+                    {item.name || item}
+                  </span>
+                ))}
+              </div>
+            </article>
           )}
 
-          <div className="reviews-header">
-            <h2>Reviews ({reviews.length})</h2>
-
-            {canWriteReview && (
-              <button
-                className="write-review-btn"
-                onClick={() => setShowReviewForm(!showReviewForm)}
-              >
-                <MessageSquare size={16} />
-                Write Review
-              </button>
-            )}
-          </div>
-
-          {showReviewForm && canWriteReview && (
-            <form className="review-form" onSubmit={submitReview}>
-              <div className="form-group">
-                <label>Job Name</label>
-
-                <input
-                  value={reviewForm.job_name}
-                  onChange={(e) =>
-                    setReviewForm({
-                      ...reviewForm,
-                      job_name: e.target.value,
-                    })
-                  }
-                  placeholder="Enter job name"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Rating</label>
-
-                <div className="rating-buttons">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <button
-                      type="button"
-                      key={num}
-                      className={
-                        reviewForm.rating === num
-                          ? "rating-btn active"
-                          : "rating-btn"
-                      }
-                      onClick={() =>
-                        setReviewForm({
-                          ...reviewForm,
-                          rating: num,
-                        })
-                      }
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Comment</label>
-
-                <textarea
-                  rows="4"
-                  value={reviewForm.comment}
-                  onChange={(e) =>
-                    setReviewForm({
-                      ...reviewForm,
-                      comment: e.target.value,
-                    })
-                  }
-                  placeholder="Describe your experience..."
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Reviewer Name</label>
-
-                <input
-                  value={reviewForm.reviewer_name}
-                  onChange={(e) =>
-                    setReviewForm({
-                      ...reviewForm,
-                      reviewer_name: e.target.value,
-                    })
-                  }
-                  placeholder="Company or reviewer name"
-                />
-              </div>
-
-              <div className="review-form-actions">
-                <button type="submit" className="submit-review-btn">
-                  Submit Review
-                </button>
-
-                <button
-                  type="button"
-                  className="cancel-review-btn"
-                  onClick={() => setShowReviewForm(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div className="reviews-list">
-            {reviews.map((review) => (
-              <div key={review.id} className="review-card">
-                <div className="review-top">
-                  <div>
-                    <h4>{review.reviewer_name || "Anonymous"}</h4>
-                    <p>{review.job_name}</p>
+          {hasCertifications && (
+            <article className="profile-card">
+              <h3>Certifications & Accreditations</h3>
+              <div className="cert-list">
+                {expert.certifications.map((item) => (
+                  <div key={item.id || item.name} className="cert-item">
+                    <CheckCircle2 size={18} />
+                    <span>{item.name || item}</span>
                   </div>
-
-                  <div className="review-stars">{"★".repeat(review.rating)}</div>
-                </div>
-
-                <blockquote>“{review.comment}”</blockquote>
-
-                <span className="review-date">
-                  {new Date(review.created_at).toLocaleDateString()}
-                </span>
+                ))}
               </div>
-            ))}
-          </div>
+            </article>
+          )}
+
+          {renderRegistrationSection(
+            "Professional Background",
+            professionalBackground
+          )}
+
+          {registrationDetails &&
+            hasQualifications &&
+            renderRegistrationSection(
+              "Qualifications & Experience",
+              <>
+                {renderTags(registrationDetails.qualifications)}
+                {isFilled(registrationDetails.qualifications_other) && (
+                  <p className="profile-muted">
+                    Other: {registrationDetails.qualifications_other}
+                  </p>
+                )}
+                <div className="profile-detail-list">
+                  {Object.entries(
+                    registrationDetails.experience_by_qualification || {}
+                  )
+                    .filter(([, experience]) =>
+                      isFilled(formatExperience(experience))
+                    )
+                    .map(([qualification, experience]) => (
+                      <div className="profile-detail-row" key={qualification}>
+                        <span>{qualification}</span>
+                        <strong>{formatExperience(experience)}</strong>
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+
+          {registrationDetails &&
+            hasMaritimeExperience &&
+            renderRegistrationSection(
+              "Maritime Experience",
+              <>
+                {renderTags(registrationDetails.vessel_types)}
+                {isFilled(registrationDetails.vessel_types_other) && (
+                  <p className="profile-muted">
+                    Other vessel type: {registrationDetails.vessel_types_other}
+                  </p>
+                )}
+                {renderTags(registrationDetails.shoreside_experience)}
+                {isFilled(registrationDetails.shoreside_experience_other) && (
+                  <p className="profile-muted">
+                    Other shoreside experience:{" "}
+                    {registrationDetails.shoreside_experience_other}
+                  </p>
+                )}
+              </>
+            )}
+
+          {registrationDetails &&
+            hasSurveyingExpertise &&
+            renderRegistrationSection(
+              "Surveying Expertise",
+              <>
+                {renderTags(registrationDetails.surveying_experience)}
+                {isFilled(registrationDetails.surveying_experience_other) && (
+                  <p className="profile-muted">
+                    Other surveying experience:{" "}
+                    {registrationDetails.surveying_experience_other}
+                  </p>
+                )}
+                {renderTags(
+                  registrationDetails.vessel_type_surveying_experience
+                )}
+                {isFilled(
+                  registrationDetails.vessel_type_surveying_experience_other
+                ) && (
+                  <p className="profile-muted">
+                    Other vessel types surveyed:{" "}
+                    {
+                      registrationDetails.vessel_type_surveying_experience_other
+                    }
+                  </p>
+                )}
+              </>
+            )}
+
+          {registrationDetails &&
+            hasAccreditations &&
+            renderRegistrationSection(
+              "Accreditations & Courses",
+              <>
+                {renderTags(registrationDetails.accreditations)}
+                {isFilled(registrationDetails.accreditations_other) && (
+                  <p className="profile-muted">
+                    Other accreditation:{" "}
+                    {registrationDetails.accreditations_other}
+                  </p>
+                )}
+                {renderTags(registrationDetails.courses_completed)}
+                {isFilled(registrationDetails.courses_completed_other) && (
+                  <p className="profile-muted">
+                    Other course: {registrationDetails.courses_completed_other}
+                  </p>
+                )}
+              </>
+            )}
         </div>
 
-        <div className="right-column">
-          <div className="profile-side-card">
+        <aside className="right-column">
+          <section className="profile-side-card">
             <h3>At a Glance</h3>
-
             <div className="side-row">
               <Briefcase size={18} />
-              {expert.jobs_completed || 0} jobs completed
+              <span>{expert.jobs_completed || 0} jobs completed</span>
             </div>
+          </section>
 
-            <div className="side-row">
-              <Shield size={18} />${expert.day_rate_usd}/day
-            </div>
-          </div>
+          {registrationDetails && (
+            <section className="profile-side-card inspection-card">
+              <h3>Inspection Information</h3>
+              {renderDetailRows([
+                ["Inspection cost", registrationDetails.inspection_cost],
+                [
+                  "Marketing consent",
+                  registrationDetails.marketing_consent ? "Yes" : "No",
+                ],
+              ])}
+            </section>
+          )}
 
-          <div className="profile-side-card">
-            <h3>Vessel Expertise</h3>
+          {hasVesselExpertise && (
+            <section className="profile-side-card">
+              <h3>Vessel Expertise</h3>
+              <div className="tag-list">
+                {expert.vessel_types.map((item) => (
+                  <span key={item.id || item.name} className="vessel-tag">
+                    {item.name || item}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
 
-            <div className="tag-list">
-              {expert.vessel_types?.map((item) => (
-                <span key={item.id || item.name} className="vessel-tag">
-                  {item.name || item}
-                </span>
-              ))}
-            </div>
-          </div>
+          {hasPorts && (
+            <section className="profile-side-card">
+              <h3>Ports Covered</h3>
+              <div className="tag-list">
+                {expert.ports.map((item) => (
+                  <span key={item.id || item.port_name} className="soft-tag">
+                    {item.port_name || item.name || item}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
 
-          <div className="profile-side-card">
-            <h3>Ports Covered</h3>
+          {hasLanguages && (
+            <section className="profile-side-card">
+              <h3>Languages</h3>
+              <div className="tag-list">
+                {expert.languages.map((item) => (
+                  <span key={item.id || item.language_name} className="soft-tag">
+                    {item.language_name || item.name || item}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
+      </section>
 
-            <div className="tag-list">
-              {expert.ports?.map((item) => (
-                <span key={item.id || item.port_name} className="soft-tag">
-                  {item.port_name || item.name || item}
-                </span>
-              ))}
-            </div>
-          </div>
+      {registrationDetails && (
+        <section className="profile-lower-grid">
+          <article className="profile-card registration-card">
+            <h3>Registration Details</h3>
+            {renderDetailRows([
+              ["Phone", registrationDetails.phone_number],
+              ["Mobile", registrationDetails.mobile_number],
+              ["Email", registrationDetails.email],
+              [
+                "DOB",
+                [
+                  registrationDetails.dob_dd,
+                  registrationDetails.dob_mm,
+                  registrationDetails.dob_yyyy,
+                ]
+                  .filter(Boolean)
+                  .join("/"),
+              ],
+              ["Heard about NexaPort", registrationDetails.heard_about],
+              ["Street address 1", registrationDetails.street1],
+              ["Street address 2", registrationDetails.street2],
+              ["City", registrationDetails.city],
+              ["Postal code", registrationDetails.postal_code],
+              ["Country", registrationDetails.country],
+              ["State/Region", registrationDetails.state_region],
+            ])}
 
-          <div className="profile-side-card">
-            <h3>Languages</h3>
+            {arrayValue(registrationDetails.refs).length > 0 && (
+              <div className="profile-reference-list">
+                {registrationDetails.refs.map((reference, index) => (
+                  <section
+                    className="profile-reference-item"
+                    key={`${reference.email}-${index}`}
+                  >
+                    <h4>Reference {index + 1}</h4>
+                    <dl>
+                      {[
+                        ["Name", reference.name],
+                        ["Email", reference.email],
+                        ["Phone", reference.phoneNumber],
+                        ["Position", reference.position],
+                        ["Company", reference.companyName],
+                      ]
+                        .filter(([, value]) => isFilled(value))
+                        .map(([label, value]) => (
+                          <div key={label}>
+                            <dt>{label}</dt>
+                            <dd>{value}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                  </section>
+                ))}
+              </div>
+            )}
+          </article>
 
-            <div className="tag-list">
-              {expert.languages?.map((item) => (
-                <span key={item.id || item.language_name} className="soft-tag">
-                  {item.language_name || item.name || item}
-                </span>
-              ))}
-            </div>
-          </div>
+        </section>
+      )}
+
+      <section className="profile-card reviews-section">
+        <div className="reviews-header">
+          <h2>Reviews ({reviews.length})</h2>
+          {canWriteReview && (
+            <button
+              className="write-review-btn"
+              onClick={() => setShowReviewForm(!showReviewForm)}
+            >
+              <MessageSquare size={16} />
+              Write Review
+            </button>
+          )}
         </div>
+
+        {showReviewForm && canWriteReview && (
+          <form className="review-form" onSubmit={submitReview}>
+            <h3>Write a Review</h3>
+            <div className="form-group">
+              <label>Job Name</label>
+              <input
+                value={reviewForm.job_name}
+                onChange={(e) =>
+                  setReviewForm({ ...reviewForm, job_name: e.target.value })
+                }
+                placeholder="Enter job name"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Rating</label>
+              <div className="rating-buttons">
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <button
+                    type="button"
+                    key={num}
+                    className={`rating-btn ${
+                      num <= reviewForm.rating ? "active" : ""
+                    }`}
+                    aria-pressed={num <= reviewForm.rating}
+                    aria-label={`Rate ${num} out of 5`}
+                    onClick={() =>
+                      setReviewForm({ ...reviewForm, rating: num })
+                    }
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Comment</label>
+              <textarea
+                rows="4"
+                value={reviewForm.comment}
+                onChange={(e) =>
+                  setReviewForm({ ...reviewForm, comment: e.target.value })
+                }
+                placeholder="Describe your experience..."
+              />
+            </div>
+            <div className="form-group">
+              <label>Reviewer Name</label>
+              <input
+                value={reviewForm.reviewer_name}
+                onChange={(e) =>
+                  setReviewForm({
+                    ...reviewForm,
+                    reviewer_name: e.target.value,
+                  })
+                }
+                placeholder="Company or reviewer name"
+              />
+            </div>
+            {reviewError && (
+              <p className="review-form-error" role="alert">
+                {reviewError}
+              </p>
+            )}
+            <div className="review-form-actions">
+              <button type="submit" className="submit-review-btn">
+                Submit Review
+              </button>
+              <button
+                type="button"
+                className="cancel-review-btn"
+                onClick={cancelReview}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {reviews.length ? (
+          <div className="reviews-list">
+            {reviews.map((review) => (
+              <article key={review.id} className="review-card">
+                {editingReviewId === review.id ? (
+                  <div className="review-edit-form">
+                    <div className="form-group">
+                      <label>Job Name</label>
+                      <input
+                        value={reviewEditForm?.job_name || ""}
+                        onChange={(event) =>
+                          setReviewEditForm({
+                            ...reviewEditForm,
+                            job_name: event.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Rating</label>
+                      <div className="rating-buttons">
+                        {[1, 2, 3, 4, 5].map((num) => (
+                          <button
+                            type="button"
+                            key={num}
+                            className={`rating-btn ${
+                              num <= Number(reviewEditForm?.rating)
+                                ? "active"
+                                : ""
+                            }`}
+                            aria-pressed={
+                              num <= Number(reviewEditForm?.rating)
+                            }
+                            aria-label={`Rate ${num} out of 5`}
+                            onClick={() =>
+                              setReviewEditForm({
+                                ...reviewEditForm,
+                                rating: num,
+                              })
+                            }
+                          >
+                            {num}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Comment</label>
+                      <textarea
+                        rows="4"
+                        value={reviewEditForm?.comment || ""}
+                        onChange={(event) =>
+                          setReviewEditForm({
+                            ...reviewEditForm,
+                            comment: event.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Reviewer Name</label>
+                      <input
+                        value={reviewEditForm?.reviewer_name || ""}
+                        onChange={(event) =>
+                          setReviewEditForm({
+                            ...reviewEditForm,
+                            reviewer_name: event.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    {reviewEditError && (
+                      <p className="review-form-error" role="alert">
+                        {reviewEditError}
+                      </p>
+                    )}
+                    <div className="review-form-actions">
+                      <button
+                        type="button"
+                        className="submit-review-btn"
+                        disabled={reviewEditSaving}
+                        onClick={() => saveEditedReview(review.id)}
+                      >
+                        {reviewEditSaving ? "Saving..." : "Save Review"}
+                      </button>
+                      <button
+                        type="button"
+                        className="cancel-review-btn"
+                        disabled={reviewEditSaving}
+                        onClick={cancelEditingReview}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="review-top">
+                      <div>
+                        <h4>{review.reviewer_name || "Anonymous"}</h4>
+                        {review.job_name && <p>{review.job_name}</p>}
+                      </div>
+                      <div className="review-header-actions">
+                        <div
+                          className="review-stars"
+                          aria-label={`${review.rating} out of 5 stars`}
+                        >
+                          {"★".repeat(review.rating)}
+                        </div>
+                        {review.can_edit === true && (
+                          <button
+                            type="button"
+                            className="edit-review-btn"
+                            onClick={() => startEditingReview(review)}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <blockquote>“{review.comment}”</blockquote>
+                    <span className="review-date">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </span>
+                  </>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="reviews-empty">No reviews yet.</p>
+        )}
       </section>
     </main>
   );

@@ -13,8 +13,9 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { getRoleId } from "../../utils/auth";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
+  CONSULTANT_PHOTO_UPDATED_EVENT,
   clearConsultantPhotoCache,
-  getCurrentConsultantPhoto,
+  getCurrentConsultant,
 } from "../../utils/consultantPhotoCache";
 import "./Navbar.css";
 
@@ -26,6 +27,7 @@ export default function Navbar() {
   const storedUser = localStorage.getItem("np_user");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const [photoUrl, setPhotoUrl] = useState(null);
+  const [expertId, setExpertId] = useState(null);
 
   const roleId = getRoleId();
   const isClient = roleId === 3;
@@ -38,12 +40,18 @@ export default function Navbar() {
       return undefined;
     }
 
-    getCurrentConsultantPhoto({ id: userId, role_id: roleId })
-      .then((url) => {
-        if (active) setPhotoUrl(url);
+    getCurrentConsultant({ id: userId, role_id: roleId })
+      .then((consultant) => {
+        if (active) {
+          setPhotoUrl(consultant.photoUrl);
+          setExpertId(consultant.expertId);
+        }
       })
       .catch(() => {
-        if (active) setPhotoUrl(null);
+        if (active) {
+          setPhotoUrl(null);
+          setExpertId(null);
+        }
       });
 
     return () => {
@@ -61,6 +69,27 @@ export default function Navbar() {
     if (menuOpen) document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [menuOpen]);
+
+  useEffect(() => {
+    const handlePhotoUpdated = (event) => {
+      if (Number(event.detail?.userId) !== Number(userId)) return;
+
+      setPhotoUrl(event.detail?.photoUrl || null);
+      if (event.detail?.expertId) {
+        setExpertId(event.detail.expertId);
+      }
+    };
+
+    window.addEventListener(
+      CONSULTANT_PHOTO_UPDATED_EVENT,
+      handlePhotoUpdated
+    );
+    return () =>
+      window.removeEventListener(
+        CONSULTANT_PHOTO_UPDATED_EVENT,
+        handlePhotoUpdated
+      );
+  }, [userId]);
 
   const handleLogout = () => {
     clearConsultantPhotoCache(userId);
@@ -141,7 +170,11 @@ export default function Navbar() {
             <button
               className="np-profile-menu-item"
               onClick={() => {
-                navigate("/profile");
+                const destination =
+                  roleId === 2 && expertId
+                    ? `/experts/${expertId}`
+                    : "/profile";
+                navigate(destination);
                 setMenuOpen(false);
               }}
             >

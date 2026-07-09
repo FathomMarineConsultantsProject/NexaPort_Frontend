@@ -540,19 +540,24 @@
 .rating-buttons button {
   width: 48px;
   height: 48px;
-  border: none;
+  border: 1px solid #9ddbd5;
   border-radius: 8px;
-  background: #149d94;
-  color: white;
+  background: #f2fbfa;
+  color: #087c73;
   font-size: 16px;
   font-weight: 800;
   cursor: pointer;
-  opacity: 0.7;
 }
 
 .rating-buttons button.active {
-  opacity: 1;
-  box-shadow: 0 0 0 3px rgba(20, 157, 148, 0.18);
+  border-color: #087c73;
+  background: #087c73;
+  color: #fff;
+}
+
+.rating-buttons button:focus-visible {
+  outline: 3px solid rgba(20, 157, 148, 0.35);
+  outline-offset: 2px;
 }
 
 .inline-review-card textarea,
@@ -575,4 +580,19 @@
   display: flex;
   gap: 12px;
   margin-top: 18px;
+}
+
+@media (max-width: 480px) {
+  .inline-review-card {
+    padding: 16px;
+  }
+
+  .rating-buttons button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .review-actions {
+    flex-wrap: wrap;
+  }
 }

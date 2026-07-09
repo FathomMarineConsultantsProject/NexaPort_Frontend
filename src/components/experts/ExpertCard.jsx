@@ -9,6 +9,10 @@ export default function ExpertCard({ expert }) {
     const name = expert.full_name || "Unnamed Expert";
     const rating = Number(expert.rating || 0).toFixed(1);
     const reviewCount = Number(expert.review_count || 0);
+    const inspectionCost =
+        typeof expert.inspection_cost === "string" && expert.inspection_cost.trim()
+            ? expert.inspection_cost
+            : "Contact for quotation";
 
     const specialties = expert.specialties?.length
         ? expert.specialties.map((item) => item.name || item)
@@ -81,10 +85,7 @@ export default function ExpertCard({ expert }) {
                         {expert.jobs_completed || 0} jobs
                     </span>
 
-                    <strong>
-                        ${Number(expert.day_rate_usd || 850).toLocaleString()}
-                        <small>/ day</small>
-                    </strong>
+                    <strong className="expert-inspection-cost">{inspectionCost}</strong>
                 </div>
             </div>
 

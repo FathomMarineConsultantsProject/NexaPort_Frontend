@@ -28,7 +28,7 @@ export default function ServiceRequestDetails() {
 
   const [reviewQuoteId, setReviewQuoteId] = useState(null);
   const [reviewForm, setReviewForm] = useState({
-    rating: 5,
+    rating: 0,
     comment: "",
     reviewer_name: "",
   });
@@ -136,6 +136,7 @@ export default function ServiceRequestDetails() {
   const submitReview = async (quote) => {
     try {
       const expertId = quote.expertId || quote.expert_id;
+      const rating = Number(reviewForm.rating);
 
       if (!expertId) {
         setToast("Expert ID missing for this accepted quote.");
@@ -143,10 +144,16 @@ export default function ServiceRequestDetails() {
         return;
       }
 
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        setToast("Select a rating from 1 to 5.");
+        setTimeout(() => setToast(""), 3000);
+        return;
+      }
+
       await createExpertReview(expertId, {
         serviceRequestId: Number(request.id || id),
         job_name: request.title,
-        rating: Number(reviewForm.rating),
+        rating,
         comment: reviewForm.comment,
         reviewer_name:
           reviewForm.reviewer_name ||
@@ -158,7 +165,7 @@ export default function ServiceRequestDetails() {
       setToast("Review submitted successfully.");
       setReviewQuoteId(null);
       setReviewForm({
-        rating: 5,
+        rating: 0,
         comment: "",
         reviewer_name: "",
       });
@@ -169,6 +176,15 @@ export default function ServiceRequestDetails() {
       setToast(error.response?.data?.message || "Failed to submit review.");
       setTimeout(() => setToast(""), 3000);
     }
+  };
+
+  const cancelReview = () => {
+    setReviewQuoteId(null);
+    setReviewForm({
+      rating: 0,
+      comment: "",
+      reviewer_name: "",
+    });
   };
 
   if (!request) {
@@ -472,9 +488,18 @@ export default function ServiceRequestDetails() {
                     <button
                       type="button"
                       className="primary-btn"
-                      onClick={() =>
-                        setReviewQuoteId(reviewQuoteId === quote.id ? null : quote.id)
-                      }
+                      onClick={() => {
+                        if (reviewQuoteId === quote.id) {
+                          cancelReview();
+                        } else {
+                          setReviewQuoteId(quote.id);
+                          setReviewForm({
+                            rating: 0,
+                            comment: "",
+                            reviewer_name: "",
+                          });
+                        }
+                      }}
                     >
                       Rate & Review Consultant
                     </button>
@@ -489,7 +514,11 @@ export default function ServiceRequestDetails() {
                             <button
                               key={num}
                               type="button"
-                              className={reviewForm.rating === num ? "active" : ""}
+                              className={
+                                num <= reviewForm.rating ? "active" : ""
+                              }
+                              aria-pressed={num <= reviewForm.rating}
+                              aria-label={`Rate ${num} out of 5`}
                               onClick={() =>
                                 setReviewForm({ ...reviewForm, rating: num })
                               }
@@ -532,7 +561,7 @@ export default function ServiceRequestDetails() {
                           <button
                             type="button"
                             className="secondary-btn"
-                            onClick={() => setReviewQuoteId(null)}
+                            onClick={cancelReview}
                           >
                             Cancel
                           </button>

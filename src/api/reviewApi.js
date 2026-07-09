@@ -10,6 +10,11 @@ export const createExpertReview = async (expertId, payload) => {
   return res.data;
 };
 
+export const updateExpertReview = async (reviewId, payload) => {
+  const res = await axiosClient.patch(`/experts/reviews/${reviewId}`, payload);
+  return res.data;
+};
+
 export const deleteExpertReview = async (reviewId) => {
   const res = await axiosClient.delete(`/experts/reviews/${reviewId}`);
   return res.data;

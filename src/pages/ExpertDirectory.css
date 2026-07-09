@@ -252,8 +252,9 @@
 
 .expert-meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
   padding: 4px 0;
 }
 
@@ -264,18 +265,19 @@
   gap: 6px;
   font-size: 14px;
   font-weight: 400;
+  flex-shrink: 0;
 }
 
-.expert-meta strong {
+.expert-inspection-cost {
   color: #149d94;
   font-size: 18px;
   font-weight: 700;
-}
-
-.expert-meta small {
-  color: #64748b;
-  font-weight: 400;
-  font-size: 13px;
+  line-height: 1.35;
+  max-width: 60%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  white-space: normal;
 }
 
 .profile-link {
