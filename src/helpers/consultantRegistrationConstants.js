@@ -160,10 +160,7 @@ export const initialConsultantRegistration = {
   vesselTypeSurveyingExperience: [],
   accreditations: [],
   coursesCompleted: [],
-  references: [
-    { name: "", email: "", phoneNumber: "", position: "", companyName: "" },
-    { name: "", email: "", phoneNumber: "", position: "", companyName: "" },
-  ],
+  references: [],
   photoFile: null,
   cvFile: null,
   inspectionCost: "",

@@ -86,7 +86,7 @@ const steps = [
   {
     id: "references",
     eyebrow: "06",
-    title: "References",
+    title: "Professional References",
     fields: ["references"],
     ownsError: (key) => key.startsWith("ref_"),
   },
@@ -113,6 +113,24 @@ const blockedCompanies = ["fathom marine consultants", "fathom marine"];
 
 const hasOther = (items) => items.includes("Other") || items.includes("other");
 const stepOwnsError = (step, key) => step.fields.includes(key) || step.ownsError?.(key);
+const emptyReference = () => ({
+  name: "",
+  email: "",
+  phoneNumber: "",
+  position: "",
+  companyName: "",
+});
+const normalizeReference = (ref) => ({
+  name: String(ref?.name || "").trim(),
+  email: String(ref?.email || "").trim(),
+  phoneNumber: String(ref?.phoneNumber || "").trim(),
+  position: String(ref?.position || "").trim(),
+  companyName: String(ref?.companyName || "").trim(),
+});
+const hasReferenceValue = (ref) =>
+  Object.values(normalizeReference(ref)).some((value) => value);
+const normalizeReferences = (refs) =>
+  refs.map(normalizeReference).filter(hasReferenceValue);
 
 export default function RegisterConsultant() {
   const [formData, setFormData] = useState(initialConsultantRegistration);
@@ -214,19 +232,30 @@ export default function RegisterConsultant() {
   const addReference = () => {
     setFormData((prev) => ({
       ...prev,
-      references: [
-        ...prev.references,
-        { name: "", email: "", phoneNumber: "", position: "", companyName: "" },
-      ],
+      references: [...prev.references, emptyReference()],
     }));
   };
 
   const removeReference = (index) => {
-    if (index < 2) return;
     setFormData((prev) => ({
       ...prev,
       references: prev.references.filter((_, i) => i !== index),
     }));
+    setErrors((prev) => {
+      const next = {};
+      Object.entries(prev).forEach(([key, value]) => {
+        const match = key.match(/^ref_(\d+)_(.+)$/);
+        if (!match) {
+          next[key] = value;
+          return;
+        }
+        const refIndex = Number(match[1]);
+        const field = match[2];
+        if (refIndex < index) next[key] = value;
+        if (refIndex > index) next[`ref_${refIndex - 1}_${field}`] = value;
+      });
+      return next;
+    });
   };
 
   const validate = () => {
@@ -330,31 +359,27 @@ export default function RegisterConsultant() {
     });
 
     formData.references.forEach((ref, index) => {
-      const hasAny = Object.values(ref).some((value) => String(value || "").trim());
-      if (index < 2 || hasAny) {
-        if (!ref.name.trim()) nextErrors[`ref_${index}_name`] = "Reference name is required.";
-        if (!ref.email.trim() || !/^\S+@\S+\.\S+$/.test(ref.email.trim())) {
-          nextErrors[`ref_${index}_email`] = "Reference email is invalid.";
-        }
-        if (!ref.phoneNumber.trim()) {
-          nextErrors[`ref_${index}_phoneNumber`] = "Reference phone is required.";
-        }
-        if (!ref.position.trim()) {
-          nextErrors[`ref_${index}_position`] = "Reference position is required.";
-        }
-        if (!ref.companyName.trim()) {
-          nextErrors[`ref_${index}_companyName`] = "Reference company is required.";
-        }
+      const normalizedRef = normalizeReference(ref);
+      const hasAny = hasReferenceValue(normalizedRef);
+      if (!hasAny) return;
+
+      if (!normalizedRef.name) nextErrors[`ref_${index}_name`] = "Reference name is required.";
+      if (!normalizedRef.email && !normalizedRef.phoneNumber) {
+        nextErrors[`ref_${index}_email`] = "Add an email or phone number.";
+        nextErrors[`ref_${index}_phoneNumber`] = "Add an email or phone number.";
+      }
+      if (normalizedRef.email && !/^\S+@\S+\.\S+$/.test(normalizedRef.email)) {
+        nextErrors[`ref_${index}_email`] = "Reference email is invalid.";
       }
 
-      if (blockedEmails.includes(ref.email.trim().toLowerCase())) {
+      if (blockedEmails.includes(normalizedRef.email.toLowerCase())) {
         nextErrors[`ref_${index}_email`] = "This email cannot be used as reference.";
       }
-      if (blockedPhones.includes(ref.phoneNumber.trim())) {
+      if (blockedPhones.includes(normalizedRef.phoneNumber)) {
         nextErrors[`ref_${index}_phoneNumber`] =
           "This phone cannot be used as reference.";
       }
-      if (blockedCompanies.includes(ref.companyName.trim().toLowerCase())) {
+      if (blockedCompanies.includes(normalizedRef.companyName.toLowerCase())) {
         nextErrors[`ref_${index}_companyName`] =
           "This company cannot be used as reference.";
       }
@@ -434,6 +459,7 @@ export default function RegisterConsultant() {
       ...payload,
       username: formData.username.trim(),
       email: formData.email.trim(),
+      references: normalizeReferences(formData.references),
       ports: formData.ports.map((port) => port.port_name),
       photoS3Key,
       cvS3Key,
@@ -738,9 +764,15 @@ export default function RegisterConsultant() {
       case "references":
         return (
           <>
+            <div className="consultant-reference-intro">
+              <span>Optional</span>
+              <p>
+                You can add professional references now or update them later from your consultant profile.
+              </p>
+            </div>
             <div className="consultant-step-tools">
               <button type="button" onClick={addReference} className="consultant-secondary">
-                + Add another reference
+                + Add reference
               </button>
             </div>
             {formData.references.map((ref, index) => (
@@ -748,13 +780,10 @@ export default function RegisterConsultant() {
                 <div className="consultant-reference-head">
                   <div>
                     <h3>Reference {index + 1}</h3>
-                    {index < 2 && <span>Required</span>}
                   </div>
-                  {index >= 2 && (
-                    <button type="button" onClick={() => removeReference(index)} className="consultant-link-btn">
-                      Remove
-                    </button>
-                  )}
+                  <button type="button" onClick={() => removeReference(index)} className="consultant-link-btn">
+                    Remove
+                  </button>
                 </div>
                 <div className="consultant-grid">
                   {["name", "email", "phoneNumber", "position", "companyName"].map((field) => (
