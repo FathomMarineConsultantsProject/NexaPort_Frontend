@@ -1,5 +1,6 @@
 import {
   Anchor,
+  BadgeCheck,
   Briefcase,
   Flag,
   Grid2X2,
@@ -123,6 +124,10 @@ export default function Navbar() {
 
         <NavLink to="/flag">
           <Flag size={17} /> Flag
+        </NavLink>
+
+        <NavLink to="/accredited-inspectors">
+          <BadgeCheck size={17} /> Accredited
         </NavLink>
 
         <NavLink to="/fleet">

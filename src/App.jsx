@@ -16,6 +16,7 @@ import FleetManagement from "./pages/FleetManagement";
 import PortDirectory from "./pages/PortDirectory";
 import FlagDirectory from "./pages/FlagDirectory";
 import FlagInspectorProfile from "./pages/FlagInspectorProfile";
+import AccreditedInspectorDirectory from "./pages/AccreditedInspectorDirectory";
 
 import PostServiceRequest from "./pages/PostServiceRequest";
 import ServiceRequestDetails from "./pages/ServiceRequestDetails";
@@ -132,6 +133,14 @@ export default function App() {
                   <Route
                     path="/flag/:flagSlug/inspectors/:inspectorId"
                     element={<FlagInspectorProfile />}
+                  />
+                  <Route
+                    path="/accredited-inspectors"
+                    element={<AccreditedInspectorDirectory />}
+                  />
+                  <Route
+                    path="/accredited-inspectors/:schemeSlug"
+                    element={<AccreditedInspectorDirectory />}
                   />
                   <Route path="/ports" element={<PortDirectory />} />
                   <Route path="/profile" element={<UserProfile />} />
