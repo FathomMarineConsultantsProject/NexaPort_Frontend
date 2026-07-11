@@ -155,6 +155,8 @@ export const initialConsultantRegistration = {
   experienceByQualification: {},
   vesselTypes: [],
   ports: [],
+  providesFlagStateInspectionServices: false,
+  flagServices: [],
   shoresideExperience: [],
   surveyingExperience: [],
   vesselTypeSurveyingExperience: [],

@@ -408,6 +408,147 @@
   background: #f8fafc;
 }
 
+.consultant-flag-services {
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.consultant-flag-services-head h3 {
+  margin: 0 0 4px;
+  color: #071b39;
+  font-size: 17px;
+}
+
+.consultant-flag-services-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.consultant-flag-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.consultant-flag-label {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.consultant-flag-label span {
+  color: #dc2626;
+}
+
+.consultant-flag-tags,
+.consultant-flag-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consultant-flag-tags span {
+  min-height: 32px;
+  border-radius: 6px;
+  background: #e9f0f7;
+  color: #001b3f;
+  padding: 0 8px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.consultant-flag-tags button {
+  border: none;
+  background: transparent;
+  color: #526c9d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.consultant-flag-options button,
+.consultant-flag-options span {
+  min-height: 32px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.consultant-flag-options button {
+  cursor: pointer;
+}
+
+.consultant-flag-options button:hover {
+  border-color: #99e4dc;
+  color: #0f766e;
+}
+
+.consultant-flag-options span.error {
+  color: #dc2626;
+}
+
+.consultant-flag-coverage {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.consultant-flag-coverage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.consultant-flag-coverage-head h4 {
+  margin: 0;
+  color: #071b39;
+  font-size: 15px;
+}
+
+.consultant-flag-coverage-head button,
+.consultant-remove-coverage {
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #071b39;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.consultant-flag-coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.consultant-remove-coverage {
+  width: fit-content;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
 @media (max-width: 860px) {
   .consultant-header {
     align-items: flex-start;
@@ -444,7 +585,8 @@
 @media (max-width: 700px) {
   .consultant-grid,
   .consultant-choice-grid,
-  .consultant-choice-row {
+  .consultant-choice-row,
+  .consultant-flag-coverage-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ACCREDITATIONS,
@@ -19,6 +19,7 @@ import {
   presignConsultantUpload,
   registerConsultant,
 } from "../api/consultantRegistrationApi";
+import { getFlags } from "../api/flagApi";
 import "./RegisterConsultant.css";
 
 const steps = [
@@ -69,6 +70,8 @@ const steps = [
     title: "Maritime expertise",
     fields: [
       "ports",
+      "providesFlagStateInspectionServices",
+      "flagServices",
       "vesselTypes",
       "vesselTypesOther",
       "shoresideExperience",
@@ -139,6 +142,10 @@ export default function RegisterConsultant() {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const [flagOptions, setFlagOptions] = useState([]);
+  const [flagSearch, setFlagSearch] = useState("");
+  const [flagsLoading, setFlagsLoading] = useState(false);
+  const [flagsError, setFlagsError] = useState("");
 
   const showCompanyName = useMemo(
     () =>
@@ -149,10 +156,39 @@ export default function RegisterConsultant() {
 
   const currentStep = steps[activeStep];
 
+  useEffect(() => {
+    let active = true;
+
+    const loadFlags = async () => {
+      setFlagsLoading(true);
+      setFlagsError("");
+
+      try {
+        const response = await getFlags();
+        if (active) setFlagOptions(response.flags || []);
+      } catch (error) {
+        if (active) {
+          setFlagsError(error.response?.data?.message || "Unable to load Flags.");
+        }
+      } finally {
+        if (active) setFlagsLoading(false);
+      }
+    };
+
+    loadFlags();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const setField = (name, value) => {
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
       if (name === "employmentStatus" && value === "self") next.companyName = "";
+      if (name === "providesFlagStateInspectionServices" && value === false) {
+        next.flagServices = [];
+      }
       return next;
     });
     setErrors((prev) => {
@@ -190,6 +226,91 @@ export default function RegisterConsultant() {
       delete copy[`exp_${value}`];
       return copy;
     });
+  };
+
+  const selectedFlagIds = new Set(formData.flagServices.map((item) => Number(item.flagId)));
+  const selectedFlags = formData.flagServices
+    .map((service) => flagOptions.find((flag) => Number(flag.id) === Number(service.flagId)))
+    .filter(Boolean);
+  const filteredFlags = flagOptions.filter((flag) => {
+    const matches = flag.name.toLowerCase().includes(flagSearch.trim().toLowerCase());
+    return matches && !selectedFlagIds.has(Number(flag.id));
+  });
+
+  const addFlagService = (flag) => {
+    if (selectedFlagIds.has(Number(flag.id))) return;
+    setFormData((prev) => ({
+      ...prev,
+      flagServices: [
+        ...prev.flagServices,
+        {
+          flagId: flag.id,
+          coverage: [{ country: "", region: "", location: "", coverageNote: "" }],
+        },
+      ],
+    }));
+    setFlagSearch("");
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy.flagServices;
+      return copy;
+    });
+  };
+
+  const removeFlagService = (flagId) => {
+    setFormData((prev) => ({
+      ...prev,
+      flagServices: prev.flagServices.filter(
+        (service) => Number(service.flagId) !== Number(flagId)
+      ),
+    }));
+  };
+
+  const updateFlagCoverage = (flagId, index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      flagServices: prev.flagServices.map((service) => {
+        if (Number(service.flagId) !== Number(flagId)) return service;
+
+        return {
+          ...service,
+          coverage: service.coverage.map((coverage, coverageIndex) =>
+            coverageIndex === index ? { ...coverage, [field]: value } : coverage
+          ),
+        };
+      }),
+    }));
+  };
+
+  const addFlagCoverage = (flagId) => {
+    setFormData((prev) => ({
+      ...prev,
+      flagServices: prev.flagServices.map((service) =>
+        Number(service.flagId) === Number(flagId)
+          ? {
+              ...service,
+              coverage: [
+                ...service.coverage,
+                { country: "", region: "", location: "", coverageNote: "" },
+              ],
+            }
+          : service
+      ),
+    }));
+  };
+
+  const removeFlagCoverage = (flagId, index) => {
+    setFormData((prev) => ({
+      ...prev,
+      flagServices: prev.flagServices.map((service) =>
+        Number(service.flagId) === Number(flagId)
+          ? {
+              ...service,
+              coverage: service.coverage.filter((_, coverageIndex) => coverageIndex !== index),
+            }
+          : service
+      ),
+    }));
   };
 
   const updateExperience = (qualification, field, value) => {
@@ -324,6 +445,25 @@ export default function RegisterConsultant() {
     }
     if (!formData.vesselTypes.length) {
       nextErrors.vesselTypes = "Select at least one vessel type.";
+    }
+    if (formData.providesFlagStateInspectionServices) {
+      if (!formData.flagServices.length) {
+        nextErrors.flagServices = "Select at least one Flag served.";
+      }
+
+      formData.flagServices.forEach((service) => {
+        const validCoverage = (service.coverage || []).filter((coverage) =>
+          Object.values(coverage).some((value) => String(value || "").trim())
+        );
+
+        if (!validCoverage.length) {
+          nextErrors.flagServices = "Each selected Flag requires at least one coverage area.";
+        }
+
+        if (validCoverage.some((coverage) => !String(coverage.country || "").trim())) {
+          nextErrors.flagServices = "Country is required for each Flag coverage area.";
+        }
+      });
     }
     if (!formData.photoFile) nextErrors.photoFile = "Profile photo is required.";
     if (!formData.cvFile) nextErrors.cvFile = "CV file is required.";
@@ -461,6 +601,24 @@ export default function RegisterConsultant() {
       email: formData.email.trim(),
       references: normalizeReferences(formData.references),
       ports: formData.ports.map((port) => port.port_name),
+      providesFlagStateInspectionServices: Boolean(
+        formData.providesFlagStateInspectionServices
+      ),
+      flagServices: formData.providesFlagStateInspectionServices
+        ? formData.flagServices.map((service) => ({
+            flagId: service.flagId,
+            coverage: service.coverage
+              .map((coverage) => ({
+                country: String(coverage.country || "").trim(),
+                region: String(coverage.region || "").trim(),
+                location: String(coverage.location || "").trim(),
+                coverageNote: String(coverage.coverageNote || "").trim(),
+              }))
+              .filter((coverage) =>
+                Object.values(coverage).some((value) => String(value || "").trim())
+              ),
+          }))
+        : [],
       photoS3Key,
       cvS3Key,
     };
@@ -593,6 +751,163 @@ export default function RegisterConsultant() {
       </div>
       {errors[key] && <p className="consultant-error">{errors[key]}</p>}
     </div>
+  );
+
+  const renderFlagServices = () => (
+    <section className="consultant-flag-services consultant-wide">
+      <div className="consultant-flag-services-head">
+        <div>
+          <h3>Flag State Inspection Services</h3>
+          <p>Declare current Flag State inspection services offered through NexaPort.</p>
+        </div>
+      </div>
+
+      <div className="consultant-choice-row">
+        {[
+          [true, "Yes"],
+          [false, "No"],
+        ].map(([value, label]) => (
+          <label className="consultant-choice" key={label}>
+            <input
+              type="radio"
+              name="providesFlagStateInspectionServices"
+              checked={formData.providesFlagStateInspectionServices === value}
+              onChange={() => setField("providesFlagStateInspectionServices", value)}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
+
+      {formData.providesFlagStateInspectionServices && (
+        <div className="consultant-flag-panel">
+          <label className="consultant-flag-label">Flags Served <span>*</span></label>
+
+          {selectedFlags.length > 0 && (
+            <div className="consultant-flag-tags">
+              {selectedFlags.map((flag) => (
+                <span key={flag.id}>
+                  {flag.name}
+                  <button type="button" onClick={() => removeFlagService(flag.id)}>
+                    Remove
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <input
+            className="consultant-input"
+            value={flagSearch}
+            onChange={(event) => setFlagSearch(event.target.value)}
+            placeholder="Search active Flags..."
+          />
+
+          <div className="consultant-flag-options">
+            {flagsLoading ? (
+              <span>Loading Flags...</span>
+            ) : flagsError ? (
+              <span className="error">{flagsError}</span>
+            ) : filteredFlags.length ? (
+              filteredFlags.slice(0, 8).map((flag) => (
+                <button type="button" key={flag.id} onClick={() => addFlagService(flag)}>
+                  {flag.name}
+                </button>
+              ))
+            ) : (
+              <span>No matching Flags.</span>
+            )}
+          </div>
+
+          {formData.flagServices.map((service) => {
+            const flag = flagOptions.find((item) => Number(item.id) === Number(service.flagId));
+            if (!flag) return null;
+
+            return (
+              <section className="consultant-flag-coverage" key={service.flagId}>
+                <div className="consultant-flag-coverage-head">
+                  <h4>{flag.name}</h4>
+                  <button type="button" onClick={() => addFlagCoverage(service.flagId)}>
+                    + Add coverage area
+                  </button>
+                </div>
+
+                {service.coverage.map((coverage, index) => (
+                  <div className="consultant-flag-coverage-grid" key={`${service.flagId}-${index}`}>
+                    <div className="consultant-field">
+                      <label>Country <span>*</span></label>
+                      <select
+                        className="consultant-input"
+                        value={coverage.country}
+                        onChange={(event) =>
+                          updateFlagCoverage(service.flagId, index, "country", event.target.value)
+                        }
+                      >
+                        {COUNTRIES.map((country) => (
+                          <option key={country} value={country === "Please Select" ? "" : country}>
+                            {country}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="consultant-field">
+                      <label>Region</label>
+                      <input
+                        className="consultant-input"
+                        value={coverage.region}
+                        onChange={(event) =>
+                          updateFlagCoverage(service.flagId, index, "region", event.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div className="consultant-field">
+                      <label>Location</label>
+                      <input
+                        className="consultant-input"
+                        value={coverage.location}
+                        onChange={(event) =>
+                          updateFlagCoverage(service.flagId, index, "location", event.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div className="consultant-field">
+                      <label>Coverage note</label>
+                      <input
+                        className="consultant-input"
+                        value={coverage.coverageNote}
+                        onChange={(event) =>
+                          updateFlagCoverage(
+                            service.flagId,
+                            index,
+                            "coverageNote",
+                            event.target.value
+                          )
+                        }
+                      />
+                    </div>
+
+                    {service.coverage.length > 1 && (
+                      <button
+                        type="button"
+                        className="consultant-remove-coverage"
+                        onClick={() => removeFlagCoverage(service.flagId, index)}
+                      >
+                        Remove coverage
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </section>
+            );
+          })}
+
+          {errors.flagServices && <p className="consultant-error">{errors.flagServices}</p>}
+        </div>
+      )}
+    </section>
   );
 
   const renderStepContent = () => {
@@ -747,6 +1062,7 @@ export default function RegisterConsultant() {
               />
               {errors.ports && <p className="consultant-error">{errors.ports}</p>}
             </div>
+            {renderFlagServices()}
             {renderCheckboxGroup("Vessel Types", "vesselTypes", VESSEL_TYPES, true)}
             {hasOther(formData.vesselTypes) && renderTextarea("Other vessel type", "vesselTypesOther", true)}
             {renderCheckboxGroup("Shoreside Experience", "shoresideExperience", SHORESIDE_EXPERIENCE)}

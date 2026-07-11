@@ -1,6 +1,7 @@
 import {
   Anchor,
   Briefcase,
+  Flag,
   Grid2X2,
   LogOut,
   MapPin,
@@ -119,6 +120,10 @@ export default function Navbar() {
             <Users size={17} /> Consultants
           </NavLink>
         )}
+
+        <NavLink to="/flag">
+          <Flag size={17} /> Flag
+        </NavLink>
 
         <NavLink to="/fleet">
           <Ship size={17} /> Fleet

@@ -620,23 +620,27 @@
   font-weight: 800;
 }
 
-.profile-photo-edit {
+.profile-media-edit {
   margin-bottom: 18px;
 }
 
-.profile-photo-edit > label {
+.profile-media-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.profile-media-field {
+  min-width: 0;
+}
+
+.profile-media-field > label {
   display: block;
   margin-bottom: 8px;
 }
 
-.profile-photo-edit-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.profile-photo-edit-controls input {
+.profile-media-field input[type="file"] {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   padding: 7px;
@@ -644,26 +648,28 @@
   font-size: 13px;
 }
 
-.profile-photo-edit small {
+.profile-media-field small {
   display: block;
   margin-top: 7px;
   color: #526c9d;
   font-size: 12px;
 }
 
-.profile-photo-selection,
-.profile-photo-message,
+.profile-media-selection,
+.profile-media-message,
+.profile-media-status,
 .profile-save-status {
   margin: 8px 0 0 !important;
   font-size: 13px !important;
   line-height: 1.45 !important;
 }
 
-.profile-photo-selection {
+.profile-media-selection,
+.profile-media-status {
   color: #526c9d !important;
 }
 
-.profile-photo-message.error,
+.profile-media-message.error,
 .profile-save-status.error {
   color: #b42318 !important;
 }
@@ -902,6 +908,7 @@
   .right-column,
   .registration-card .profile-detail-list,
   .profile-reference-list,
+  .profile-media-edit-grid,
   .profile-edit-grid {
     grid-template-columns: 1fr;
   }
@@ -927,4 +934,26 @@
   .profile-reference-item dl > div {
     grid-template-columns: 68px minmax(0, 1fr);
   }
+}
+
+.profile-flag-services {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-flag-service {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.profile-flag-service:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.profile-flag-service h4 {
+  margin: 0 0 12px;
+  color: #071b39;
+  font-size: 15px;
+  font-weight: 800;
 }

@@ -9,11 +9,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
 import {
-  createExpertPhotoUploadUrl,
+  createExpertMediaUploadUrl,
   getExpertById,
   getExpertCvUrl,
   updateExpert,
-  updateExpertPhoto,
 } from "../api/expertApi";
 import {
   createExpertReview,
@@ -113,9 +112,12 @@ export default function ExpertProfile() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
   const [photoError, setPhotoError] = useState("");
+  const [cvFile, setCvFile] = useState(null);
+  const [cvError, setCvError] = useState("");
   const [profileSaveMessage, setProfileSaveMessage] = useState("");
   const [profileSaveError, setProfileSaveError] = useState("");
   const photoInputRef = useRef(null);
+  const cvInputRef = useRef(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -198,9 +200,20 @@ export default function ExpertProfile() {
     if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
+  const discardSelectedCv = () => {
+    setCvFile(null);
+    setCvError("");
+    if (cvInputRef.current) cvInputRef.current.value = "";
+  };
+
+  const discardSelectedMedia = () => {
+    discardSelectedPhoto();
+    discardSelectedCv();
+  };
+
   const cancelEditing = () => {
     if (savingProfile) return;
-    discardSelectedPhoto();
+    discardSelectedMedia();
     setProfileSaveError("");
     setIsEditing(false);
   };
@@ -214,15 +227,47 @@ export default function ExpertProfile() {
     e.preventDefault();
     if (savingProfile) return;
 
-    let confirmedPhoto = null;
     try {
       setSavingProfile(true);
       setProfileSaveMessage("");
       setProfileSaveError("");
       setPhotoError("");
+      setCvError("");
+
+      if (
+        photoFile &&
+        !["image/png", "image/jpeg", "image/webp"].includes(photoFile.type)
+      ) {
+        setPhotoError("Photo must be PNG, JPEG or WEBP.");
+        throw new Error("Select a valid profile photo.");
+      }
+      if (photoFile && photoFile.size > 3 * 1024 * 1024) {
+        setPhotoError("Photo must be 3MB or less.");
+        throw new Error("Select a valid profile photo.");
+      }
+      if (photoFile && photoFile.size <= 0) {
+        setPhotoError("Photo file is empty.");
+        throw new Error("Select a valid profile photo.");
+      }
+      if (cvFile && cvFile.type !== "application/pdf") {
+        setCvError("CV must be a PDF file.");
+        throw new Error("Select a valid CV file.");
+      }
+      if (cvFile && cvFile.size > 5 * 1024 * 1024) {
+        setCvError("CV must be 5MB or less.");
+        throw new Error("Select a valid CV file.");
+      }
+      if (cvFile && cvFile.size <= 0) {
+        setCvError("CV file is empty.");
+        throw new Error("Select a valid CV file.");
+      }
+
+      let photoS3Key;
+      let cvS3Key;
 
       if (photoFile) {
-        const presign = await createExpertPhotoUploadUrl(expert.id, {
+        const presign = await createExpertMediaUploadUrl(expert.id, {
+          kind: "photo",
           contentType: photoFile.type,
           size: photoFile.size,
         });
@@ -236,22 +281,29 @@ export default function ExpertProfile() {
           throw new Error("Profile photo upload failed.");
         }
 
-        confirmedPhoto = await updateExpertPhoto(expert.id, presign.key);
-        setExpert((previous) => ({
-          ...previous,
-          photo_url: confirmedPhoto.photo_url,
-          photo_expires_at: confirmedPhoto.photo_expires_at,
-        }));
-        updateConsultantPhotoCache({
-          userId: getStoredUser().id,
-          expertId: expert.id,
-          photoUrl: confirmedPhoto.photo_url,
-          photoExpiresAt: confirmedPhoto.photo_expires_at,
-        });
-        discardSelectedPhoto();
+        photoS3Key = presign.key;
       }
 
-      const profileResponse = await updateExpert(expert.id, {
+      if (cvFile) {
+        const presign = await createExpertMediaUploadUrl(expert.id, {
+          kind: "cv",
+          contentType: cvFile.type,
+          size: cvFile.size,
+        });
+        const uploadResponse = await fetch(presign.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": cvFile.type },
+          body: cvFile,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("CV upload failed.");
+        }
+
+        cvS3Key = presign.key;
+      }
+
+      const profilePayload = {
         full_name: editForm.full_name,
         biography: editForm.biography,
         base_location: editForm.base_location,
@@ -266,16 +318,25 @@ export default function ExpertProfile() {
         ports: editForm.ports.map((port) => port.port_name),
         languages: textToList(editForm.languages),
         registration_details: editForm.registration_details,
-      });
-      setExpert({
-        ...profileResponse.data,
-        ...(confirmedPhoto
-          ? {
-              photo_url: confirmedPhoto.photo_url,
-              photo_expires_at: confirmedPhoto.photo_expires_at,
-            }
-          : {}),
-      });
+      };
+      if (photoS3Key) profilePayload.photo_s3_key = photoS3Key;
+      if (cvS3Key) profilePayload.cv_s3_key = cvS3Key;
+
+      const profileResponse = await updateExpert(expert.id, profilePayload);
+      setExpert(profileResponse.data);
+      if (
+        photoS3Key &&
+        isExpert() &&
+        Number(expert.user_id) === Number(getStoredUser()?.id)
+      ) {
+        updateConsultantPhotoCache({
+          userId: getStoredUser().id,
+          expertId: expert.id,
+          photoUrl: profileResponse.data.photo_url,
+          photoExpiresAt: profileResponse.data.photo_expires_at,
+        });
+      }
+      discardSelectedMedia();
       setIsEditing(false);
       setProfileSaveMessage("Profile changes saved.");
     } catch (error) {
@@ -284,11 +345,7 @@ export default function ExpertProfile() {
         error.response?.data?.message ||
         error.message ||
         "Failed to update consultant profile";
-      setProfileSaveError(
-        confirmedPhoto
-          ? `Profile photo updated, but other profile changes were not saved. ${message}`
-          : message
-      );
+      setProfileSaveError(message);
     } finally {
       setSavingProfile(false);
     }
@@ -403,10 +460,7 @@ export default function ExpertProfile() {
   // Keep reviews visible, but review submission should happen from accepted request flow later.
 
   const registrationDetails = expert.registration_details;
-  const canChangeProfilePhoto =
-    isExpert() &&
-    Number(expert.user_id) === Number(currentUser?.id) &&
-    Boolean(registrationDetails);
+  const canChangeProfileMedia = canEditProfile && Boolean(registrationDetails);
 
   const selectProfilePhoto = (event) => {
     const file = event.target.files?.[0] || null;
@@ -429,9 +483,42 @@ export default function ExpertProfile() {
       setPhotoError("Photo must be 3MB or less.");
       return;
     }
+    if (file.size <= 0) {
+      discardSelectedPhoto();
+      setPhotoError("Photo file is empty.");
+      return;
+    }
 
     setPhotoFile(file);
     setPhotoPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const selectCv = (event) => {
+    const file = event.target.files?.[0] || null;
+    setCvError("");
+    setProfileSaveError("");
+
+    if (!file) {
+      discardSelectedCv();
+      return;
+    }
+    if (file.type !== "application/pdf") {
+      discardSelectedCv();
+      setCvError("CV must be a PDF file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      discardSelectedCv();
+      setCvError("CV must be 5MB or less.");
+      return;
+    }
+    if (file.size <= 0) {
+      discardSelectedCv();
+      setCvError("CV file is empty.");
+      return;
+    }
+
+    setCvFile(file);
   };
 
   const openCv = async () => {
@@ -598,6 +685,9 @@ export default function ExpertProfile() {
     isFilled(registrationDetails?.accreditations_other) ||
     isFilled(registrationDetails?.courses_completed) ||
     isFilled(registrationDetails?.courses_completed_other);
+  const hasFlagServices = arrayValue(expert.flag_services).some(
+    (service) => isFilled(service.flag_name) && arrayValue(service.coverage).length > 0
+  );
   const professionalBackground = registrationDetails
     ? renderDetailRows([
         ["Nationality", registrationDetails.nationality],
@@ -684,28 +774,56 @@ export default function ExpertProfile() {
         <form className="profile-edit-card" onSubmit={submitProfileUpdate}>
           <h3>Edit Consultant Profile</h3>
 
-          {canChangeProfilePhoto && (
-            <section className="profile-photo-edit">
-              <label htmlFor="expert-profile-photo">Change Profile Photo</label>
-              <div className="profile-photo-edit-controls">
-                <input
-                  ref={photoInputRef}
-                  id="expert-profile-photo"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={selectProfilePhoto}
-                  disabled={savingProfile}
-                />
+          {canChangeProfileMedia && (
+            <section className="profile-media-edit">
+              <div className="profile-media-edit-grid">
+                <div className="profile-media-field">
+                  <label htmlFor="expert-profile-photo">Change Profile Photo</label>
+                  <input
+                    ref={photoInputRef}
+                    id="expert-profile-photo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={selectProfilePhoto}
+                    disabled={savingProfile}
+                  />
+                  <small>PNG, JPEG or WEBP. Maximum 3MB.</small>
+                  {photoFile && (
+                    <p className="profile-media-selection">
+                      Selected: {photoFile.name}. Save Changes to upload.
+                    </p>
+                  )}
+                  {photoError && (
+                    <p className="profile-media-message error">{photoError}</p>
+                  )}
+                </div>
+
+                <div className="profile-media-field">
+                  <label htmlFor="expert-profile-cv">
+                    Replace Curriculum Vitae (CV)
+                  </label>
+                  <input
+                    ref={cvInputRef}
+                    id="expert-profile-cv"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={selectCv}
+                    disabled={savingProfile}
+                  />
+                  <small>PDF only. Maximum 5MB.</small>
+                  <p className="profile-media-status">
+                    Current CV: {expert.has_cv ? "Available" : "Not uploaded"}
+                  </p>
+                  {cvFile && (
+                    <p className="profile-media-selection">
+                      Selected: {cvFile.name}. Save Changes to replace the current CV.
+                    </p>
+                  )}
+                  {cvError && (
+                    <p className="profile-media-message error">{cvError}</p>
+                  )}
+                </div>
               </div>
-              <small>PNG, JPEG or WEBP. Maximum 3MB.</small>
-              {photoFile && (
-                <p className="profile-photo-selection">
-                  Selected: {photoFile.name}. Save Changes to upload.
-                </p>
-              )}
-              {photoError && (
-                <p className="profile-photo-message error">{photoError}</p>
-              )}
             </section>
           )}
 
@@ -1179,6 +1297,39 @@ export default function ExpertProfile() {
                   </p>
                 )}
               </>
+            )}
+
+          {hasFlagServices &&
+            renderRegistrationSection(
+              "Flag Services",
+              <div className="profile-flag-services">
+                {expert.flag_services.map((service) => (
+                  <section className="profile-flag-service" key={service.flag_id}>
+                    <h4>{service.flag_name}</h4>
+                    <div className="profile-detail-list">
+                      {arrayValue(service.coverage).map((coverage, index) => {
+                        const place = [
+                          coverage.location,
+                          coverage.region,
+                          coverage.country,
+                        ]
+                          .filter(Boolean)
+                          .join(", ");
+
+                        return (
+                          <div
+                            className="profile-detail-row"
+                            key={`${service.flag_id}-${index}`}
+                          >
+                            <span>{place}</span>
+                            <strong>{coverage.coverage_note || "Coverage area"}</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
             )}
         </div>
 

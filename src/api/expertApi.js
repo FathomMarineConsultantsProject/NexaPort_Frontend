@@ -15,6 +15,11 @@ export const getExpertCvUrl = async (id) => {
   return res.data;
 };
 
+export const createExpertMediaUploadUrl = async (id, payload) => {
+  const res = await axiosClient.post(`/experts/${id}/media-upload-url`, payload);
+  return res.data;
+};
+
 export const createExpertPhotoUploadUrl = async (id, payload) => {
   const res = await axiosClient.post(`/experts/${id}/photo-upload-url`, payload);
   return res.data;
