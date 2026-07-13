@@ -2,6 +2,7 @@ import {
   Anchor,
   BadgeCheck,
   Briefcase,
+  ClipboardCheck,
   Flag,
   Grid2X2,
   LogOut,
@@ -33,6 +34,7 @@ export default function Navbar() {
 
   const roleId = getRoleId();
   const isClient = roleId === 3;
+  const isSuperAdmin = roleId === 1;
   const userId = user?.id;
 
   useEffect(() => {
@@ -129,6 +131,12 @@ export default function Navbar() {
         <NavLink to="/accredited-inspectors">
           <BadgeCheck size={17} /> Accredited
         </NavLink>
+
+        {isSuperAdmin && (
+          <NavLink to="/appointed-surveyors">
+            <ClipboardCheck size={17} /> Appointed
+          </NavLink>
+        )}
 
         <NavLink to="/fleet">
           <Ship size={17} /> Fleet
