@@ -124,18 +124,20 @@ export default function Navbar() {
           </NavLink>
         )}
 
-        <NavLink to="/flag">
-          <Flag size={17} /> Flag
-        </NavLink>
-
-        <NavLink to="/accredited-inspectors">
-          <BadgeCheck size={17} /> Accredited
-        </NavLink>
-
         {isSuperAdmin && (
-          <NavLink to="/appointed-surveyors">
-            <ClipboardCheck size={17} /> Appointed
-          </NavLink>
+          <>
+            <NavLink to="/flag">
+              <Flag size={17} /> Flag
+            </NavLink>
+
+            <NavLink to="/accredited-inspectors">
+              <BadgeCheck size={17} /> Accredited
+            </NavLink>
+
+            <NavLink to="/appointed-surveyors">
+              <ClipboardCheck size={17} /> Appointed
+            </NavLink>
+          </>
         )}
 
         <NavLink to="/fleet">

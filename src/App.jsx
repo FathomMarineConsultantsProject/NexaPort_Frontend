@@ -129,19 +129,45 @@ export default function App() {
                   />
 
                   <Route path="/fleet" element={<FleetManagement />} />
-                  <Route path="/flag" element={<FlagDirectory />} />
-                  <Route path="/flag/:flagSlug" element={<FlagDirectory />} />
+                  <Route
+                    path="/flag"
+                    element={
+                      <AdminOnly>
+                        <FlagDirectory />
+                      </AdminOnly>
+                    }
+                  />
+                  <Route
+                    path="/flag/:flagSlug"
+                    element={
+                      <AdminOnly>
+                        <FlagDirectory />
+                      </AdminOnly>
+                    }
+                  />
                   <Route
                     path="/flag/:flagSlug/inspectors/:inspectorId"
-                    element={<FlagInspectorProfile />}
+                    element={
+                      <AdminOnly>
+                        <FlagInspectorProfile />
+                      </AdminOnly>
+                    }
                   />
                   <Route
                     path="/accredited-inspectors"
-                    element={<AccreditedInspectorDirectory />}
+                    element={
+                      <AdminOnly>
+                        <AccreditedInspectorDirectory />
+                      </AdminOnly>
+                    }
                   />
                   <Route
                     path="/accredited-inspectors/:schemeSlug"
-                    element={<AccreditedInspectorDirectory />}
+                    element={
+                      <AdminOnly>
+                        <AccreditedInspectorDirectory />
+                      </AdminOnly>
+                    }
                   />
                   <Route
                     path="/appointed-surveyors"
