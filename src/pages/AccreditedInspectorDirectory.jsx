@@ -14,6 +14,7 @@ import {
   getAccreditationSchemes,
   getAccreditedInspectors,
 } from "../api/accreditedInspectorApi";
+import CopyableContact from "../components/common/CopyableContact";
 import "./AccreditedInspectorDirectory.css";
 
 const emptySummary = { inspector_count: 0, country_count: 0 };
@@ -271,13 +272,13 @@ export default function AccreditedInspectorDirectory() {
                   {inspector.telephone && (
                     <div className="accredited-contact-row">
                       <Phone size={16} />
-                      <div><span>Phone</span><a href={`tel:${inspector.telephone}`}>{inspector.telephone}</a></div>
+                      <div><span>Phone</span><CopyableContact value={inspector.telephone} href={`tel:${inspector.telephone}`} type="phone" /></div>
                     </div>
                   )}
                   {inspector.email && (
                     <div className="accredited-contact-row">
                       <Mail size={16} />
-                      <div><span>Email</span><a href={`mailto:${inspector.email}`}>{inspector.email}</a></div>
+                      <div><span>Email</span><CopyableContact value={inspector.email} href={`mailto:${inspector.email}`} type="email" /></div>
                     </div>
                   )}
                 </div>

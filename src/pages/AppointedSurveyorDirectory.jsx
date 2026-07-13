@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getAppointedSurveyors } from "../api/appointedSurveyorApi";
+import CopyableContact from "../components/common/CopyableContact";
 import "./AppointedSurveyorDirectory.css";
 
 const emptySummary = {
@@ -39,12 +40,12 @@ function ContactRow({ icon: Icon, label, value, type }) {
       <div>
         <span>{label}</span>
         {type === "phone" &&
-          values.map((item) => (
-            <a key={item} href={phoneHref(item)}>{item}</a>
+          values.map((item, index) => (
+            <CopyableContact key={`${item}-${index}`} value={item} href={phoneHref(item)} type="phone" />
           ))}
         {type === "email" &&
-          values.map((item) => (
-            <a key={item} href={`mailto:${item}`}>{item}</a>
+          values.map((item, index) => (
+            <CopyableContact key={`${item}-${index}`} value={item} href={`mailto:${item}`} type="email" />
           ))}
         {!type && <p>{value}</p>}
       </div>

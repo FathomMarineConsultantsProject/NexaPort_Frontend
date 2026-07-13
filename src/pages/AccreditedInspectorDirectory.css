@@ -32,6 +32,7 @@
 .accredited-contact-row { min-width: 0; display: flex; align-items: flex-start; gap: 9px; }
 .accredited-contact-row > svg { flex: 0 0 auto; margin-top: 3px; color: #0f766e; }
 .accredited-contact-row > div { min-width: 0; }
+.accredited-contact-row .copyable-contact { width: 100%; }
 .accredited-contact-row span { display: block; margin-bottom: 2px; color: #7b899c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .accredited-contact-row strong, .accredited-contact-row a { color: #33465e; font-size: 12px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; word-break: break-word; }
 .accredited-contact-row a { text-decoration-color: #a8b9c8; text-underline-offset: 2px; }

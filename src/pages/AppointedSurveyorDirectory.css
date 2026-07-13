@@ -293,6 +293,10 @@
   color: #0f766e;
 }
 
+.appointed-contact-row .copyable-contact {
+  width: 100%;
+}
+
 .appointed-contact-row span {
   display: block;
   margin-bottom: 2px;

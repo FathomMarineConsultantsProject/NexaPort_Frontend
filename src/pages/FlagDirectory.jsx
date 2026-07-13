@@ -6,15 +6,25 @@ import ConsultantAvatar from "../components/experts/ConsultantAvatar";
 import { isClient } from "../utils/auth";
 import "./FlagDirectory.css";
 
-const coverageLabel = (record) => {
-  if (record.record_type === "external") return record.areas_covered_text || [record.location, record.region, record.country].filter(Boolean).join(", ");
-  const first = record.coverage?.[0];
-  if (!first) return [record.base_location, record.country].filter(Boolean).join(", ");
-  return [[first.location, first.region, first.country].filter(Boolean).join(", "), first.coverage_note].filter(Boolean).join(" - ");
+const cleanText = (value) => {
+  const text = String(value ?? "").trim();
+  return /^null$/i.test(text) ? "" : text;
 };
 
-const recordCountry = (record) => record.record_type === "external" ? record.country || "Unspecified Country" : record.coverage?.[0]?.country || record.country || "Unspecified Country";
-const recordLocation = (record) => record.record_type === "external" ? record.location || "Unspecified Location" : record.coverage?.[0]?.location || record.base_location || "Unspecified Location";
+const organizationText = (value) => {
+  const text = cleanText(value);
+  return /^(n\/?a|not applicable)$/i.test(text) ? "" : text;
+};
+
+const coverageLabel = (record) => {
+  if (record.record_type === "external") return cleanText(record.areas_covered_text) || [record.location, record.region, record.country].map(cleanText).filter(Boolean).join(", ");
+  const first = record.coverage?.[0];
+  if (!first) return [record.base_location, record.country].map(cleanText).filter(Boolean).join(", ");
+  return [[first.location, first.region, first.country].map(cleanText).filter(Boolean).join(", "), cleanText(first.coverage_note)].filter(Boolean).join(" - ");
+};
+
+const recordCountry = (record) => cleanText(record.record_type === "external" ? record.country : record.coverage?.[0]?.country || record.country) || "Unspecified Country";
+const recordLocation = (record) => cleanText(record.record_type === "external" ? record.location : record.coverage?.[0]?.location || record.base_location) || "Unspecified Location";
 const countText = (count) => `${count} ${count === 1 ? "inspector" : "inspectors"}`;
 
 export default function FlagDirectory() {
@@ -86,13 +96,15 @@ export default function FlagDirectory() {
 
   const renderRecord = (record) => {
     const external = record.record_type === "external";
-    const companyOnly = external && !record.full_name && record.organization_name;
-    const displayName = record.full_name || record.organization_name || "Flag inspector";
-    const location = [record.location || record.base_location, record.region, record.country].filter(Boolean).join(", ");
+    const fullName = cleanText(record.full_name);
+    const organizationName = organizationText(record.organization_name);
+    const companyOnly = external && !fullName && !!organizationName;
+    const displayName = fullName || organizationName || "Flag inspector";
+    const location = [record.location || record.base_location, record.region, record.country].map(cleanText).filter(Boolean).join(", ");
     const card = <article className={`flag-record-card ${record.record_type}`}>
       <div className="flag-record-identity"><div className="flag-record-avatar">{companyOnly ? <Building2 size={22} /> : external ? <UserRound size={22} /> : <ConsultantAvatar className="flag-consultant-avatar" photoUrl={record.photo_url} name={record.full_name} />}</div><div className="flag-record-heading"><span className="flag-source-badge">{external ? "External Directory" : "NexaPort Consultant"}</span><h4>{displayName}</h4></div></div>
       <div className="flag-record-details">
-        {record.organization_name && !companyOnly && <p className="flag-record-line"><Building2 size={15} /><span>{record.organization_name}</span></p>}
+        {organizationName && !companyOnly && <p className="flag-record-line"><Building2 size={15} /><span>{organizationName}</span></p>}
         {location && <p className="flag-record-line"><MapPin size={15} /><span>{location}</span></p>}
         {coverageLabel(record) && <div className="flag-record-coverage"><strong>Areas covered</strong><p>{coverageLabel(record)}</p></div>}
       </div><span className="flag-profile-action">View Profile <ChevronRight size={15} /></span>
@@ -110,7 +122,7 @@ export default function FlagDirectory() {
         <label className="flag-control flag-search"><span>Search directory</span><div><Search size={18} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, company, country, location or coverage" /></div></label>
         <div className="flag-summary" aria-live="polite"><strong>{records.length}</strong><span>inspectors</span><i /><strong>{groups.length}</strong><span>countries</span><i /><strong>{locationCount}</strong><span>locations</span></div>
       </div>
-      {!loadingFlags && !!flags.length && <div className="flag-quick-select"><span>Quick select</span>{flags.map((flag) => <button type="button" key={flag.id} className={selectedFlag?.id === flag.id ? "active" : ""} onClick={() => chooseFlag(flag)}>{flag.name}</button>)}</div>}
+      {!loadingFlags && !!flags.length && <div className="flag-quick-select"><span className="flag-quick-select__label">Quick select</span><div className="flag-quick-select__viewport"><div className="flag-quick-select__track">{flags.map((flag) => <button type="button" key={flag.id} className={selectedFlag?.id === flag.id ? "active" : ""} onClick={() => chooseFlag(flag)}>{flag.name}</button>)}</div></div></div>}
     </section>
     {error && <div className="flag-state error">{error}</div>}
     {loadingDirectory ? <div className="flag-skeleton-list" aria-label="Loading Flag inspectors">{[1,2,3].map((n) => <div className="flag-skeleton" key={n}><span /><span /></div>)}</div>

@@ -62,6 +62,7 @@
   font-size: 32px;
   line-height: 1.15;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .flag-profile-hero p {
@@ -71,6 +72,8 @@
   gap: 7px;
   color: #526c9d;
   font-size: 15px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .flag-profile-grid {
@@ -113,7 +116,30 @@
   font-size: 14px;
   font-weight: 700;
   overflow-wrap: anywhere;
+  word-break: break-word;
   white-space: pre-wrap;
+}
+
+.flag-profile-contact-values span {
+  display: block;
+  color: inherit;
+  font: inherit;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.flag-profile-contact-values {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.flag-profile-contact-values .copyable-contact__value {
+  color: #001b3f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-transform: none;
 }
 
 .flag-source-link {
