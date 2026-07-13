@@ -86,11 +86,13 @@ export default function FlagDirectory() {
 
   const renderRecord = (record) => {
     const external = record.record_type === "external";
+    const companyOnly = external && !record.full_name && record.organization_name;
+    const displayName = record.full_name || record.organization_name || "Flag inspector";
     const location = [record.location || record.base_location, record.region, record.country].filter(Boolean).join(", ");
     const card = <article className={`flag-record-card ${record.record_type}`}>
-      <div className="flag-record-identity"><div className="flag-record-avatar">{external ? <UserRound size={22} /> : <ConsultantAvatar className="flag-consultant-avatar" photoUrl={record.photo_url} name={record.full_name} />}</div><div className="flag-record-heading"><span className="flag-source-badge">{external ? "External Directory" : "NexaPort Consultant"}</span><h4>{record.full_name}</h4></div></div>
+      <div className="flag-record-identity"><div className="flag-record-avatar">{companyOnly ? <Building2 size={22} /> : external ? <UserRound size={22} /> : <ConsultantAvatar className="flag-consultant-avatar" photoUrl={record.photo_url} name={record.full_name} />}</div><div className="flag-record-heading"><span className="flag-source-badge">{external ? "External Directory" : "NexaPort Consultant"}</span><h4>{displayName}</h4></div></div>
       <div className="flag-record-details">
-        {record.organization_name && <p className="flag-record-line"><Building2 size={15} /><span>{record.organization_name}</span></p>}
+        {record.organization_name && !companyOnly && <p className="flag-record-line"><Building2 size={15} /><span>{record.organization_name}</span></p>}
         {location && <p className="flag-record-line"><MapPin size={15} /><span>{location}</span></p>}
         {coverageLabel(record) && <div className="flag-record-coverage"><strong>Areas covered</strong><p>{coverageLabel(record)}</p></div>}
       </div><span className="flag-profile-action">View Profile <ChevronRight size={15} /></span>

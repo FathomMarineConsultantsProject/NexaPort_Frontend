@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, MapPin, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, MapPin, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getFlagInspector } from "../api/flagApi";
@@ -70,6 +70,8 @@ export default function FlagInspectorProfile() {
   }
 
   const sourceUrl = inspector.source_record_url || inspector.source_url;
+  const companyOnly = !inspector.full_name && inspector.organization_name;
+  const displayName = inspector.full_name || inspector.organization_name || "Flag inspector";
 
   return (
     <main className="flag-profile-page">
@@ -80,11 +82,11 @@ export default function FlagInspectorProfile() {
 
       <section className="flag-profile-hero">
         <div className="flag-profile-icon">
-          <UserRound size={30} />
+          {companyOnly ? <Building2 size={30} /> : <UserRound size={30} />}
         </div>
         <div>
-          <span>{flag?.name || "Flag"} Flag Inspector</span>
-          <h1>{inspector.full_name}</h1>
+          <span>{flag?.name || "Flag"} {companyOnly ? "Flag Inspection Company" : "Flag Inspector"}</span>
+          <h1>{displayName}</h1>
           <p>
             <MapPin size={16} />
             {[inspector.location, inspector.region, inspector.country]
