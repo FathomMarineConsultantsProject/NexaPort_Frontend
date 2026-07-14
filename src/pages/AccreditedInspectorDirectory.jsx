@@ -15,9 +15,20 @@ import {
   getAccreditedInspectors,
 } from "../api/accreditedInspectorApi";
 import CopyableContact from "../components/common/CopyableContact";
+import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
+import ViewToggle from "../components/common/ViewToggle";
 import "./AccreditedInspectorDirectory.css";
 
 const emptySummary = { inspector_count: 0, country_count: 0 };
+const VIEW_KEY = "np_accredited_inspectors_view";
+const initialView = () => {
+  try {
+    const stored = localStorage.getItem(VIEW_KEY);
+    return stored === "list" || stored === "grid" ? stored : "grid";
+  } catch {
+    return "grid";
+  }
+};
 
 export default function AccreditedInspectorDirectory() {
   const { schemeSlug } = useParams();
@@ -34,6 +45,8 @@ export default function AccreditedInspectorDirectory() {
   const [loadingDirectory, setLoadingDirectory] = useState(false);
   const [error, setError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
+  const [view, setView] = useState(initialView);
+  const [selectedInspector, setSelectedInspector] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -122,6 +135,17 @@ export default function AccreditedInspectorDirectory() {
   const sourceLabel = scheme?.code
     ? `${scheme.code} Accredited Inspectors Directory`
     : "Accredited Inspectors Directory";
+  const changeView = (nextView) => {
+    setView(nextView);
+    try { localStorage.setItem(VIEW_KEY, nextView); } catch { /* Preference remains in memory. */ }
+  };
+  const handleRowKeyDown = (event, inspector) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setSelectedInspector(inspector);
+    }
+  };
 
   return (
     <main className="accredited-page">
@@ -249,10 +273,13 @@ export default function AccreditedInspectorDirectory() {
               <span>Directory results</span>
               <h2>{schemeLabel(scheme)}</h2>
             </div>
-            {scheme.description && <p>{scheme.description}</p>}
+            <div className="accredited-results-actions">
+              {scheme.description && <p>{scheme.description}</p>}
+              <ViewToggle value={view} onChange={changeView} label="Accredited inspector results view" />
+            </div>
           </div>
 
-          <div className="accredited-grid">
+          {view === "grid" ? <div className="accredited-grid">
             {inspectors.map((inspector) => (
               <article className="accredited-card" key={inspector.id}>
                 <div className="accredited-card-head">
@@ -289,8 +316,52 @@ export default function AccreditedInspectorDirectory() {
                 </div>
               </article>
             ))}
-          </div>
+          </div> : (
+            <div className="accredited-table-wrap">
+              <table className="accredited-table">
+                <thead><tr><th>Name</th><th>Accreditation scheme</th><th>Email</th><th>Phone</th><th>Country</th><th>RCMS status</th><th><span className="sr-only">Action</span></th></tr></thead>
+                <tbody>
+                  {inspectors.map((inspector) => (
+                    <tr
+                      key={inspector.id}
+                      tabIndex={0}
+                      onClick={() => setSelectedInspector(inspector)}
+                      onKeyDown={(event) => handleRowKeyDown(event, inspector)}
+                    >
+                      <td><strong>{inspector.full_name}</strong></td>
+                      <td>{scheme.code} — {scheme.name}</td>
+                      <td>{inspector.email ? <CopyableContact value={inspector.email} href={`mailto:${inspector.email}`} type="email" /> : "—"}</td>
+                      <td>{inspector.telephone ? <CopyableContact value={inspector.telephone} href={`tel:${inspector.telephone}`} type="phone" /> : "—"}</td>
+                      <td>{inspector.country || "—"}</td>
+                      <td>{inspector.rcms_status || "—"}</td>
+                      <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedInspector(inspector); }}>View details</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
+      )}
+
+      {selectedInspector && (
+        <DirectoryDetailsModal
+          eyebrow={`${scheme?.code || ""} Accredited Inspector`}
+          title={selectedInspector.full_name}
+          onClose={() => setSelectedInspector(null)}
+        >
+          <DirectoryDetailGrid entries={[
+            ["Accreditation scheme", scheme ? `${scheme.code} — ${scheme.name}` : ""],
+            ["Country", selectedInspector.country],
+            ["RCMS status", selectedInspector.rcms_status || "Not specified"],
+            ["Email", selectedInspector.email ? <a href={`mailto:${selectedInspector.email}`}>{selectedInspector.email}</a> : ""],
+            ["Phone", selectedInspector.telephone ? <a href={`tel:${selectedInspector.telephone}`}>{selectedInspector.telephone}</a> : ""],
+            ["Record type", "External directory record"],
+            ["Source", selectedInspector.source_name || sourceLabel],
+            ["Source last checked", selectedInspector.source_last_checked_at ? new Date(selectedInspector.source_last_checked_at).toLocaleString() : ""],
+          ]} />
+          {selectedInspector.source_url && <a className="directory-modal-source" href={selectedInspector.source_url} target="_blank" rel="noopener noreferrer">View source <ExternalLink size={14} /></a>}
+        </DirectoryDetailsModal>
       )}
     </main>
   );

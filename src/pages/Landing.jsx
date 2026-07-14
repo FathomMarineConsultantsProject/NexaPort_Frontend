@@ -32,7 +32,7 @@ export default function Landing() {
               <button className="landing-nav-signin" onClick={() => navigate("/login")}>
                 Sign In
               </button>
-              <button className="landing-nav-register" onClick={() => navigate("/login")}>
+              <button className="landing-nav-register" onClick={() => navigate("/register-client")}>
                 Get Started
               </button>
             </>

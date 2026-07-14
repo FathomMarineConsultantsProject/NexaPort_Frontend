@@ -1,11 +1,31 @@
-import { Calendar, ChevronDown, MapPin, Search, Ship } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Calendar, ChevronDown, MapPin, Plus, Search, Ship, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { getServiceRequests } from "../api/serviceRequestApi";
+import { deleteServiceRequest, getServiceRequests } from "../api/serviceRequestApi";
 import { isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
 import "./ServiceRequests.css";
+
+function FilterDropdown({ label, options, value, onChange, setDropdownRef, openDropdown, setOpenDropdown }) {
+  const dropdownId = label.toLowerCase().replace(/\s/g, "-");
+  return (
+    <div className="filter-select" ref={(element) => setDropdownRef(dropdownId, element)}>
+      <button type="button" onClick={() => setOpenDropdown(openDropdown === dropdownId ? null : dropdownId)} className="filter-select-trigger">
+        <span>{value}</span><ChevronDown size={18} />
+      </button>
+      {openDropdown === dropdownId && (
+        <div className="filter-select-menu">
+          {options.map((option) => (
+            <button type="button" key={option} className={`filter-option ${value === option ? "active" : ""}`} onClick={() => { onChange(option); setOpenDropdown(null); }}>
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ServiceRequests() {
   const navigate = useNavigate();
@@ -15,6 +35,12 @@ export default function ServiceRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [requestToDelete, setRequestToDelete] = useState(null);
+  const [deletingRequest, setDeletingRequest] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const deleteCancelRef = useRef(null);
+  const deleteDialogRef = useRef(null);
+  const deletionInFlightRef = useRef(false);
 
   const [selectedType, setSelectedType] = useState("All Types");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
@@ -22,10 +48,6 @@ export default function ServiceRequests() {
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRefs = useRef({});
-
-  useEffect(() => {
-    loadRequests();
-  }, [search, selectedType, selectedStatus, selectedUrgency]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -40,7 +62,7 @@ export default function ServiceRequests() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openDropdown]);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -62,51 +84,50 @@ export default function ServiceRequests() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, selectedStatus, selectedType, selectedUrgency]);
+
+  useEffect(() => {
+    const loadId = window.setTimeout(loadRequests, 0);
+    return () => window.clearTimeout(loadId);
+  }, [loadRequests]);
+
+  useEffect(() => {
+    if (!requestToDelete) return undefined;
+    const previouslyFocused = document.activeElement;
+    const focusId = window.setTimeout(() => deleteCancelRef.current?.focus(), 0);
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !deletionInFlightRef.current) {
+        setRequestToDelete(null);
+        setDeleteError("");
+      }
+      if (event.key === "Tab") {
+        const focusable = deleteDialogRef.current?.querySelectorAll("button:not(:disabled)");
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!deleteDialogRef.current?.contains(document.activeElement)) {
+          event.preventDefault();
+          first.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(focusId);
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [requestToDelete]);
 
   const serviceTypes = ["All Types", "Survey", "Inspection", "Audit"];
   const statuses = ["All Statuses", "open", "assigned", "in progress", "completed"];
   const urgencies = ["Any Urgency", "routine", "urgent", "emergency"];
-
-  const FilterDropdown = ({ label, options, value, onChange }) => {
-    const dropdownId = label.toLowerCase().replace(/\s/g, "-");
-
-    return (
-      <div
-        className="filter-select"
-        ref={(el) => (dropdownRefs.current[dropdownId] = el)}
-      >
-        <button
-          type="button"
-          onClick={() =>
-            setOpenDropdown(openDropdown === dropdownId ? null : dropdownId)
-          }
-          className="filter-select-trigger"
-        >
-          <span>{value}</span>
-          <ChevronDown size={18} />
-        </button>
-
-        {openDropdown === dropdownId && (
-          <div className="filter-select-menu">
-            {options.map((option) => (
-              <button
-                type="button"
-                key={option}
-                className={`filter-option ${value === option ? "active" : ""}`}
-                onClick={() => {
-                  onChange(option);
-                  setOpenDropdown(null);
-                }}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const getPageSubtitle = () => {
     if (isSuperAdmin()) return "All maritime requests across the platform.";
@@ -147,6 +168,32 @@ export default function ServiceRequests() {
     return `${count} ${count === 1 ? "quotation" : "quotations"}`;
   };
 
+  const closeDeleteModal = () => {
+    if (deletionInFlightRef.current) return;
+    setRequestToDelete(null);
+    setDeleteError("");
+  };
+
+  const handleDeleteRequest = async () => {
+    if (!requestToDelete || deletionInFlightRef.current) return;
+    deletionInFlightRef.current = true;
+    setDeletingRequest(true);
+    setDeleteError("");
+    try {
+      await deleteServiceRequest(requestToDelete.id);
+      setRequests((current) => current.filter((request) => request.id !== requestToDelete.id));
+      setNotice(`“${requestToDelete.title || "Service request"}” was deleted.`);
+      setRequestToDelete(null);
+    } catch (error) {
+      setDeleteError(
+        error.response?.data?.message || "Failed to delete this service request."
+      );
+    } finally {
+      deletionInFlightRef.current = false;
+      setDeletingRequest(false);
+    }
+  };
+
   return (
     <div className="requests-page">
       <div className="requests-header">
@@ -155,15 +202,18 @@ export default function ServiceRequests() {
           <p>{getPageSubtitle()}</p>
         </div>
 
-        {isClient() && (
-          <button
-            type="button"
-            onClick={() => navigate("/requests/new")}
-            className="post-request-btn"
-          >
-            Post New Request
-          </button>
-        )}
+        <div className="requests-header-actions">
+          {(isClient() || isSuperAdmin()) && (
+            <button
+              type="button"
+              onClick={() => navigate("/requests/new")}
+              className="post-request-btn"
+            >
+              <Plus size={17} />
+              {isSuperAdmin() ? "Create Service Request" : "Post New Request"}
+            </button>
+          )}
+        </div>
       </div>
 
       {notice && (
@@ -191,6 +241,9 @@ export default function ServiceRequests() {
           options={serviceTypes}
           value={selectedType}
           onChange={setSelectedType}
+          setDropdownRef={(id, element) => { dropdownRefs.current[id] = element; }}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
         />
 
         <FilterDropdown
@@ -198,6 +251,9 @@ export default function ServiceRequests() {
           options={statuses}
           value={selectedStatus}
           onChange={setSelectedStatus}
+          setDropdownRef={(id, element) => { dropdownRefs.current[id] = element; }}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
         />
 
         <FilterDropdown
@@ -205,6 +261,9 @@ export default function ServiceRequests() {
           options={urgencies}
           value={selectedUrgency}
           onChange={setSelectedUrgency}
+          setDropdownRef={(id, element) => { dropdownRefs.current[id] = element; }}
+          openDropdown={openDropdown}
+          setOpenDropdown={setOpenDropdown}
         />
       </div>
 
@@ -290,17 +349,51 @@ export default function ServiceRequests() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/requests/${request.id}`)}
-                    className="view-quote-btn"
-                  >
-                    View Details
-                  </button>
+                  <div className="request-card-actions">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/requests/${request.id}`)}
+                      className="view-quote-btn"
+                    >
+                      View Details
+                    </button>
+                    {isSuperAdmin() && (
+                      <button
+                        type="button"
+                        className="delete-request-btn"
+                        onClick={() => { setDeleteError(""); setRequestToDelete(request); }}
+                      >
+                        <Trash2 size={15} /> Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {requestToDelete && (
+        <div className="delete-request-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) closeDeleteModal();
+        }}>
+          <section ref={deleteDialogRef} className="delete-request-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-request-title">
+            <h2 id="delete-request-title">Delete Service Request?</h2>
+            <p>Are you sure you want to permanently delete “{requestToDelete.title || "Untitled request"}”? This action cannot be undone.</p>
+            {deleteError && <div className="delete-request-error" role="alert">{deleteError}</div>}
+            <div className="delete-request-actions">
+              <button ref={deleteCancelRef} type="button" onClick={closeDeleteModal} disabled={deletingRequest}>Cancel</button>
+              <button
+                type="button"
+                className="confirm-delete-request"
+                disabled={deletingRequest}
+                onClick={handleDeleteRequest}
+              >
+                {deletingRequest ? "Deleting..." : "Delete Request"}
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </div>

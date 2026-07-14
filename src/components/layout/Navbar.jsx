@@ -1,6 +1,7 @@
 import {
   Anchor,
   BadgeCheck,
+  Bell,
   Briefcase,
   ClipboardCheck,
   Flag,
@@ -11,8 +12,13 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import {
+  getAdminNotifications,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead,
+} from "../../api/adminNotificationApi";
 import { getRoleId } from "../../utils/auth";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
@@ -25,7 +31,14 @@ import "./Navbar.css";
 export default function Navbar() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState("");
   const menuRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const notificationRequestInFlight = useRef(false);
 
   const storedUser = localStorage.getItem("np_user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -36,6 +49,38 @@ export default function Navbar() {
   const isClient = roleId === 3;
   const isSuperAdmin = roleId === 1;
   const userId = user?.id;
+
+  const loadNotifications = useCallback(async () => {
+    if (!isSuperAdmin || notificationRequestInFlight.current) return;
+    notificationRequestInFlight.current = true;
+    setNotificationsLoading(true);
+    setNotificationsError("");
+    try {
+      const response = await getAdminNotifications();
+      setNotifications(response.data || []);
+      setUnreadCount(Number(response.unread_count) || 0);
+    } catch (error) {
+      setNotificationsError(
+        error.response?.data?.message || "Unable to load notifications."
+      );
+    } finally {
+      notificationRequestInFlight.current = false;
+      setNotificationsLoading(false);
+    }
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return undefined;
+    const initialLoadId = window.setTimeout(loadNotifications, 0);
+    const handleFocus = () => loadNotifications();
+    window.addEventListener("focus", handleFocus);
+    const intervalId = window.setInterval(loadNotifications, 50000);
+    return () => {
+      window.clearTimeout(initialLoadId);
+      window.removeEventListener("focus", handleFocus);
+      window.clearInterval(intervalId);
+    };
+  }, [isSuperAdmin, loadNotifications]);
 
   useEffect(() => {
     let active = true;
@@ -75,6 +120,19 @@ export default function Navbar() {
   }, [menuOpen]);
 
   useEffect(() => {
+    const handleOutside = (event) => {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target)
+      ) {
+        setNotificationsOpen(false);
+      }
+    };
+    if (notificationsOpen) document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [notificationsOpen]);
+
+  useEffect(() => {
     const handlePhotoUpdated = (event) => {
       if (Number(event.detail?.userId) !== Number(userId)) return;
 
@@ -102,6 +160,43 @@ export default function Navbar() {
     navigate("/");
   };
 
+  const openNotification = async (notification) => {
+    const wasUnread = !notification.read_at;
+    if (wasUnread) {
+      setNotifications((current) =>
+        current.map((item) =>
+          item.id === notification.id
+            ? { ...item, read_at: new Date().toISOString() }
+            : item
+        )
+      );
+      setUnreadCount((current) => Math.max(0, current - 1));
+      markAdminNotificationRead(notification.id).catch(loadNotifications);
+    }
+
+    const payload = notification.payload || {};
+    const destination =
+      notification.type === "client_registration"
+        ? `/admin/client-registrations/${payload.registration_id || notification.entity_id}`
+        : `/experts/${payload.expert_id || notification.entity_id}`;
+    setNotificationsOpen(false);
+    navigate(destination);
+  };
+
+  const markAllRead = async () => {
+    if (!unreadCount) return;
+    const readAt = new Date().toISOString();
+    setNotifications((current) =>
+      current.map((item) => ({ ...item, read_at: item.read_at || readAt }))
+    );
+    setUnreadCount(0);
+    try {
+      await markAllAdminNotificationsRead();
+    } catch {
+      loadNotifications();
+    }
+  };
+
   return (
     <header className="np-navbar">
       <div className="np-brand" onClick={() => navigate("/")} role="button">
@@ -126,6 +221,10 @@ export default function Navbar() {
 
         {isSuperAdmin && (
           <>
+            <NavLink to="/admin/client-registrations">
+              <Users size={17} /> Client Registrations
+            </NavLink>
+
             <NavLink to="/flag">
               <Flag size={17} /> Flag
             </NavLink>
@@ -153,10 +252,80 @@ export default function Navbar() {
         </NavLink>
       </nav>
 
+      <div className="np-account-actions">
+        {isSuperAdmin && (
+          <div className="np-notifications-wrap" ref={notificationsRef}>
+            <button
+              type="button"
+              className="np-notification-button"
+              aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
+              aria-expanded={notificationsOpen}
+              onClick={() => {
+                setNotificationsOpen((open) => !open);
+                setMenuOpen(false);
+                if (!notificationsOpen) loadNotifications();
+              }}
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="np-notification-badge">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <div className="np-notification-menu">
+                <div className="np-notification-menu-head">
+                  <strong>Notifications</strong>
+                  {unreadCount > 0 && (
+                    <button type="button" onClick={markAllRead}>Mark all as read</button>
+                  )}
+                </div>
+                <div className="np-notification-list">
+                  {notificationsLoading && !notifications.length ? (
+                    <div className="np-notification-state">Loading notifications...</div>
+                  ) : notificationsError ? (
+                    <div className="np-notification-state error">
+                      <span>{notificationsError}</span>
+                      <button type="button" onClick={loadNotifications}>Retry</button>
+                    </div>
+                  ) : !notifications.length ? (
+                    <div className="np-notification-state">No new registration notifications</div>
+                  ) : (
+                    notifications.map((notification) => {
+                      const payload = notification.payload || {};
+                      return (
+                        <button
+                          type="button"
+                          key={notification.id}
+                          className={`np-notification-item ${notification.read_at ? "read" : "unread"}`}
+                          onClick={() => openNotification(notification)}
+                        >
+                          <span className="np-notification-type">
+                            {notification.type === "client_registration" ? "Client registration" : "Consultant registration"}
+                          </span>
+                          <strong>{payload.name || notification.title}</strong>
+                          {payload.company && <span>{payload.company}</span>}
+                          {payload.email && <small>{payload.email}</small>}
+                          <time>{new Date(notification.created_at).toLocaleString()}</time>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       <div className="np-profile-wrap" ref={menuRef}>
         <button
           className="np-avatar-btn"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => {
+            setMenuOpen(!menuOpen);
+            setNotificationsOpen(false);
+          }}
           title={user?.full_name || "Account"}
         >
           <ConsultantAvatar
@@ -210,6 +379,7 @@ export default function Navbar() {
             </button>
           </div>
         )}
+      </div>
       </div>
     </header>
   );

@@ -12,6 +12,8 @@ import {
 import { useEffect, useState } from "react";
 import { getAppointedSurveyors } from "../api/appointedSurveyorApi";
 import CopyableContact from "../components/common/CopyableContact";
+import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
+import ViewToggle from "../components/common/ViewToggle";
 import "./AppointedSurveyorDirectory.css";
 
 const emptySummary = {
@@ -20,6 +22,15 @@ const emptySummary = {
   general_count: 0,
   restricted_count: 0,
   mlc_authorized_count: 0,
+};
+const VIEW_KEY = "np_appointed_surveyors_view";
+const initialView = () => {
+  try {
+    const stored = localStorage.getItem(VIEW_KEY);
+    return stored === "list" || stored === "grid" ? stored : "grid";
+  } catch {
+    return "grid";
+  }
 };
 
 const splitValues = (value) =>
@@ -65,6 +76,8 @@ export default function AppointedSurveyorDirectory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
+  const [view, setView] = useState(initialView);
+  const [selectedSurveyor, setSelectedSurveyor] = useState(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -117,6 +130,17 @@ export default function AppointedSurveyorDirectory() {
     ["Restricted", summary.restricted_count],
     ["MLC Authorized", summary.mlc_authorized_count],
   ];
+  const changeView = (nextView) => {
+    setView(nextView);
+    try { localStorage.setItem(VIEW_KEY, nextView); } catch { /* Preference remains in memory. */ }
+  };
+  const handleRowKeyDown = (event, surveyor) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setSelectedSurveyor(surveyor);
+    }
+  };
 
   return (
     <main className="appointed-page">
@@ -212,10 +236,10 @@ export default function AppointedSurveyorDirectory() {
         <section className="appointed-results">
           <div className="appointed-results-heading">
             <span>Directory results</span>
-            <strong>{summary.surveyor_count} {summary.surveyor_count === 1 ? "record" : "records"}</strong>
+            <div><strong>{summary.surveyor_count} {summary.surveyor_count === 1 ? "record" : "records"}</strong><ViewToggle value={view} onChange={changeView} label="Appointed surveyor results view" /></div>
           </div>
 
-          <div className="appointed-grid">
+          {view === "grid" ? <div className="appointed-grid">
             {surveyors.map((surveyor) => {
               const restricted = surveyor.appointment_scope === "restricted";
               return (
@@ -265,8 +289,55 @@ export default function AppointedSurveyorDirectory() {
                 </article>
               );
             })}
-          </div>
+          </div> : (
+            <div className="appointed-table-wrap">
+              <table className="appointed-table">
+                <thead><tr><th>Name</th><th>Organization</th><th>Appointment type</th><th>Email</th><th>Phone</th><th>Country</th><th>MLC status</th><th><span className="sr-only">Action</span></th></tr></thead>
+                <tbody>
+                  {surveyors.map((surveyor) => {
+                    const email = splitValues(surveyor.email_addresses)[0];
+                    const phone = splitValues(surveyor.mobile_numbers || surveyor.telephone_numbers)[0];
+                    return (
+                      <tr key={surveyor.id} tabIndex={0} onClick={() => setSelectedSurveyor(surveyor)} onKeyDown={(event) => handleRowKeyDown(event, surveyor)}>
+                        <td><strong>{[surveyor.professional_title, surveyor.full_name].filter(Boolean).join(" ")}</strong></td>
+                        <td>{surveyor.organization_name || "—"}</td>
+                        <td className="capitalize">{surveyor.appointment_scope || "—"}</td>
+                        <td>{email ? <CopyableContact value={email} href={`mailto:${email}`} type="email" /> : "—"}</td>
+                        <td>{phone ? <CopyableContact value={phone} href={phoneHref(phone)} type="phone" /> : "—"}</td>
+                        <td>{surveyor.country || "—"}</td>
+                        <td>{surveyor.mlc_under_500gt_authorized ? "Authorized" : "Not authorized"}</td>
+                        <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedSurveyor(surveyor); }}>View details</button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
+      )}
+
+      {selectedSurveyor && (
+        <DirectoryDetailsModal
+          eyebrow="Appointed Ship Surveyor"
+          title={[selectedSurveyor.professional_title, selectedSurveyor.full_name].filter(Boolean).join(" ")}
+          onClose={() => setSelectedSurveyor(null)}
+        >
+          <DirectoryDetailGrid entries={[
+            ["Organization", selectedSurveyor.organization_name],
+            ["Appointment scope", selectedSurveyor.appointment_scope],
+            ["Country", selectedSurveyor.country],
+            ["MLC under 500 GT", selectedSurveyor.mlc_under_500gt_authorized ? "Authorized" : "Not authorized"],
+            ["Maximum ship length", selectedSurveyor.max_ship_length_meters ? `${Number(selectedSurveyor.max_ship_length_meters)} metres` : ""],
+            ["Email", selectedSurveyor.email_addresses],
+            ["Mobile", selectedSurveyor.mobile_numbers],
+            ["Telephone", selectedSurveyor.telephone_numbers],
+            ["Address", selectedSurveyor.address_text],
+            ["Source", selectedSurveyor.source_name],
+            ["Source document", selectedSurveyor.source_document_title],
+            ["Source published", selectedSurveyor.source_published_date ? new Date(selectedSurveyor.source_published_date).toLocaleDateString() : ""],
+          ]} />
+        </DirectoryDetailsModal>
       )}
     </main>
   );

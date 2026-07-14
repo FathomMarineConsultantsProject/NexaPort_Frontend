@@ -20,6 +20,20 @@
 .accredited-results-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin: 0 2px 13px; }
 .accredited-results-heading h2 { margin: 4px 0 0; color: #071f3d; font-size: 21px; }
 .accredited-results-heading p { max-width: 520px; margin: 0; color: #6b7a90; font-size: 12px; line-height: 1.5; text-align: right; }
+.accredited-results-actions { display: flex; align-items: center; justify-content: flex-end; gap: 13px; }
+.accredited-table-wrap { overflow-x: auto; border: 1px solid #dce4ed; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(15,35,64,.04); }
+.accredited-table { width: 100%; min-width: 1020px; border-collapse: collapse; }
+.accredited-table th { padding: 11px 13px; border-bottom: 1px solid #dce4ed; background: #f6f9fb; color: #617086; font-size: 10px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+.accredited-table td { padding: 12px 13px; border-bottom: 1px solid #edf1f5; color: #40536b; font-size: 12px; vertical-align: middle; }
+.accredited-table tbody tr { cursor: pointer; }
+.accredited-table tbody tr:last-child td { border-bottom: 0; }
+.accredited-table tbody tr:hover, .accredited-table tbody tr:focus-visible { background: #f1faf8; outline: none; }
+.accredited-table td strong { color: #10233f; }
+.accredited-table td .copyable-contact { max-width: 210px; }
+.accredited-table td:last-child { text-align: right; }
+.accredited-table td:last-child button { border: 1px solid #bcd9d4; border-radius: 7px; background: #fff; padding: 7px 9px; color: #0f766e; font: 700 11px inherit; cursor: pointer; }
+.directory-modal-source { display: inline-flex; align-items: center; gap: 6px; margin-top: 17px; color: #0f766e; font-size: 12px; font-weight: 750; text-decoration: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .accredited-grid, .accredited-skeleton-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-top: 22px; }
 .accredited-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid #dce4ed; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(15, 35, 64, .04); overflow: hidden; }
 .accredited-card-head { display: flex; align-items: flex-start; gap: 12px; padding: 18px 18px 15px; border-bottom: 1px solid #edf1f5; }
@@ -50,5 +64,5 @@
 .accredited-skeleton { min-height: 250px; border: 1px solid #e2e8f0; border-radius: 11px; background: #eef2f6; animation: accredited-pulse 1.3s ease infinite; }
 @keyframes accredited-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 @media (max-width: 1120px) { .accredited-controls { grid-template-columns: 1fr 1.4fr; } .accredited-summary { grid-column: 1 / -1; } .accredited-grid, .accredited-skeleton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .accredited-page { padding: 22px 14px 38px; } .accredited-heading, .accredited-results-heading { align-items: flex-start; flex-direction: column; gap: 12px; } .accredited-source-link { align-self: flex-start; } .accredited-controls { grid-template-columns: 1fr; padding: 14px; } .accredited-summary { grid-column: auto; justify-content: flex-start; overflow-x: auto; } .accredited-results-heading p { text-align: left; } .accredited-grid, .accredited-skeleton-grid { grid-template-columns: 1fr; } .accredited-card-foot { align-items: flex-start; flex-direction: column; } .accredited-source { text-align: left; } }
+@media (max-width: 720px) { .accredited-page { padding: 22px 14px 38px; } .accredited-heading, .accredited-results-heading { align-items: flex-start; flex-direction: column; gap: 12px; } .accredited-results-actions { width: 100%; align-items: flex-start; justify-content: space-between; } .accredited-source-link { align-self: flex-start; } .accredited-controls { grid-template-columns: 1fr; padding: 14px; } .accredited-summary { grid-column: auto; justify-content: flex-start; overflow-x: auto; } .accredited-results-heading p { text-align: left; } .accredited-grid, .accredited-skeleton-grid { grid-template-columns: 1fr; } .accredited-card-foot { align-items: flex-start; flex-direction: column; } .accredited-source { text-align: left; } }
 @media (prefers-reduced-motion: reduce) { .accredited-skeleton { animation: none; } }

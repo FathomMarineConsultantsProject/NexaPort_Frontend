@@ -1,0 +1,15 @@
+.directory-modal-backdrop { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 20px; background: rgba(8,22,43,.58); }
+.directory-modal { width: min(680px, 100%); max-height: 90vh; overflow: auto; border-radius: 12px; background: #fff; box-shadow: 0 24px 70px rgba(7,27,57,.3); }
+.directory-modal > header { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 21px 23px 17px; border-bottom: 1px solid #e7edf3; background: #fff; }
+.directory-modal header span { color: #0f766e; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.directory-modal h2 { margin: 4px 0 0; color: #10233f; font-size: 22px; overflow-wrap: anywhere; }
+.directory-modal header button { width: 36px; height: 36px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid #d6e0e9; border-radius: 8px; background: #fff; color: #52647a; cursor: pointer; }
+.directory-modal header button:hover { background: #f5f8fa; color: #0f766e; }
+.directory-modal header button:focus-visible { outline: 3px solid rgba(20,184,166,.2); }
+.directory-modal-content { padding: 22px 23px 25px; }
+.directory-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0; }
+.directory-detail-grid > div { min-width: 0; padding: 13px 14px; border: 1px solid #e0e7ee; border-radius: 8px; background: #f9fbfc; }
+.directory-detail-grid dt { margin-bottom: 5px; color: #718096; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.directory-detail-grid dd { margin: 0; color: #263b59; font-size: 13px; font-weight: 650; line-height: 1.5; overflow-wrap: anywhere; }
+.directory-detail-grid a { color: #0f766e; }
+@media (max-width: 600px) { .directory-modal-backdrop { padding: 10px; } .directory-modal > header, .directory-modal-content { padding-left: 17px; padding-right: 17px; } .directory-detail-grid { grid-template-columns: 1fr; } }
