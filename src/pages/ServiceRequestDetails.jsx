@@ -9,8 +9,8 @@ import {
   Ship,
   Star,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { acceptQuotation, createQuotation } from "../api/quotationApi";
+import { useCallback, useEffect, useState } from "react";
+import { acceptQuotation, createQuotation, getQuotations } from "../api/quotationApi";
 import { createExpertReview } from "../api/reviewApi";
 import { getServiceRequestById } from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
@@ -43,23 +43,29 @@ export default function ServiceRequestDetails() {
     coverLetter: "",
   });
 
-  useEffect(() => {
-    loadPage();
-  }, [id]);
-
-  const loadPage = async () => {
+  const loadPage = useCallback(async () => {
     setLoading(true);
 
     try {
       const requestRes = await getServiceRequestById(id);
-      setRequest(requestRes.data);
+      if (isExpert()) {
+        const quotationRes = await getQuotations({ serviceRequestId: id });
+        setRequest({ ...requestRes.data, _ownQuotations: quotationRes.data || [] });
+      } else {
+        setRequest(requestRes.data);
+      }
     } catch (error) {
       console.error("Failed to load request:", error);
       setRequest(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    const loadId = window.setTimeout(loadPage, 0);
+    return () => window.clearTimeout(loadId);
+  }, [loadPage]);
 
   const formatDate = (date) => {
     if (!date) return "-";
@@ -189,6 +195,26 @@ export default function ServiceRequestDetails() {
 
   if (!request) {
     return <main className="request-details-page">Request not found.</main>;
+  }
+
+  if (isExpert()) {
+    const ownQuotes = request._ownQuotations || [];
+    return <main className="request-details-page consultant-request-detail">
+      <section className="details-card consultant-safe-detail-grid">
+        <div><span>Inspection Type</span><strong>{request.inspectionType || "Not provided"}</strong></div>
+        <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
+        <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
+        <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
+      </section>
+      <section className="consultant-quote-section">
+        <div className="quotation-head"><h2>Your Quotation</h2>{!ownQuotes.length && <button className="submit-quote-toggle" onClick={() => setShowQuoteForm(!showQuoteForm)}><Briefcase size={17}/> Submit Quotation</button>}</div>
+        {ownQuotes.map((quote) => <article className="quotation-card" key={quote.id}><div className="quotation-top"><div><h3>Your submitted quotation</h3><p>{formatDateTime(quote.createdAt)}</p></div><div className="quotation-price"><strong>${money(quote.totalQuoteUsd)}</strong><span className={`quote-status ${quote.status}`}>{quote.status}</span></div></div></article>)}
+        {showQuoteForm && !ownQuotes.length && <form className="quote-form-card" onSubmit={submitQuotation}><h3>Submit Quotation</h3><div className="quote-two-grid">
+          {[["totalQuoteUsd","Total Quotation (USD)"],["attendanceDays","Attendance Days"],["travelCost","Travel Cost"],["accommodationCost","Accommodation"],["reportFee","Report Fee"],["urgencySurcharge","Urgency Surcharge"]].map(([field,label]) => <label key={field}>{label}<input type="number" min="0" required={field === "totalQuoteUsd"} value={quoteForm[field]} onChange={(event) => setQuoteForm({...quoteForm,[field]:event.target.value})}/></label>)}
+        </div><label>Cover Letter / Notes<textarea value={quoteForm.coverLetter} onChange={(event) => setQuoteForm({...quoteForm,coverLetter:event.target.value})}/></label><div className="quote-actions"><button type="submit" className="primary-btn">Submit Quotation</button><button type="button" className="secondary-btn" onClick={() => setShowQuoteForm(false)}>Cancel</button></div></form>}
+      </section>
+      {toast && <div className="request-toast"><strong>{toast}</strong></div>}
+    </main>;
   }
 
   const quotations = request?.quotations || [];

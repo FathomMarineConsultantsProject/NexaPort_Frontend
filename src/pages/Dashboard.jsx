@@ -10,9 +10,10 @@ import {
   Star,
   TrendingUp,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDashboardStats } from "../api/Dashboardapi";
+import { getServiceRequests } from "../api/serviceRequestApi";
 import { isClient, isExpert } from "../utils/auth";
 import "./Dashboard.css";
 
@@ -37,18 +38,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const blurExperts = isClient() || isExpert();
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
       const [dashRes, requestsRes] = await Promise.all([
         getDashboardStats(),
-        fetch("https://nexa-port-backend.vercel.app/api/service-requests").then((r) =>
-          r.json()
-        ),
+        getServiceRequests(),
       ]);
 
       if (dashRes.success) setStats(dashRes.data);
@@ -58,7 +53,12 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const loadId = window.setTimeout(loadDashboard, 0);
+    return () => window.clearTimeout(loadId);
+  }, [loadDashboard]);
 
   if (loading) {
     return (
@@ -109,7 +109,7 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="charts-row">
-        <div className="chart-card">
+        {!isExpert() && <div className="chart-card">
           <h2>Requests by Service Type</h2>
           <div className="bar-chart-list">
             {serviceTypes.length > 0 ? (
@@ -132,7 +132,7 @@ export default function Dashboard() {
               <p style={{ color: "#94a3b8", fontSize: "14px" }}>No data</p>
             )}
           </div>
-        </div>
+        </div>}
 
         <div className="chart-card">
           <h2>Urgency Distribution</h2>
@@ -161,7 +161,7 @@ export default function Dashboard() {
 
       {/* Financial + Top Experts */}
       <div className="lower-row">
-        <div className="financial-card">
+        {!isExpert() && <div className="financial-card">
           <div className="financial-card-header">
             <TrendingUp size={20} /> Financial Overview
           </div>
@@ -182,7 +182,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         <div className={`experts-card ${blurExperts ? "experts-card-blurred" : ""}`}>
           <div className="experts-card-header"><h2>Top-Rated Consultants</h2></div>
@@ -243,7 +243,14 @@ export default function Dashboard() {
             No service requests yet
           </div>
         ) : (
-          recentRequests.map((req) => (
+          recentRequests.map((req) => isExpert() ? (
+            <Link to={`/requests/${req.id}`} key={req.id} className="recent-request-row consultant-dashboard-request">
+              <div><small>Inspection Type</small><strong>{req.inspectionType || "Not provided"}</strong></div>
+              <div><small>Ship Type</small><strong>{req.vesselType || "Not provided"}</strong></div>
+              <div><small>Date of Inspection</small><strong>{req.inspectionDate ? new Date(req.inspectionDate).toLocaleDateString() : "Not provided"}</strong></div>
+              <div><small>Port of Inspection</small><strong>{req.portOfInspection || "Not provided"}</strong></div>
+            </Link>
+          ) : (
             <Link to={`/requests/${req.id}`} key={req.id} className="recent-request-row">
               <div className="recent-request-left">
                 <div className="recent-request-badges">

@@ -1,8 +1,9 @@
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-import { getExperts } from "../api/expertApi";
+import { deactivateConsultantAsAdmin, deleteConsultantAsAdmin, getConsultantDeletionImpact, getExperts } from "../api/expertApi";
+import TypedConfirmationModal from "../components/common/TypedConfirmationModal";
 import { getSpecialties } from "../api/masterApi";
 import CustomSelect from "../components/experts/CustomSelect";
 import ExpertCard from "../components/experts/ExpertCard";
@@ -18,18 +19,18 @@ const availabilityOptions = [
 ];
 
 export default function ExpertDirectory() {
+  const navigate = useNavigate();
   const [experts, setExperts] = useState([]);
   const [specialties, setSpecialties] = useState(["All Specialties"]);
   const [search, setSearch] = useState("");
   const [availability, setAvailability] = useState("All Availability");
   const [specialty, setSpecialty] = useState("All Specialties");
   const [loading, setLoading] = useState(true);
+  const [accountAction, setAccountAction] = useState(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
 
-  useEffect(() => {
-    loadPageData();
-  }, []);
-
-  const loadPageData = async () => {
+  const loadPageData = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -49,7 +50,12 @@ export default function ExpertDirectory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const loadId = window.setTimeout(loadPageData, 0);
+    return () => window.clearTimeout(loadId);
+  }, [loadPageData]);
 
   const filteredExperts = useMemo(() => {
     return experts.filter((expert) => {
@@ -73,6 +79,25 @@ export default function ExpertDirectory() {
       return nameMatch && availabilityMatch && specialtyMatch;
     });
   }, [experts, search, availability, specialty]);
+
+  const prepareDelete = async (expert) => {
+    setActionError("");
+    try {
+      const response = await getConsultantDeletionImpact(expert.id);
+      setAccountAction({ expert, dependencies: response.data, mode: response.data.has_immutable_history ? "deactivate" : "delete" });
+    } catch (error) { setActionError(error.response?.data?.message || "Unable to inspect Consultant dependencies."); }
+  };
+
+  const completeAccountAction = async ({ confirmation, reason }) => {
+    setActionBusy(true); setActionError("");
+    try {
+      if (accountAction.mode === "delete") await deleteConsultantAsAdmin(accountAction.expert.id, confirmation);
+      else await deactivateConsultantAsAdmin(accountAction.expert.id, { confirmation, reason });
+      setExperts((current) => current.filter((item) => item.id !== accountAction.expert.id));
+      setAccountAction(null);
+    } catch (error) { setActionError(error.response?.data?.message || "Consultant account action failed."); }
+    finally { setActionBusy(false); }
+  };
 
   return (
     <main className="expert-page">
@@ -127,10 +152,25 @@ export default function ExpertDirectory() {
       ) : (
         <section className="expert-grid">
           {filteredExperts.map((expert) => (
-            <ExpertCard key={expert.id} expert={expert} />
+            <article className="expert-admin-card" key={expert.id}><ExpertCard expert={expert} />{isSuperAdmin() && <div className="expert-admin-actions"><button type="button" onClick={() => navigate(`/experts/${expert.id}`)}>Edit</button><button type="button" className="danger" onClick={() => prepareDelete(expert)}>Delete</button></div>}</article>
           ))}
         </section>
       )}
+      {actionError && !accountAction && <div className="experts-action-error">{actionError}</div>}
+      {accountAction && <TypedConfirmationModal
+        title={accountAction.mode === "delete" ? "Permanently delete Consultant?" : "Deactivate and anonymize Consultant?"}
+        subject={accountAction.expert.full_name}
+        company={accountAction.expert.company_name}
+        warning={accountAction.mode === "delete" ? "This dependency-free login and Consultant profile will be permanently removed." : "Business history will be preserved, while login access and personal profile information are removed."}
+        dependencies={accountAction.dependencies}
+        confirmationText={accountAction.mode === "delete" ? "DELETE" : "DEACTIVATE"}
+        confirmLabel={accountAction.mode === "delete" ? "Permanently Delete" : "Deactivate and Anonymize"}
+        requireReason={accountAction.mode === "deactivate"}
+        busy={actionBusy}
+        error={actionError}
+        onCancel={() => !actionBusy && setAccountAction(null)}
+        onConfirm={completeAccountAction}
+      />}
     </main>
   );
 }

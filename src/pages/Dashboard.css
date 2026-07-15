@@ -436,3 +436,4 @@
   cursor: default;
   background: #f8fafc;
 }
+.consultant-dashboard-request{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.consultant-dashboard-request div{display:grid;gap:5px}.consultant-dashboard-request small{text-transform:uppercase;font-size:9px;letter-spacing:.06em;color:#738197}.consultant-dashboard-request strong{color:#173453}@media(max-width:700px){.consultant-dashboard-request{grid-template-columns:1fr 1fr}}@media(max-width:390px){.consultant-dashboard-request{grid-template-columns:1fr}}

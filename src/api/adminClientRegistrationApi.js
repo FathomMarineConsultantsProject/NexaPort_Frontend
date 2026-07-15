@@ -5,3 +5,10 @@ export const getClientRegistration = async (id) => (await axiosClient.get(`/admi
 export const approveClientRegistration = async (id, payload = {}) => (await axiosClient.post(`/admin/client-registrations/${id}/approve`, payload)).data;
 export const rejectClientRegistration = async (id, payload) => (await axiosClient.post(`/admin/client-registrations/${id}/reject`, payload)).data;
 export const getClientDocumentUrl = async (clientProfileId, documentId) => (await axiosClient.get(`/admin/client-registrations/${clientProfileId}/documents/${documentId}/download-url`)).data;
+
+export const getAdminClients = async (params) => (await axiosClient.get("/admin/clients", { params })).data;
+export const getAdminClient = async (userId) => (await axiosClient.get(`/admin/clients/${userId}`)).data;
+export const updateAdminClient = async (userId, payload) => (await axiosClient.patch(`/admin/clients/${userId}`, payload)).data;
+export const getClientDeletionImpact = async (userId) => (await axiosClient.get(`/admin/clients/${userId}/deletion-impact`)).data;
+export const deleteAdminClient = async (userId, confirmation) => (await axiosClient.delete(`/admin/clients/${userId}`, { data: { confirmation } })).data;
+export const deactivateAdminClient = async (userId, payload) => (await axiosClient.post(`/admin/clients/${userId}/deactivate-anonymize`, payload)).data;

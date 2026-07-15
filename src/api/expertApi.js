@@ -44,3 +44,15 @@ export const deleteExpert = async (id) => {
   const res = await axiosClient.delete(`/experts/${id}`);
   return res.data;
 };
+
+export const getConsultantDeletionImpact = async (id) =>
+  (await axiosClient.get(`/admin/consultants/${id}/deletion-impact`)).data;
+
+export const updateConsultantAsAdmin = async (id, payload) =>
+  (await axiosClient.patch(`/admin/consultants/${id}`, payload)).data;
+
+export const deleteConsultantAsAdmin = async (id, confirmation) =>
+  (await axiosClient.delete(`/admin/consultants/${id}`, { data: { confirmation } })).data;
+
+export const deactivateConsultantAsAdmin = async (id, payload) =>
+  (await axiosClient.post(`/admin/consultants/${id}/deactivate-anonymize`, payload)).data;

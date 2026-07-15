@@ -1,8 +1,8 @@
-import { Calendar, ChevronDown, MapPin, Plus, Search, Ship, Trash2 } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronDown, Edit3, MapPin, Plus, Search, Ship, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { deleteServiceRequest, getServiceRequests } from "../api/serviceRequestApi";
+import { approveServiceRequest, deleteServiceRequest, getServiceRequests, updateServiceRequest } from "../api/serviceRequestApi";
 import { isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
 import "./ServiceRequests.css";
@@ -37,6 +37,10 @@ export default function ServiceRequests() {
   const [search, setSearch] = useState("");
   const [requestToDelete, setRequestToDelete] = useState(null);
   const [deletingRequest, setDeletingRequest] = useState(false);
+  const [moderation, setModeration] = useState("pending");
+  const [approvingId, setApprovingId] = useState(null);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const deleteCancelRef = useRef(null);
   const deleteDialogRef = useRef(null);
@@ -72,6 +76,7 @@ export default function ServiceRequests() {
       if (selectedType !== "All Types") params.type = selectedType;
       if (selectedStatus !== "All Statuses") params.status = selectedStatus;
       if (selectedUrgency !== "Any Urgency") params.urgency = selectedUrgency;
+      if (isSuperAdmin()) params.moderation = moderation;
 
       const response = await getServiceRequests(params);
 
@@ -84,7 +89,7 @@ export default function ServiceRequests() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedStatus, selectedType, selectedUrgency]);
+  }, [search, selectedStatus, selectedType, selectedUrgency, moderation]);
 
   useEffect(() => {
     const loadId = window.setTimeout(loadRequests, 0);
@@ -194,6 +199,48 @@ export default function ServiceRequests() {
     }
   };
 
+  const handleApprove = async (request) => {
+    if (!window.confirm("Approve this request and notify all active Consultants?")) return;
+    setApprovingId(request.id); setNotice("");
+    try {
+      const response = await approveServiceRequest(request.id);
+      if (moderation === "pending") setRequests((current) => current.filter((item) => item.id !== request.id));
+      else setRequests((current) => current.map((item) => item.id === request.id ? response.data : item));
+      setNotice("Request approved. Eligible Consultants were notified.");
+    } catch (error) { setNotice(error.response?.data?.message || "Approval failed."); }
+    finally { setApprovingId(null); }
+  };
+
+  const beginEdit = (request) => setEditingRequest({
+    id: request.id,
+    serviceType: request.serviceType || "",
+    serviceCategory: request.serviceCategory || "",
+    title: request.title || "",
+    scopeOfWork: request.scopeOfWork || "",
+    urgency: request.urgency || "routine",
+    budgetUsd: request.budgetUsd ?? "",
+    requiredBy: request.requiredBy ? String(request.requiredBy).slice(0, 10) : "",
+    vesselName: request.vessel?.name || "",
+    imoNumber: request.vessel?.imoNumber || "",
+    vesselType: request.vessel?.type || "",
+    flagState: request.vessel?.flagState || "",
+    portName: request.port?.name || "",
+    country: request.port?.country || "",
+    eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
+    locationSummary: request.port?.locationSummary || "",
+    requiredCertification: request.requiredCertification || "",
+  });
+
+  const saveEdit = async () => {
+    setEditSaving(true);
+    try {
+      const response = await updateServiceRequest(editingRequest.id, editingRequest);
+      setRequests((current) => current.map((item) => item.id === editingRequest.id ? response.data : item));
+      setEditingRequest(null); setNotice("Pending request updated.");
+    } catch (error) { setNotice(error.response?.data?.message || "Request update failed."); }
+    finally { setEditSaving(false); }
+  };
+
   return (
     <div className="requests-page">
       <div className="requests-header">
@@ -215,6 +262,10 @@ export default function ServiceRequests() {
           )}
         </div>
       </div>
+
+      {isSuperAdmin() && <div className="moderation-tabs" role="tablist">
+        {["pending", "approved", "all"].map((item) => <button type="button" role="tab" aria-selected={moderation === item} className={moderation === item ? "active" : ""} key={item} onClick={() => setModeration(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
+      </div>}
 
       {notice && (
         <div className="request-notice">
@@ -246,7 +297,7 @@ export default function ServiceRequests() {
           setOpenDropdown={setOpenDropdown}
         />
 
-        <FilterDropdown
+        {!isExpert() && <FilterDropdown
           label="Status"
           options={statuses}
           value={selectedStatus}
@@ -254,9 +305,9 @@ export default function ServiceRequests() {
           setDropdownRef={(id, element) => { dropdownRefs.current[id] = element; }}
           openDropdown={openDropdown}
           setOpenDropdown={setOpenDropdown}
-        />
+        />}
 
-        <FilterDropdown
+        {!isExpert() && <FilterDropdown
           label="Urgency"
           options={urgencies}
           value={selectedUrgency}
@@ -264,7 +315,7 @@ export default function ServiceRequests() {
           setDropdownRef={(id, element) => { dropdownRefs.current[id] = element; }}
           openDropdown={openDropdown}
           setOpenDropdown={setOpenDropdown}
-        />
+        />}
       </div>
 
       {loading ? (
@@ -279,6 +330,17 @@ export default function ServiceRequests() {
       ) : (
         <div className="requests-list">
           {requests.map((request) => {
+            if (isExpert()) return (
+              <div key={request.id} className="request-card consultant-safe-card">
+                <div className="request-main consultant-safe-grid">
+                  <div><span>Inspection Type</span><strong>{request.inspectionType || "Not provided"}</strong></div>
+                  <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
+                  <div><span>Date of Inspection</span><strong>{request.inspectionDate ? new Date(request.inspectionDate).toLocaleDateString() : "Not provided"}</strong></div>
+                  <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
+                </div>
+                <button type="button" onClick={() => navigate(`/requests/${request.id}`)} className="view-quote-btn">View Request</button>
+              </div>
+            );
             const vessel = request.vessel || {};
             const port = request.port || {};
 
@@ -358,13 +420,15 @@ export default function ServiceRequests() {
                       View Details
                     </button>
                     {isSuperAdmin() && (
+                      <><button type="button" className="edit-request-btn" onClick={() => beginEdit(request)} disabled={request.moderationStatus !== "pending"}><Edit3 size={15}/> Edit</button>
+                      {request.moderationStatus === "pending" && <button type="button" className="approve-request-btn" disabled={approvingId === request.id} onClick={() => handleApprove(request)}><CheckCircle2 size={15}/> {approvingId === request.id ? "Approving..." : "Approve"}</button>}
                       <button
                         type="button"
                         className="delete-request-btn"
                         onClick={() => { setDeleteError(""); setRequestToDelete(request); }}
                       >
                         <Trash2 size={15} /> Delete
-                      </button>
+                      </button></>
                     )}
                   </div>
                 </div>
@@ -396,6 +460,13 @@ export default function ServiceRequests() {
           </section>
         </div>
       )}
+
+      {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>Edit Pending Request</h2><div className="request-edit-grid">
+        {[
+          ["serviceType","Service type"],["serviceCategory","Inspection type"],["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["portName","Port"],["country","Country"],["eta","ETA","date"],["locationSummary","Location summary"],["requiredCertification","Required certification"]
+        ].map(([field,label,type="text"]) => <label key={field}>{label}<input type={type} value={editingRequest[field] ?? ""} onChange={(event) => setEditingRequest({...editingRequest,[field]:event.target.value})}/></label>)}
+        <label className="wide">Scope of work<textarea value={editingRequest.scopeOfWork} onChange={(event) => setEditingRequest({...editingRequest,scopeOfWork:event.target.value})}/></label>
+      </div><div className="request-edit-actions"><button type="button" disabled={editSaving} onClick={() => setEditingRequest(null)}>Cancel</button><button type="button" className="save" disabled={editSaving} onClick={saveEdit}>{editSaving ? "Saving..." : "Save Changes"}</button></div></section></div>}
     </div>
   );
 }

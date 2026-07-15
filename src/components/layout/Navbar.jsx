@@ -48,10 +48,11 @@ export default function Navbar() {
   const roleId = getRoleId();
   const isClient = roleId === 3;
   const isSuperAdmin = roleId === 1;
+  const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
 
   const loadNotifications = useCallback(async () => {
-    if (!isSuperAdmin || notificationRequestInFlight.current) return;
+    if (!canUseNotifications || notificationRequestInFlight.current) return;
     notificationRequestInFlight.current = true;
     setNotificationsLoading(true);
     setNotificationsError("");
@@ -67,10 +68,10 @@ export default function Navbar() {
       notificationRequestInFlight.current = false;
       setNotificationsLoading(false);
     }
-  }, [isSuperAdmin]);
+  }, [canUseNotifications]);
 
   useEffect(() => {
-    if (!isSuperAdmin) return undefined;
+    if (!canUseNotifications) return undefined;
     const initialLoadId = window.setTimeout(loadNotifications, 0);
     const handleFocus = () => loadNotifications();
     window.addEventListener("focus", handleFocus);
@@ -80,7 +81,7 @@ export default function Navbar() {
       window.removeEventListener("focus", handleFocus);
       window.clearInterval(intervalId);
     };
-  }, [isSuperAdmin, loadNotifications]);
+  }, [canUseNotifications, loadNotifications]);
 
   useEffect(() => {
     let active = true;
@@ -176,7 +177,9 @@ export default function Navbar() {
 
     const payload = notification.payload || {};
     const destination =
-      notification.type === "client_registration"
+      notification.type === "service_request_approved"
+        ? `/requests/${payload.request_id || notification.entity_id}`
+        : notification.type === "client_registration"
         ? `/admin/client-registrations/${payload.registration_id || notification.entity_id}`
         : `/experts/${payload.expert_id || notification.entity_id}`;
     setNotificationsOpen(false);
@@ -219,7 +222,7 @@ export default function Navbar() {
           </NavLink>
         )}
 
-        {isSuperAdmin && (
+        {canUseNotifications && (
           <>
             <NavLink to="/admin/client-registrations">
               <Users size={17} /> Client Registrations
@@ -291,7 +294,7 @@ export default function Navbar() {
                       <button type="button" onClick={loadNotifications}>Retry</button>
                     </div>
                   ) : !notifications.length ? (
-                    <div className="np-notification-state">No new registration notifications</div>
+                    <div className="np-notification-state">No notifications</div>
                   ) : (
                     notifications.map((notification) => {
                       const payload = notification.payload || {};
@@ -302,12 +305,9 @@ export default function Navbar() {
                           className={`np-notification-item ${notification.read_at ? "read" : "unread"}`}
                           onClick={() => openNotification(notification)}
                         >
-                          <span className="np-notification-type">
-                            {notification.type === "client_registration" ? "Client registration" : "Consultant registration"}
-                          </span>
-                          <strong>{payload.name || notification.title}</strong>
-                          {payload.company && <span>{payload.company}</span>}
-                          {payload.email && <small>{payload.email}</small>}
+                          <span className="np-notification-type">{notification.type === "service_request_approved" ? "Inspection request" : notification.type === "client_registration" ? "Client registration" : "Consultant registration"}</span>
+                          <strong>{notification.type === "service_request_approved" ? notification.title : payload.name || notification.title}</strong>
+                          {notification.type === "service_request_approved" ? <span>{notification.message}</span> : <>{payload.company && <span>{payload.company}</span>}{payload.email && <small>{payload.email}</small>}</>}
                           <time>{new Date(notification.created_at).toLocaleString()}</time>
                         </button>
                       );

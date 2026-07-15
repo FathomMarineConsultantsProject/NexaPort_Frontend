@@ -24,3 +24,8 @@ export const deleteServiceRequest = async (id) => {
   const res = await axiosClient.delete(`/service-requests/${id}`);
   return res.data;
 };
+
+export const approveServiceRequest = async (id) => {
+  const res = await axiosClient.post(`/service-requests/${id}/approve`);
+  return res.data;
+};

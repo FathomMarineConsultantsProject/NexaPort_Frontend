@@ -297,3 +297,4 @@
   background: #f1f5f9;
   color: #149d94;
 }
+.expert-admin-card{min-width:0}.expert-admin-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}.expert-admin-actions button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:8px 12px;font-weight:800;color:#173453}.expert-admin-actions .danger{color:#9a352f;border-color:#e3b1ad}.experts-action-error{position:fixed;right:20px;bottom:20px;background:#fff1ef;border:1px solid #e7aaa4;color:#91362f;padding:12px 16px;border-radius:8px;z-index:20}

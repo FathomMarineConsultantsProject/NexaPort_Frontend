@@ -596,3 +596,4 @@
     flex-wrap: wrap;
   }
 }
+.consultant-request-detail{max-width:1000px;margin:0 auto}.consultant-safe-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}.consultant-safe-detail-grid div{display:grid;gap:7px}.consultant-safe-detail-grid span{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#728096;font-weight:800}.consultant-safe-detail-grid strong{font-size:17px;color:#173453}.consultant-quote-section{margin-top:22px}@media(max-width:720px){.consultant-safe-detail-grid{grid-template-columns:1fr 1fr}}@media(max-width:430px){.consultant-safe-detail-grid{grid-template-columns:1fr}}

@@ -13,6 +13,7 @@ import {
   getExpertById,
   getExpertCvUrl,
   updateExpert,
+  updateConsultantAsAdmin,
 } from "../api/expertApi";
 import {
   createExpertReview,
@@ -138,6 +139,10 @@ export default function ExpertProfile() {
     ports: [],
     languages: "",
     registration_details: null,
+    user_email: "",
+    user_phone: "",
+    user_is_active: true,
+    flag_services: [],
   });
 
   const [reviewForm, setReviewForm] = useState({
@@ -173,6 +178,10 @@ export default function ExpertProfile() {
         registration_details: expertRes.data.registration_details
           ? { ...initialRegistrationEdit, ...expertRes.data.registration_details }
           : null,
+        user_email: expertRes.data.user_email || "",
+        user_phone: expertRes.data.user_phone || "",
+        user_is_active: expertRes.data.user_is_active !== false,
+        flag_services: expertRes.data.flag_services || [],
       });
       setReviews(reviewRes.data || []);
     } catch (error) {
@@ -322,6 +331,17 @@ export default function ExpertProfile() {
       if (photoS3Key) profilePayload.photo_s3_key = photoS3Key;
       if (cvS3Key) profilePayload.cv_s3_key = cvS3Key;
 
+      if (isSuperAdmin()) {
+        await updateConsultantAsAdmin(expert.id, {
+          user: {
+            full_name: editForm.full_name,
+            email: editForm.user_email,
+            phone: editForm.user_phone,
+            is_active: editForm.user_is_active,
+          },
+          flag_services: editForm.flag_services,
+        });
+      }
       const profileResponse = await updateExpert(expert.id, profilePayload);
       setExpert(profileResponse.data);
       if (
@@ -620,6 +640,16 @@ export default function ExpertProfile() {
     });
   };
 
+  const updateFlagCoverage = (serviceIndex, coverageIndex, field, value) => {
+    setEditForm((current) => ({
+      ...current,
+      flag_services: current.flag_services.map((service, index) => index !== serviceIndex ? service : {
+        ...service,
+        coverage: arrayValue(service.coverage).map((coverage, itemIndex) => itemIndex !== coverageIndex ? coverage : { ...coverage, [field]: value }),
+      }),
+    }));
+  };
+
   const renderDetailRows = (rows) => {
     const visibleRows = rows.filter(([, value]) => isFilled(value));
     if (!visibleRows.length) return null;
@@ -883,6 +913,8 @@ export default function ExpertProfile() {
               />
             </label>
 
+            {isSuperAdmin() && <><label>Account Email<input type="email" value={editForm.user_email} onChange={(e) => setEditForm({...editForm,user_email:e.target.value})}/></label><label>Account Phone<input value={editForm.user_phone} onChange={(e) => setEditForm({...editForm,user_phone:e.target.value})}/></label><label className="profile-active-check"><input type="checkbox" checked={editForm.user_is_active} onChange={(e) => setEditForm({...editForm,user_is_active:e.target.checked})}/> Active account</label></>}
+
             <label>
               Availability
               <select
@@ -1129,6 +1161,8 @@ export default function ExpertProfile() {
               </label>
             </>
           )}
+
+          {editTab === "registration" && isSuperAdmin() && arrayValue(editForm.flag_services).length > 0 && <div className="profile-flag-edit"><h4>Flag services and coverage</h4>{editForm.flag_services.map((service, serviceIndex) => <section key={service.flag_id}><strong>{service.flag_name}</strong>{arrayValue(service.coverage).map((coverage, coverageIndex) => <div className="profile-edit-grid" key={`${service.flag_id}-${coverageIndex}`}>{[["country","Country"],["region","Region"],["location","Location"],["coverage_note","Coverage note"]].map(([field,label]) => <label key={field}>{label}<input value={coverage[field] || ""} onChange={(event) => updateFlagCoverage(serviceIndex, coverageIndex, field, event.target.value)}/></label>)}</div>)}</section>)}</div>}
 
           {isSuperAdmin() && (
             <label className="profile-premium-check">
