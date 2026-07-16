@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/Auth";
 import "./Auth.css";
+import ResetPasswordModal from "../components/auth/ResetPasswordModal";
+
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -10,6 +12,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
 
   const handleLoginSubmit = async (event) => {
@@ -49,6 +52,19 @@ export default function Auth() {
             <form className="auth-form" onSubmit={handleLoginSubmit}>
               <div className="auth-field"><label>Email or Username</label><input className="auth-input" name="identifier" value={loginForm.identifier} onChange={(event) => setLoginForm({ ...loginForm, identifier: event.target.value })} autoComplete="username" /></div>
               <div className="auth-field"><label>Password</label><div style={{ position: "relative" }}><input className="auth-input" style={{ width: "100%", paddingRight: 44 }} type={showPassword ? "text" : "password"} value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} autoComplete="current-password" /><button type="button" aria-label="Toggle password visibility" onClick={() => setShowPassword((value) => !value)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", border: 0, background: "none", color: "#60708c" }}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+
+              <div className="auth-forgot-row">
+                <button
+                  type="button"
+                  className="auth-forgot-btn"
+                  onClick={() => {
+                    setError("");
+                    setResetPasswordOpen(true);
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
               <button className="auth-submit-btn" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</button>
             </form>
             <div className="auth-divider">New to NexaPort? <button type="button" className="auth-link-button" onClick={() => setTab("register")}>Create an account</button></div>
@@ -61,8 +77,29 @@ export default function Auth() {
             <div className="auth-divider">Already registered? <button type="button" className="auth-link-button" onClick={() => setTab("login")}>Sign in</button></div>
           </>
         )}
-        <div className="auth-footer-note">Verified Maritime Consultants. Anywhere. Anytime.</div>
+        <div className="auth-footer-note">
+          Verified Maritime Consultants. Anywhere. Anytime.
+        </div>
       </div>
+
+      <ResetPasswordModal
+        open={resetPasswordOpen}
+        defaultEmail={
+          loginForm.identifier.includes("@")
+            ? loginForm.identifier
+            : ""
+        }
+        onClose={() => setResetPasswordOpen(false)}
+        onPasswordChanged={() => {
+          setResetPasswordOpen(false);
+          setTab("login");
+          setLoginForm((current) => ({
+            ...current,
+            password: "",
+          }));
+          setError("");
+        }}
+      />
     </div>
   );
 }
