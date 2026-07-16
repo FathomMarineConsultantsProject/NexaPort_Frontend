@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   Flag,
   Grid2X2,
+  LockKeyhole,
   LogOut,
   MapPin,
   Ship,
@@ -27,6 +28,7 @@ import {
   getCurrentConsultant,
 } from "../../utils/consultantPhotoCache";
 import "./Navbar.css";
+import ResetPasswordModal from "../auth/ResetPasswordModal";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -39,6 +41,7 @@ export default function Navbar() {
   const menuRef = useRef(null);
   const notificationsRef = useRef(null);
   const notificationRequestInFlight = useRef(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   const storedUser = localStorage.getItem("np_user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -161,6 +164,14 @@ export default function Navbar() {
     navigate("/");
   };
 
+  const handlePasswordChanged = () => {
+    clearConsultantPhotoCache(userId);
+    localStorage.removeItem("np_token");
+    localStorage.removeItem("np_user");
+    setResetPasswordOpen(false);
+    navigate("/login");
+  };
+
   const openNotification = async (notification) => {
     const wasUnread = !notification.read_at;
     if (wasUnread) {
@@ -180,8 +191,8 @@ export default function Navbar() {
       notification.type === "service_request_approved"
         ? `/requests/${payload.request_id || notification.entity_id}`
         : notification.type === "client_registration"
-        ? `/admin/client-registrations/${payload.registration_id || notification.entity_id}`
-        : `/experts/${payload.expert_id || notification.entity_id}`;
+          ? `/admin/client-registrations/${payload.registration_id || notification.entity_id}`
+          : `/experts/${payload.expert_id || notification.entity_id}`;
     setNotificationsOpen(false);
     navigate(destination);
   };
@@ -319,68 +330,87 @@ export default function Navbar() {
           </div>
         )}
 
-      <div className="np-profile-wrap" ref={menuRef}>
-        <button
-          className="np-avatar-btn"
-          onClick={() => {
-            setMenuOpen(!menuOpen);
-            setNotificationsOpen(false);
-          }}
-          title={user?.full_name || "Account"}
-        >
-          <ConsultantAvatar
-            className="np-avatar-initial"
-            photoUrl={photoUrl}
-            name={user?.full_name}
-            fallback="U"
-          />
-          <span className="np-avatar-name">
-            {user?.full_name?.split(" ")[0] || "Account"}
-          </span>
-        </button>
+        <div className="np-profile-wrap" ref={menuRef}>
+          <button
+            className="np-avatar-btn"
+            onClick={() => {
+              setMenuOpen(!menuOpen);
+              setNotificationsOpen(false);
+            }}
+            title={user?.full_name || "Account"}
+          >
+            <ConsultantAvatar
+              className="np-avatar-initial"
+              photoUrl={photoUrl}
+              name={user?.full_name}
+              fallback="U"
+            />
+            <span className="np-avatar-name">
+              {user?.full_name?.split(" ")[0] || "Account"}
+            </span>
+          </button>
 
-        {menuOpen && (
-          <div className="np-profile-menu">
-            <div className="np-profile-menu-head">
-              <ConsultantAvatar
-                className="np-profile-menu-avatar"
-                photoUrl={photoUrl}
-                name={user?.full_name}
-                fallback="U"
-              />
-              <div>
-                <div className="np-profile-menu-name">{user?.full_name || "User"}</div>
-                <div className="np-profile-menu-email">{user?.email || ""}</div>
+          {menuOpen && (
+            <div className="np-profile-menu">
+              <div className="np-profile-menu-head">
+                <ConsultantAvatar
+                  className="np-profile-menu-avatar"
+                  photoUrl={photoUrl}
+                  name={user?.full_name}
+                  fallback="U"
+                />
+                <div>
+                  <div className="np-profile-menu-name">{user?.full_name || "User"}</div>
+                  <div className="np-profile-menu-email">{user?.email || ""}</div>
+                </div>
               </div>
+
+              <div className="np-profile-menu-divider" />
+
+              <button
+                className="np-profile-menu-item"
+                onClick={() => {
+                  const destination =
+                    roleId === 2 && expertId
+                      ? `/experts/${expertId}`
+                      : "/profile";
+                  navigate(destination);
+                  setMenuOpen(false);
+                }}
+              >
+                <User size={15} />
+                View Profile
+              </button>
+
+
+              <button
+                type="button"
+                className="np-profile-menu-item"
+                onClick={() => {
+                  setResetPasswordOpen(true);
+                  setMenuOpen(false);
+                }}
+              >
+                <LockKeyhole size={15} />
+                Reset Password
+              </button>
+
+              <div className="np-profile-menu-divider" />
+
+              <button className="np-profile-menu-item danger" onClick={handleLogout}>
+                <LogOut size={15} />
+                Sign Out
+              </button>
             </div>
-
-            <div className="np-profile-menu-divider" />
-
-            <button
-              className="np-profile-menu-item"
-              onClick={() => {
-                const destination =
-                  roleId === 2 && expertId
-                    ? `/experts/${expertId}`
-                    : "/profile";
-                navigate(destination);
-                setMenuOpen(false);
-              }}
-            >
-              <User size={15} />
-              View Profile
-            </button>
-
-            <div className="np-profile-menu-divider" />
-
-            <button className="np-profile-menu-item danger" onClick={handleLogout}>
-              <LogOut size={15} />
-              Sign Out
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-      </div>
+      <ResetPasswordModal
+        open={resetPasswordOpen}
+        defaultEmail={user?.email || ""}
+        onClose={() => setResetPasswordOpen(false)}
+        onPasswordChanged={handlePasswordChanged}
+      />
     </header>
   );
 }
