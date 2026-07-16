@@ -9,6 +9,7 @@ import RegisterClient from "./pages/RegisterClient";
 import ClientVerificationStatus from "./pages/ClientVerificationStatus";
 import AdminClientRegistrations from "./pages/AdminClientRegistrations";
 import AdminClientRegistrationDetails from "./pages/AdminClientRegistrationDetails";
+import AdminClientDetails from "./pages/AdminClientDetails";
 import UserProfile from "./pages/Userprofile";
 import ExpertDirectory from "./pages/ExpertDirectory";
 import ExpertProfile from "./pages/ExpertProfile";
@@ -74,6 +75,7 @@ const Shell = () => (
         <Route path="/appointed-surveyors" element={<AdminOnly><AppointedSurveyorDirectory /></AdminOnly>} />
         <Route path="/admin/client-registrations" element={<AdminOnly><AdminClientRegistrations /></AdminOnly>} />
         <Route path="/admin/client-registrations/:clientProfileId" element={<AdminOnly><AdminClientRegistrationDetails /></AdminOnly>} />
+        <Route path="/admin/clients/:userId" element={<AdminOnly><AdminClientDetails /></AdminOnly>} />
         <Route path="/ports" element={<PortDirectory />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

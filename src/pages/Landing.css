@@ -283,3 +283,13 @@
   margin: 0;
   line-height: 1.4;
 }
+
+.landing-feature-stat {
+  display: block;
+  min-height: 28px;
+  margin: 1px 0 5px;
+  color: #0f766e;
+  font-size: 22px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}

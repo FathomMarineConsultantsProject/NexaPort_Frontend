@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDashboardStats } from "../api/Dashboardapi";
+import { getPlatformStats } from "../api/publicStatsApi";
 import { getServiceRequests } from "../api/serviceRequestApi";
 import { isClient, isExpert } from "../utils/auth";
 import "./Dashboard.css";
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [maritimeProfessionalsTotal, setMaritimeProfessionalsTotal] = useState(null);
   const blurExperts = isClient() || isExpert();
 
   const loadDashboard = useCallback(async () => {
@@ -59,6 +61,14 @@ export default function Dashboard() {
     const loadId = window.setTimeout(loadDashboard, 0);
     return () => window.clearTimeout(loadId);
   }, [loadDashboard]);
+
+  useEffect(() => {
+    let active = true;
+    getPlatformStats()
+      .then((response) => { if (active && response.success) setMaritimeProfessionalsTotal(response.data.maritime_professionals_total); })
+      .catch(() => { if (active) setMaritimeProfessionalsTotal(null); });
+    return () => { active = false; };
+  }, []);
 
   if (loading) {
     return (
@@ -98,8 +108,9 @@ export default function Dashboard() {
           <div className="stat-card-value">{cards.open_requests ?? 0}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-label"><Shield size={14} /> Verified Consultants</div>
-          <div className="stat-card-value">{cards.verified_experts ?? 0}</div>
+          <div className="stat-card-label"><Shield size={14} /> Maritime Professionals</div>
+          <div className="stat-card-value">{maritimeProfessionalsTotal === null ? "—" : Number(maritimeProfessionalsTotal).toLocaleString()}</div>
+          <div className="stat-card-description">Consultants and inspectors available across NexaPort’s professional maritime directories.</div>
         </div>
         <div className="stat-card">
           <div className="stat-card-label"><Ship size={14} /> Vessels Registered</div>

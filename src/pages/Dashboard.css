@@ -61,6 +61,13 @@
   letter-spacing: -1px;
 }
 
+.stat-card-description {
+  margin-top: 6px;
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .charts-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

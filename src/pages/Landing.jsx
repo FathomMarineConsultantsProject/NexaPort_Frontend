@@ -1,10 +1,21 @@
 import { Anchor, ArrowRight, Shield, Ship, Users, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getPlatformStats } from "../api/publicStatsApi";
 import "./Landing.css";
 
 export default function Landing() {
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("np_token");
+  const [maritimeProfessionalsTotal, setMaritimeProfessionalsTotal] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getPlatformStats()
+      .then((response) => { if (active && response.success) setMaritimeProfessionalsTotal(response.data.maritime_professionals_total); })
+      .catch(() => { if (active) setMaritimeProfessionalsTotal(null); });
+    return () => { active = false; };
+  }, []);
 
   const handleRequestSurvey = () => {
     navigate(isLoggedIn ? "/requests" : "/login");
@@ -84,8 +95,9 @@ export default function Landing() {
             <Users size={22} />
           </div>
           <div>
-            <h3>Verified Consultants</h3>
-            <p>OCIMF-accredited surveyors and class-approved inspectors</p>
+            <h3>Maritime Professionals</h3>
+            <strong className="landing-feature-stat">{maritimeProfessionalsTotal === null ? "—" : Number(maritimeProfessionalsTotal).toLocaleString()}</strong>
+            <p>NexaPort consultants, Flag-State inspectors, accredited inspectors and appointed surveyors available across our maritime network.</p>
           </div>
         </div>
 
