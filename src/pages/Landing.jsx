@@ -38,14 +38,17 @@ export default function Landing() {
         }
 
         setPlatformStats({
-          maritimeProfessionalsTotal:
-            response.data?.maritime_professionals_total ?? 0,
+          maritimeProfessionalsTotal: Number(
+            response.data?.maritime_professionals_total ?? 0
+          ),
 
-          portsTotal:
-            Number(response.data?.ports_total ?? 0) * 10,
+          portsTotal: Number(
+            response.data?.ports_total ?? 0
+          ),
 
-          globalPresenceScore:
-            response.data?.global_presence_score ?? 0,
+          globalPresenceScore: Number(
+            response.data?.global_presence_score ?? 0
+          ),
         });
       } catch (error) {
         console.error(
