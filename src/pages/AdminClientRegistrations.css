@@ -5,3 +5,44 @@
 .admin-status.legacy{background:#eef1f5;color:#59677b}
 @media(max-width:700px){.clients-table{display:none}.client-mobile-list{display:grid;gap:12px;margin-top:18px}.client-mobile-list>article{background:#fff;border:1px solid #dce3ed;border-radius:9px;padding:16px;min-width:0}.client-mobile-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.client-mobile-heading a{color:#173453;font-weight:800;text-decoration:none}.client-mobile-heading small{display:block;color:#75839a;margin-top:4px;overflow-wrap:anywhere}.client-mobile-list dl{display:grid;gap:10px;margin:15px 0}.client-mobile-list dl>div{display:grid;grid-template-columns:minmax(85px,.7fr) minmax(0,1.3fr);gap:10px}.client-mobile-list dt{color:#68768d;font-size:10px;text-transform:uppercase;font-weight:800}.client-mobile-list dd{margin:0;overflow-wrap:anywhere}.client-mobile-list .client-row-actions{display:grid;grid-template-columns:1fr 1fr}.client-mobile-list .client-row-actions button{width:100%}}
 .view-registration-link{border:0;background:none;color:#0f766e;font-weight:800;padding:0;text-decoration:underline}
+
+.admin-client-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-register-client-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid #0f8f83;
+  border-radius: 9px;
+  background: #0f8f83;
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-register-client-button:hover {
+  background: #0b766d;
+  border-color: #0b766d;
+}
+
+@media (max-width: 900px) {
+  .admin-client-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-register-client-button {
+    width: 100%;
+  }
+}

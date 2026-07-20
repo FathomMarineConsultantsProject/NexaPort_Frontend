@@ -3,9 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getVesselTypes } from "../api/masterApi";
 import {
+  confirmAdminRegistrationDocument,
   confirmRegistrationDocument,
+  createAdminClientRegistrationDraft,
   createClientRegistrationDraft,
+  presignAdminRegistrationDocument,
   presignRegistrationDocument,
+  submitAdminClientRegistration,
   submitClientRegistration,
   uploadToPresignedUrl,
 } from "../api/clientRegistrationApi";
@@ -34,7 +38,9 @@ const validImo = (value) => {
   return total % 10 === Number(digits[6]);
 };
 
-export default function RegisterClient() {
+export default function RegisterClient({
+  adminMode = false
+}) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(initialForm);
@@ -79,7 +85,9 @@ export default function RegisterClient() {
     if (step === 0 && (!registrationDraftToken || draftEmail !== form.email.trim().toLowerCase())) {
       setBusy(true);
       try {
-        const response = await createClientRegistrationDraft(form.email);
+        const response = adminMode
+          ? await createAdminClientRegistrationDraft(form.email)
+          : await createClientRegistrationDraft(form.email);
         setRegistrationDraftToken(response.registrationDraftToken);
         setDraftEmail(form.email.trim().toLowerCase());
         setDocuments({});
@@ -101,9 +109,25 @@ export default function RegisterClient() {
     setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Preparing upload", progress: 0 } }));
     try {
       const metadata = { category, contentType: file.type, size: file.size, originalFilename: file.name };
-      const presigned = await presignRegistrationDocument(metadata, registrationDraftToken);
+      const presigned = adminMode
+        ? await presignAdminRegistrationDocument(
+          metadata,
+          registrationDraftToken
+        )
+        : await presignRegistrationDocument(
+          metadata,
+          registrationDraftToken
+        );
       await uploadToPresignedUrl({ uploadUrl: presigned.uploadUrl, file, onProgress: (progress) => setDocuments((current) => ({ ...current, [category]: { ...current[category], status: "Uploading", progress } })) });
-      const confirmed = await confirmRegistrationDocument({ ...metadata, key: presigned.key }, registrationDraftToken);
+      const confirmed = adminMode
+        ? await confirmAdminRegistrationDocument(
+          { ...metadata, key: presigned.key },
+          registrationDraftToken
+        )
+        : await confirmRegistrationDocument(
+          { ...metadata, key: presigned.key },
+          registrationDraftToken
+        );
       setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Ready", progress: 100, token: confirmed.documentToken } }));
     } catch (error) {
       setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Upload failed", progress: 0 } }));
@@ -121,18 +145,91 @@ export default function RegisterClient() {
         vessels: form.provideFleetLater ? [] : form.vessels.filter((vessel) => vessel.vessel_name.trim()),
         services: form.services.map((name) => ({ name })), documentTokens: DOCUMENTS.map(([category]) => documents[category].token),
       };
-      const response = await submitClientRegistration(payload, registrationDraftToken);
-      localStorage.setItem("np_token", response.token); localStorage.setItem("np_user", JSON.stringify(response.user));
-      navigate("/client-verification-status", { replace: true });
+      const response = adminMode
+        ? await submitAdminClientRegistration(
+          payload,
+          registrationDraftToken
+        )
+        : await submitClientRegistration(
+          payload,
+          registrationDraftToken
+        );
+
+      if (adminMode) {
+        navigate("/admin/client-registrations", {
+          replace: true,
+          state: {
+            tab: "pending",
+            notice: "Client registered successfully.",
+          },
+        });
+
+        return;
+      }
+
+      localStorage.setItem("np_token", response.token);
+      localStorage.setItem(
+        "np_user",
+        JSON.stringify(response.user)
+      );
+
+      navigate("/client-verification-status", {
+        replace: true,
+      });
     } catch (requestError) { setMessage(requestError.response?.data?.message || "Registration submission failed."); }
     finally { setBusy(false); }
   };
 
   return (
     <main className="client-register-page">
-      <header className="client-register-top"><Link to="/" className="client-register-brand"><Anchor size={21} /> NexaPort</Link><Link to="/login">Sign in</Link></header>
+      <header className="client-register-top">
+        <Link
+          to={
+            adminMode
+              ? "/admin/client-registrations"
+              : "/"
+          }
+          className="client-register-brand"
+        >
+          <Anchor size={21} />
+          NexaPort
+        </Link>
+
+        {adminMode ? (
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/admin/client-registrations")
+            }
+          >
+            Back to Client Registrations
+          </button>
+        ) : (
+          <Link to="/login">
+            Sign in
+          </Link>
+        )}
+      </header>
       <section className="client-register-shell">
-        <div className="client-register-heading"><span>Client Registration</span><h1>Register your company</h1><p>Register your company to request inspections, manage vessels and access inspection services.</p></div>
+        <div className="client-register-heading">
+          <span>
+            {adminMode
+              ? "Super Admin"
+              : "Client Registration"}
+          </span>
+
+          <h1>
+            {adminMode
+              ? "Register Client"
+              : "Register your company"}
+          </h1>
+
+          <p>
+            {adminMode
+              ? "Create a Client account and complete the registration on the Client's behalf."
+              : "Register your company to request inspections, manage vessels and access inspection services."}
+          </p>
+        </div>
         <ol className="client-stepper">{STEPS.map((label, index) => <li key={label} className={index === step ? "active" : index < step ? "complete" : ""}><span>{index < step ? <Check size={14} /> : index + 1}</span><small>{label}</small></li>)}</ol>
         {message && <div className="client-form-message">{message}</div>}
 

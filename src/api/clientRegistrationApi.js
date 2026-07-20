@@ -26,3 +26,63 @@ export const updateMyClientOnboarding = async (payload) => (await axiosClient.pa
 export const resubmitClientOnboarding = async () => (await axiosClient.post("/client-onboarding/resubmit")).data;
 export const presignClientDocument = async (payload) => (await axiosClient.post("/client-onboarding/documents/upload-url", payload)).data;
 export const confirmClientDocument = async (payload) => (await axiosClient.post("/client-onboarding/documents/confirm", payload)).data;
+export const createAdminClientRegistrationDraft = async (
+  email
+) =>
+  (
+    await axiosClient.post(
+      "/admin/client-registrations/create/draft",
+      { email }
+    )
+  ).data;
+
+export const presignAdminRegistrationDocument = async (
+  payload,
+  registrationDraftToken
+) =>
+  (
+    await axiosClient.post(
+      "/admin/client-registrations/create/documents/upload-url",
+      payload,
+      {
+        headers: {
+          "x-registration-draft-token":
+            registrationDraftToken,
+        },
+      }
+    )
+  ).data;
+
+export const confirmAdminRegistrationDocument = async (
+  payload,
+  registrationDraftToken
+) =>
+  (
+    await axiosClient.post(
+      "/admin/client-registrations/create/documents/confirm",
+      payload,
+      {
+        headers: {
+          "x-registration-draft-token":
+            registrationDraftToken,
+        },
+      }
+    )
+  ).data;
+
+export const submitAdminClientRegistration = async (
+  payload,
+  registrationDraftToken
+) =>
+  (
+    await axiosClient.post(
+      "/admin/client-registrations/create/submit",
+      payload,
+      {
+        headers: {
+          "x-registration-draft-token":
+            registrationDraftToken,
+        },
+      }
+    )
+  ).data;

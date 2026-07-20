@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -62,7 +62,49 @@ export default function AdminClientRegistrations() {
   };
 
   return <div className="admin-clients-page">
-    <header><div><span>Super Admin</span><h1>{tab === "clients" ? "Clients" : "Client Registrations"}</h1><p>{tab === "clients" ? "Manage all role-3 Client accounts, including legacy accounts." : "Review company onboarding submissions and verification status."}</p></div><div className="admin-client-search"><Search size={17}/><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search Client, company, email or registration number"/></div></header>
+    <header>
+  <div>
+    <span>Super Admin</span>
+
+    <h1>
+      {tab === "clients"
+        ? "Clients"
+        : "Client Registrations"}
+    </h1>
+
+    <p>
+      {tab === "clients"
+        ? "Manage all role-3 Client accounts, including legacy accounts."
+        : "Review company onboarding submissions and verification status."}
+    </p>
+  </div>
+
+  <div className="admin-client-header-actions">
+    <button
+      type="button"
+      className="admin-register-client-button"
+      onClick={() =>
+        navigate("/admin/client-registrations/register")
+      }
+    >
+      <Plus size={17} />
+      Register Client
+    </button>
+
+    <div className="admin-client-search">
+      <Search size={17} />
+
+      <input
+        value={search}
+        onChange={(event) => {
+          setSearch(event.target.value);
+          setPage(1);
+        }}
+        placeholder="Search Client, company, email or registration number"
+      />
+    </div>
+  </div>
+</header>
     <div className="admin-client-tabs">{TABS.map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => { setTab(item); setPage(1); }}>{item}</button>)}</div>
     {tab === "clients" && <div className="client-account-filters">{CLIENT_FILTERS.map((item) => <button type="button" key={item} className={clientFilter === item ? "active" : ""} onClick={() => { setClientFilter(item); setPage(1); }}>{item}</button>)}</div>}
     {error && <div className="admin-client-error">{error}</div>}

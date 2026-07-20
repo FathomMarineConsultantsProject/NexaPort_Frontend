@@ -74,6 +74,14 @@ const Shell = () => (
         <Route path="/accredited-inspectors/:schemeSlug" element={<AdminOnly><AccreditedInspectorDirectory /></AdminOnly>} />
         <Route path="/appointed-surveyors" element={<AdminOnly><AppointedSurveyorDirectory /></AdminOnly>} />
         <Route path="/admin/client-registrations" element={<AdminOnly><AdminClientRegistrations /></AdminOnly>} />
+      <Route
+          path="/admin/client-registrations/register"
+          element={
+            <AdminOnly>
+              <RegisterClient adminMode />
+            </AdminOnly>
+          }
+        />
         <Route path="/admin/client-registrations/:clientProfileId" element={<AdminOnly><AdminClientRegistrationDetails /></AdminOnly>} />
         <Route path="/admin/clients/:userId" element={<AdminOnly><AdminClientDetails /></AdminOnly>} />
         <Route path="/ports" element={<PortDirectory />} />
