@@ -1,5 +1,5 @@
 import { Anchor, Check, ChevronLeft, ChevronRight, Plus, Trash2, Upload } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getVesselTypes } from "../api/masterApi";
 import {
@@ -56,8 +56,6 @@ export default function RegisterClient({
   const setValue = (name, value) => setForm((current) => ({ ...current, [name]: value }));
   const setCompany = (name, value) => setForm((current) => ({ ...current, company: { ...current.company, [name]: value } }));
   const updateVessel = (index, name, value) => setForm((current) => ({ ...current, vessels: current.vessels.map((vessel, vesselIndex) => vesselIndex === index ? { ...vessel, [name]: value } : vessel) }));
-  const selectedDocuments = useMemo(() => DOCUMENTS.filter(([category]) => documents[category]?.token).length, [documents]);
-
   const validateStep = () => {
     if (step === 0) {
       if (!form.full_name.trim() || !form.designation.trim() || !/^\S+@\S+\.\S+$/.test(form.email) || !form.mobile_number.trim()) return "Complete all required user details.";
@@ -74,7 +72,6 @@ export default function RegisterClient({
       if (!form.provideFleetLater && form.vessels.some((vessel) => !vessel.vessel_name.trim() || !vessel.ownership_relationship.trim() || !validImo(vessel.imo_number))) return "Complete each key vessel and check any IMO number.";
     }
     if (step === 3 && !form.services.length) return "Select at least one required service.";
-    if (step === 4 && selectedDocuments !== DOCUMENTS.length) return "Upload all three required verification documents.";
     return "";
   };
 
@@ -143,7 +140,7 @@ export default function RegisterClient({
         full_name: form.full_name, designation: form.designation, email: form.email, mobile_number: form.mobile_number, password: form.password,
         company: form.company, declared_vessel_count: Number(form.declared_vessel_count),
         vessels: form.provideFleetLater ? [] : form.vessels.filter((vessel) => vessel.vessel_name.trim()),
-        services: form.services.map((name) => ({ name })), documentTokens: DOCUMENTS.map(([category]) => documents[category].token),
+        services: form.services.map((name) => ({ name })), documentTokens: Object.values(documents).flatMap((document) => document.token ? [document.token] : []),
       };
       const response = adminMode
         ? await submitAdminClientRegistration(
@@ -265,5 +262,5 @@ function ServicesStep({ selected, toggle }) {
 }
 
 function VerificationStep({ form, documents, selectDocument, removeDocument }) {
-  return <><div className="client-section-title"><h2>Verification</h2><p>Upload private company documents and review the submission.</p></div><div className="document-upload-list">{DOCUMENTS.map(([category, label]) => { const document = documents[category]; return <div className="document-upload" key={category}><div><strong>{label}</strong><small>PDF, PNG, JPEG or WEBP. Maximum 5 MB.</small>{document && <p>{document.name} · {document.status}{document.progress ? ` (${document.progress}%)` : ""}</p>}</div><div>{document && <button type="button" className="remove-document" onClick={() => removeDocument(category)}>Remove</button>}<label className="upload-button"><Upload size={16} /> {document ? "Replace file" : "Select file"}<input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(e) => selectDocument(category, e.target.files?.[0])} /></label></div></div>; })}</div><div className="review-summary"><h3>Review summary</h3><dl><div><dt>User</dt><dd>{form.full_name}<br />{form.email}</dd></div><div><dt>Company</dt><dd>{form.company.legal_name}<br />{form.company.country}</dd></div><div><dt>Fleet</dt><dd>{form.declared_vessel_count} declared · {form.provideFleetLater ? "Details after approval" : `${form.vessels.filter((v) => v.vessel_name).length} key vessels entered`}</dd></div><div><dt>Services</dt><dd>{form.services.join(", ")}</dd></div><div><dt>Documents</dt><dd>{Object.values(documents).filter((document) => document.token).length} of 3 ready</dd></div></dl></div></>;
+  return <><div className="client-section-title"><h2>Verification</h2><p>Upload any optional private company documents and review the submission.</p></div><div className="document-upload-list">{DOCUMENTS.map(([category, label]) => { const document = documents[category]; return <div className="document-upload" key={category}><div><strong>{label}</strong><small>Optional. PDF, PNG, JPEG or WEBP. Maximum 5 MB.</small>{document && <p>{document.name} · {document.status}{document.progress ? ` (${document.progress}%)` : ""}</p>}</div><div>{document && <button type="button" className="remove-document" onClick={() => removeDocument(category)}>Remove</button>}<label className="upload-button"><Upload size={16} /> {document ? "Replace file" : "Select file"}<input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(e) => selectDocument(category, e.target.files?.[0])} /></label></div></div>; })}</div><div className="review-summary"><h3>Review summary</h3><dl><div><dt>User</dt><dd>{form.full_name}<br />{form.email}</dd></div><div><dt>Company</dt><dd>{form.company.legal_name}<br />{form.company.country}</dd></div><div><dt>Fleet</dt><dd>{form.declared_vessel_count} declared · {form.provideFleetLater ? "Details after approval" : `${form.vessels.filter((v) => v.vessel_name).length} key vessels entered`}</dd></div><div><dt>Services</dt><dd>{form.services.join(", ")}</dd></div><div><dt>Documents</dt><dd>{Object.values(documents).filter((document) => document.token).length} of 3 ready</dd></div></dl></div></>;
 }
