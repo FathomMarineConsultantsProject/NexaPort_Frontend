@@ -236,7 +236,7 @@ export default function Navbar() {
         {canUseNotifications && (
           <>
             <NavLink to="/admin/client-registrations">
-              <Users size={17} /> Client Registrations
+              <Users size={17} /> Owners and Managers
             </NavLink>
 
             <NavLink to="/flag">

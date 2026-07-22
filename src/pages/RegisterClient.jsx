@@ -199,7 +199,7 @@ export default function RegisterClient({
               navigate("/admin/client-registrations")
             }
           >
-            Back to Client Registrations
+            Back to Owners and Managers
           </button>
         ) : (
           <Link to="/login">

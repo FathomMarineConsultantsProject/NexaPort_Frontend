@@ -69,7 +69,7 @@ export default function AdminClientRegistrations() {
     <h1>
       {tab === "clients"
         ? "Clients"
-        : "Client Registrations"}
+        : "Owners and Managers"}
     </h1>
 
     <p>
