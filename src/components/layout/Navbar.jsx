@@ -1,26 +1,27 @@
 import {
   Anchor,
-  BadgeCheck,
   Bell,
   Briefcase,
-  ClipboardCheck,
-  Flag,
+  ChevronDown,
   Grid2X2,
   LockKeyhole,
   LogOut,
   MapPin,
+  Menu,
   Ship,
   User,
   Users,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { matchPath, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   getAdminNotifications,
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
 } from "../../api/adminNotificationApi";
 import { getRoleId } from "../../utils/auth";
+import { ADMIN_DIRECTORIES, ADMIN_DIRECTORY_GROUPS } from "../../config/adminDirectories";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
   CONSULTANT_PHOTO_UPDATED_EVENT,
@@ -32,13 +33,20 @@ import ResetPasswordModal from "../auth/ResetPasswordModal";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [directoriesOpen, setDirectoriesOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileDirectoriesOpen, setMobileDirectoriesOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
   const menuRef = useRef(null);
+  const directoriesRef = useRef(null);
+  const directoriesTriggerRef = useRef(null);
+  const mobileTriggerRef = useRef(null);
   const notificationsRef = useRef(null);
   const notificationRequestInFlight = useRef(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
@@ -53,6 +61,9 @@ export default function Navbar() {
   const isSuperAdmin = roleId === 1;
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
+  const directoryActive = ADMIN_DIRECTORIES.some(({ path }) =>
+    matchPath({ path: `${path}/*` }, location.pathname)
+  );
 
   const loadNotifications = useCallback(async () => {
     if (!canUseNotifications || notificationRequestInFlight.current) return;
@@ -122,6 +133,28 @@ export default function Navbar() {
     if (menuOpen) document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [menuOpen]);
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (directoriesRef.current && !directoriesRef.current.contains(event.target)) {
+        setDirectoriesOpen(false);
+      }
+    };
+    if (directoriesOpen) document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [directoriesOpen]);
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key !== "Escape") return;
+      if (directoriesOpen) directoriesTriggerRef.current?.focus();
+      if (mobileOpen) mobileTriggerRef.current?.focus();
+      setDirectoriesOpen(false);
+      setMobileOpen(false);
+    };
+    if (directoriesOpen || mobileOpen) document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [directoriesOpen, mobileOpen]);
 
   useEffect(() => {
     const handleOutside = (event) => {
@@ -211,6 +244,11 @@ export default function Navbar() {
     }
   };
 
+  const closeMobileNavigation = () => {
+    setMobileOpen(false);
+    setMobileDirectoriesOpen(false);
+  };
+
   return (
     <header className="np-navbar">
       <div className="np-brand" onClick={() => navigate("/")} role="button">
@@ -233,23 +271,43 @@ export default function Navbar() {
           </NavLink>
         )}
 
-        {canUseNotifications && (
+        {isSuperAdmin && (
           <>
             <NavLink to="/admin/client-registrations">
-              <Users size={17} /> Owners and Managers
+              <Users size={17} /> Owners &amp; Managers
             </NavLink>
 
-            <NavLink to="/flag">
-              <Flag size={17} /> Flag
-            </NavLink>
+            <div className="np-directories" ref={directoriesRef}>
+              <button
+                ref={directoriesTriggerRef}
+                type="button"
+                className={`np-directories-trigger${directoryActive ? " active" : ""}`}
+                aria-expanded={directoriesOpen}
+                aria-controls="directories-popover"
+                onClick={() => {
+                  setDirectoriesOpen((open) => !open);
+                  setNotificationsOpen(false);
+                  setMenuOpen(false);
+                }}
+              >
+                Directories <ChevronDown size={15} aria-hidden="true" />
+              </button>
 
-            <NavLink to="/accredited-inspectors">
-              <BadgeCheck size={17} /> Accredited
-            </NavLink>
-
-            <NavLink to="/appointed-surveyors">
-              <ClipboardCheck size={17} /> Appointed
-            </NavLink>
+              {directoriesOpen && (
+                <div id="directories-popover" className="np-directories-popover" aria-label="Directories">
+                  {ADMIN_DIRECTORY_GROUPS.map((group) => (
+                    <section key={group.label}>
+                      <span>{group.label}</span>
+                      {group.items.map(({ label, path, icon: Icon }) => (
+                        <NavLink key={path} to={path} onClick={() => setDirectoriesOpen(false)}>
+                          <Icon size={16} aria-hidden="true" /> {label}
+                        </NavLink>
+                      ))}
+                    </section>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -266,6 +324,23 @@ export default function Navbar() {
         </NavLink>
       </nav>
 
+      <button
+        ref={mobileTriggerRef}
+        type="button"
+        className="np-mobile-toggle"
+        aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+        aria-expanded={mobileOpen}
+        aria-controls="mobile-navigation"
+        onClick={() => {
+          setMobileOpen((open) => !open);
+          setDirectoriesOpen(false);
+          setNotificationsOpen(false);
+          setMenuOpen(false);
+        }}
+      >
+        {mobileOpen ? <X size={21} /> : <Menu size={21} />}
+      </button>
+
       <div className="np-account-actions">
         {isSuperAdmin && (
           <div className="np-notifications-wrap" ref={notificationsRef}>
@@ -277,6 +352,7 @@ export default function Navbar() {
               onClick={() => {
                 setNotificationsOpen((open) => !open);
                 setMenuOpen(false);
+                closeMobileNavigation();
                 if (!notificationsOpen) loadNotifications();
               }}
             >
@@ -336,6 +412,7 @@ export default function Navbar() {
             onClick={() => {
               setMenuOpen(!menuOpen);
               setNotificationsOpen(false);
+              closeMobileNavigation();
             }}
             title={user?.full_name || "Account"}
           >
@@ -405,6 +482,67 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {mobileOpen && (
+        <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
+          <NavLink to="/requests" onClick={closeMobileNavigation}>
+            <Briefcase size={18} /> Requests
+          </NavLink>
+
+          {!isClient && (
+            <NavLink to="/experts" onClick={closeMobileNavigation}>
+              <Users size={18} /> Consultants
+            </NavLink>
+          )}
+
+          {isSuperAdmin && (
+            <>
+              <NavLink to="/admin/client-registrations" onClick={closeMobileNavigation}>
+                <Users size={18} /> Owners &amp; Managers
+              </NavLink>
+
+              <div className="np-mobile-directories">
+                <button
+                  type="button"
+                  className={directoryActive ? "active" : ""}
+                  aria-expanded={mobileDirectoriesOpen}
+                  aria-controls="mobile-directory-links"
+                  onClick={() => setMobileDirectoriesOpen((open) => !open)}
+                >
+                  <span>Directories</span>
+                  <ChevronDown className={mobileDirectoriesOpen ? "expanded" : ""} size={17} aria-hidden="true" />
+                </button>
+
+                {mobileDirectoriesOpen && (
+                  <div id="mobile-directory-links" className="np-mobile-directory-links">
+                    {ADMIN_DIRECTORY_GROUPS.map((group) => (
+                      <section key={group.label}>
+                        <span>{group.label}</span>
+                        {group.items.map(({ label, path, icon: Icon }) => (
+                          <NavLink key={path} to={path} onClick={closeMobileNavigation}>
+                            <Icon size={17} aria-hidden="true" /> {label}
+                          </NavLink>
+                        ))}
+                      </section>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          <NavLink to="/fleet" onClick={closeMobileNavigation}>
+            <Ship size={18} /> Fleet
+          </NavLink>
+          <NavLink to="/ports" onClick={closeMobileNavigation}>
+            <MapPin size={18} /> Ports
+          </NavLink>
+          <NavLink to="/dashboard" onClick={closeMobileNavigation}>
+            <Grid2X2 size={18} /> Dashboard
+          </NavLink>
+        </nav>
+      )}
+
       <ResetPasswordModal
         open={resetPasswordOpen}
         defaultEmail={user?.email || ""}

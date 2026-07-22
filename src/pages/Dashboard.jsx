@@ -87,7 +87,7 @@ export default function Dashboard() {
   const totalST = serviceTypes.reduce((s, r) => s + r.count, 0) || 1;
   const totalUg = urgencies.reduce((s, r) => s + r.count, 0) || 1;
 
-  const serviceTypeColor = { Survey: "survey", Inspection: "inspection", Audit: "audit" };
+  const serviceTypeColor = { Survey: "survey", Inspection: "inspection", Audit: "audit", Other: "audit" };
 
   return (
     <div className="dashboard-page">
@@ -267,7 +267,7 @@ export default function Dashboard() {
                 <div className="recent-request-badges">
                   <span className={`rr-urgency ${req.urgency}`}>{req.urgency}</span>
                   <span className={`rr-status ${statusClass(req.status)}`}>{req.status}</span>
-                  <span className="rr-category">{req.serviceCategory}</span>
+                  <span className="rr-category">{req.serviceType === "Other" ? `Other — ${req.serviceTypeOther || "Details not provided"}` : req.serviceCategory}</span>
                 </div>
                 <div className="recent-request-title">{req.title}</div>
                 <div className="recent-request-meta">

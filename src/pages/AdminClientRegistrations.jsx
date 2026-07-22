@@ -66,17 +66,9 @@ export default function AdminClientRegistrations() {
   <div>
     <span>Super Admin</span>
 
-    <h1>
-      {tab === "clients"
-        ? "Clients"
-        : "Owners and Managers"}
-    </h1>
+    <h1>Owners and Managers</h1>
 
-    <p>
-      {tab === "clients"
-        ? "Manage all role-3 Client accounts, including legacy accounts."
-        : "Review company onboarding submissions and verification status."}
-    </p>
+    <p>Manage shipowner and ship-management company accounts, registration reviews and legacy records.</p>
   </div>
 
   <div className="admin-client-header-actions">
@@ -105,7 +97,7 @@ export default function AdminClientRegistrations() {
     </div>
   </div>
 </header>
-    <div className="admin-client-tabs">{TABS.map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => { setTab(item); setPage(1); }}>{item}</button>)}</div>
+    <div className="admin-client-tabs">{TABS.map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => { setTab(item); setPage(1); }}>{item === "clients" ? "All Accounts" : item}</button>)}</div>
     {tab === "clients" && <div className="client-account-filters">{CLIENT_FILTERS.map((item) => <button type="button" key={item} className={clientFilter === item ? "active" : ""} onClick={() => { setClientFilter(item); setPage(1); }}>{item}</button>)}</div>}
     {error && <div className="admin-client-error">{error}</div>}
     <div className={`admin-client-table-wrap ${tab === "clients" ? "clients-table" : ""}`}><table><thead>{tab === "clients" ? <tr><th>Client</th><th>Company</th><th>Phone</th><th>Country</th><th>Verification</th><th>Account</th><th>Created</th><th>Actions</th></tr> : <tr><th>Applicant</th><th>Company</th><th>Country</th><th>Submitted</th><th>Status</th><th>Resubmissions</th><th/></tr>}</thead><tbody>

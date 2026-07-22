@@ -20,6 +20,8 @@ import FlagDirectory from "./pages/FlagDirectory";
 import FlagInspectorProfile from "./pages/FlagInspectorProfile";
 import AccreditedInspectorDirectory from "./pages/AccreditedInspectorDirectory";
 import AppointedSurveyorDirectory from "./pages/AppointedSurveyorDirectory";
+import DirectoryScaffold from "./components/directories/DirectoryScaffold";
+import { NEW_ADMIN_DIRECTORIES } from "./config/adminDirectories";
 import PostServiceRequest from "./pages/PostServiceRequest";
 import ServiceRequestDetails from "./pages/ServiceRequestDetails";
 import ServiceRequests from "./pages/ServiceRequests";
@@ -73,6 +75,9 @@ const Shell = () => (
         <Route path="/accredited-inspectors" element={<AdminOnly><AccreditedInspectorDirectory /></AdminOnly>} />
         <Route path="/accredited-inspectors/:schemeSlug" element={<AdminOnly><AccreditedInspectorDirectory /></AdminOnly>} />
         <Route path="/appointed-surveyors" element={<AdminOnly><AppointedSurveyorDirectory /></AdminOnly>} />
+        {NEW_ADMIN_DIRECTORIES.map((directory) => (
+          <Route key={directory.path} path={directory.path} element={<AdminOnly><DirectoryScaffold directory={directory} /></AdminOnly>} />
+        ))}
         <Route path="/admin/client-registrations" element={<AdminOnly><AdminClientRegistrations /></AdminOnly>} />
       <Route
           path="/admin/client-registrations/register"

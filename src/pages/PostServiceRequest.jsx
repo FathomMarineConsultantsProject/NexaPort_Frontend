@@ -6,12 +6,15 @@ import { createServiceRequest } from "../api/serviceRequestApi";
 import "./PostServiceRequest.css";
 import CustomSelect from "../components/experts/CustomSelect";
 
+const SERVICE_TYPES = ["Audit", "Inspection", "Survey", "Other"];
+
 export default function PostServiceRequest() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [dropdownData, setDropdownData] = useState({
     serviceTypes: [],
@@ -24,6 +27,7 @@ export default function PostServiceRequest() {
   const [formData, setFormData] = useState({
     serviceType: "Inspection",
     serviceCategory: "",
+    serviceTypeOther: "",
     title: "",
     scopeOfWork: "",
     urgency: "routine",
@@ -42,29 +46,31 @@ export default function PostServiceRequest() {
   });
 
   useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        const response = await getServiceRequestDropdowns();
+
+        if (response.success) {
+          const data = response.data;
+
+          setDropdownData(data);
+
+          setFormData((prev) => ({
+            ...prev,
+            serviceType: SERVICE_TYPES.includes(data.serviceTypes?.[0]?.name)
+              ? data.serviceTypes[0].name
+              : "Inspection",
+            serviceCategory: "",
+            urgency: data.urgencyOptions?.[0]?.value || "routine",
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load dropdown data:", err);
+      }
+    };
+
     loadDropdownData();
   }, []);
-
-  const loadDropdownData = async () => {
-    try {
-      const response = await getServiceRequestDropdowns();
-
-      if (response.success) {
-        const data = response.data;
-
-        setDropdownData(data);
-
-        setFormData((prev) => ({
-          ...prev,
-          serviceType: data.serviceTypes?.[0]?.name || "Inspection",
-          serviceCategory: "",
-          urgency: data.urgencyOptions?.[0]?.value || "routine",
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to load dropdown data:", err);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -73,8 +79,10 @@ export default function PostServiceRequest() {
       setFormData((prev) => ({
         ...prev,
         serviceType: value,
-        serviceCategory: "",
+        serviceCategory: value === "Other" ? "Other" : "",
+        serviceTypeOther: "",
       }));
+      setFieldErrors((current) => ({ ...current, serviceType: undefined, serviceCategory: undefined, serviceTypeOther: undefined }));
       return;
     }
 
@@ -82,20 +90,33 @@ export default function PostServiceRequest() {
       ...prev,
       [name]: value,
     }));
+    setFieldErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setFieldErrors({});
+
+    const nextFieldErrors = {};
+    const otherDetails = formData.serviceTypeOther.trim();
+    if (formData.serviceType === "Other") {
+      if (!otherDetails) nextFieldErrors.serviceTypeOther = "Please describe the required service.";
+      else if (otherDetails.length < 3) nextFieldErrors.serviceTypeOther = "Service details must be at least 3 characters.";
+      else if (otherDetails.length > 500) nextFieldErrors.serviceTypeOther = "Service details must be 500 characters or fewer.";
+    } else if (!formData.serviceCategory) {
+      nextFieldErrors.serviceCategory = "Select a service category.";
+    }
 
     if (
       !formData.serviceType ||
-      !formData.serviceCategory ||
       !formData.title ||
-      !formData.scopeOfWork
+      !formData.scopeOfWork ||
+      Object.keys(nextFieldErrors).length
     ) {
-      setError("Service Type, Service Category, Request Title, and Scope of Work are required");
+      setFieldErrors(nextFieldErrors);
+      setError("Please correct the highlighted fields.");
       return;
     }
 
@@ -104,7 +125,8 @@ export default function PostServiceRequest() {
     try {
       const payload = {
         serviceType: formData.serviceType,
-        serviceCategory: formData.serviceCategory,
+        serviceCategory: formData.serviceType === "Other" ? "Other" : formData.serviceCategory,
+        serviceTypeOther: formData.serviceType === "Other" ? otherDetails : null,
         title: formData.title,
         scopeOfWork: formData.scopeOfWork,
         urgency: formData.urgency,
@@ -133,10 +155,12 @@ export default function PostServiceRequest() {
           navigate(`/requests/${response.data.id}`);
         }, 1000);
       } else {
+        setFieldErrors(response.field_errors || {});
         setError(response.message || "Failed to post service request");
       }
     } catch (err) {
       console.error("Error creating service request:", err);
+      setFieldErrors(err.response?.data?.field_errors || {});
       setError(err.response?.data?.message || "Failed to post service request");
     } finally {
       setLoading(false);
@@ -152,7 +176,7 @@ export default function PostServiceRequest() {
         <div className="psr-head">
           <h1>Post Service Request</h1>
           <p>
-            Describe your maritime survey, inspection, or audit requirement. Verified experts will
+            Describe your maritime survey, inspection, audit, or specialist service requirement. Verified experts will
             respond with quotations.
           </p>
         </div>
@@ -175,18 +199,21 @@ export default function PostServiceRequest() {
                 <CustomSelect
                   width="100%"
                   value={formData.serviceType}
-                  options={dropdownData.serviceTypes.map((type) => type.name)}
-                  onChange={(value) =>
+                  options={SERVICE_TYPES}
+                  onChange={(value) => {
+                    setFieldErrors((current) => ({ ...current, serviceType: undefined, serviceCategory: undefined, serviceTypeOther: undefined }));
                     setFormData((prev) => ({
                       ...prev,
                       serviceType: value,
-                      serviceCategory: "",
-                    }))
-                  }
+                      serviceCategory: value === "Other" ? "Other" : "",
+                      serviceTypeOther: "",
+                    }));
+                  }}
                 />
+                {fieldErrors.serviceType && <small className="psr-field-error">{fieldErrors.serviceType}</small>}
               </div>
 
-              <div className="psr-group">
+              {formData.serviceType !== "Other" && <div className="psr-group">
                 <label>Service Category</label>
                 <CustomSelect
                   width="100%"
@@ -203,8 +230,27 @@ export default function PostServiceRequest() {
                     }))
                   }
                 />
-              </div>
+                {fieldErrors.serviceCategory && <small className="psr-field-error">{fieldErrors.serviceCategory}</small>}
+              </div>}
             </div>
+
+            {formData.serviceType === "Other" && <div className="psr-row full">
+              <div className="psr-group">
+                <label htmlFor="serviceTypeOther">Specify Service Required</label>
+                <textarea
+                  id="serviceTypeOther"
+                  name="serviceTypeOther"
+                  value={formData.serviceTypeOther}
+                  onChange={handleInputChange}
+                  placeholder="Describe the survey, inspection, audit or specialist maritime service needed."
+                  className="psr-textarea"
+                  maxLength={500}
+                  required
+                  aria-invalid={Boolean(fieldErrors.serviceTypeOther)}
+                />
+                {fieldErrors.serviceTypeOther && <small className="psr-field-error">{fieldErrors.serviceTypeOther}</small>}
+              </div>
+            </div>}
 
             <div className="psr-row full">
               <div className="psr-group">

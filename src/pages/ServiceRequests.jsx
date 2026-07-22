@@ -41,6 +41,7 @@ export default function ServiceRequests() {
   const [approvingId, setApprovingId] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [editFieldErrors, setEditFieldErrors] = useState({});
   const [deleteError, setDeleteError] = useState("");
   const deleteCancelRef = useRef(null);
   const deleteDialogRef = useRef(null);
@@ -130,7 +131,7 @@ export default function ServiceRequests() {
     };
   }, [requestToDelete]);
 
-  const serviceTypes = ["All Types", "Survey", "Inspection", "Audit"];
+  const serviceTypes = ["All Types", "Survey", "Inspection", "Audit", "Other"];
   const statuses = ["All Statuses", "open", "assigned", "in progress", "completed"];
   const urgencies = ["Any Urgency", "routine", "urgent", "emergency"];
 
@@ -211,10 +212,13 @@ export default function ServiceRequests() {
     finally { setApprovingId(null); }
   };
 
-  const beginEdit = (request) => setEditingRequest({
+  const beginEdit = (request) => {
+    setEditFieldErrors({});
+    setEditingRequest({
     id: request.id,
     serviceType: request.serviceType || "",
     serviceCategory: request.serviceCategory || "",
+    serviceTypeOther: request.serviceTypeOther || "",
     title: request.title || "",
     scopeOfWork: request.scopeOfWork || "",
     urgency: request.urgency || "routine",
@@ -229,15 +233,36 @@ export default function ServiceRequests() {
     eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
     locationSummary: request.port?.locationSummary || "",
     requiredCertification: request.requiredCertification || "",
-  });
+    });
+  };
 
   const saveEdit = async () => {
+    const nextErrors = {};
+    const serviceTypeOther = editingRequest.serviceTypeOther.trim();
+    if (editingRequest.serviceType === "Other") {
+      if (!serviceTypeOther) nextErrors.serviceTypeOther = "Please describe the required service.";
+      else if (serviceTypeOther.length < 3) nextErrors.serviceTypeOther = "Service details must be at least 3 characters.";
+      else if (serviceTypeOther.length > 500) nextErrors.serviceTypeOther = "Service details must be 500 characters or fewer.";
+    } else if (!editingRequest.serviceCategory.trim()) {
+      nextErrors.serviceCategory = "Select a service category.";
+    }
+    if (Object.keys(nextErrors).length) {
+      setEditFieldErrors(nextErrors);
+      return;
+    }
     setEditSaving(true);
     try {
-      const response = await updateServiceRequest(editingRequest.id, editingRequest);
+      const response = await updateServiceRequest(editingRequest.id, {
+        ...editingRequest,
+        serviceCategory: editingRequest.serviceType === "Other" ? "Other" : editingRequest.serviceCategory,
+        serviceTypeOther: editingRequest.serviceType === "Other" ? serviceTypeOther : null,
+      });
       setRequests((current) => current.map((item) => item.id === editingRequest.id ? response.data : item));
       setEditingRequest(null); setNotice("Pending request updated.");
-    } catch (error) { setNotice(error.response?.data?.message || "Request update failed."); }
+    } catch (error) {
+      setEditFieldErrors(error.response?.data?.field_errors || {});
+      setNotice(error.response?.data?.message || "Request update failed.");
+    }
     finally { setEditSaving(false); }
   };
 
@@ -352,7 +377,9 @@ export default function ServiceRequests() {
                       {request.serviceType || request.service_type || "-"}
                     </span>
                     <span className="request-category-badge">
-                      {request.serviceCategory || request.service_category || "-"}
+                      {request.serviceType === "Other"
+                        ? request.serviceTypeOther || "Details not provided"
+                        : request.serviceCategory || request.service_category || "-"}
                     </span>
                     <span className={`urgency-badge ${request.urgency || ""}`}>
                       {request.urgency || "-"}
@@ -462,8 +489,14 @@ export default function ServiceRequests() {
       )}
 
       {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>Edit Pending Request</h2><div className="request-edit-grid">
+        <label>Service type<select value={editingRequest.serviceType} onChange={(event) => {
+          const serviceType = event.target.value;
+          setEditFieldErrors({});
+          setEditingRequest({...editingRequest, serviceType, serviceCategory: serviceType === "Other" ? "Other" : "", serviceTypeOther: ""});
+        }}>{["Audit", "Inspection", "Survey", "Other"].map((type) => <option key={type}>{type}</option>)}</select></label>
+        {editingRequest.serviceType === "Other" ? <label className="wide">Specify Service Required<textarea maxLength={500} placeholder="Describe the survey, inspection, audit or specialist maritime service needed." value={editingRequest.serviceTypeOther} onChange={(event) => { setEditFieldErrors({...editFieldErrors, serviceTypeOther: undefined}); setEditingRequest({...editingRequest,serviceTypeOther:event.target.value}); }}/>{editFieldErrors.serviceTypeOther && <small className="request-edit-error">{editFieldErrors.serviceTypeOther}</small>}</label> : <label>Service category<input value={editingRequest.serviceCategory} onChange={(event) => { setEditFieldErrors({...editFieldErrors, serviceCategory: undefined}); setEditingRequest({...editingRequest,serviceCategory:event.target.value}); }}/>{editFieldErrors.serviceCategory && <small className="request-edit-error">{editFieldErrors.serviceCategory}</small>}</label>}
         {[
-          ["serviceType","Service type"],["serviceCategory","Inspection type"],["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["portName","Port"],["country","Country"],["eta","ETA","date"],["locationSummary","Location summary"],["requiredCertification","Required certification"]
+          ["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["portName","Port"],["country","Country"],["eta","ETA","date"],["locationSummary","Location summary"],["requiredCertification","Required certification"]
         ].map(([field,label,type="text"]) => <label key={field}>{label}<input type={type} value={editingRequest[field] ?? ""} onChange={(event) => setEditingRequest({...editingRequest,[field]:event.target.value})}/></label>)}
         <label className="wide">Scope of work<textarea value={editingRequest.scopeOfWork} onChange={(event) => setEditingRequest({...editingRequest,scopeOfWork:event.target.value})}/></label>
       </div><div className="request-edit-actions"><button type="button" disabled={editSaving} onClick={() => setEditingRequest(null)}>Cancel</button><button type="button" className="save" disabled={editSaving} onClick={saveEdit}>{editSaving ? "Saving..." : "Save Changes"}</button></div></section></div>}

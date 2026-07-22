@@ -201,7 +201,10 @@ export default function ServiceRequestDetails() {
     const ownQuotes = request._ownQuotations || [];
     return <main className="request-details-page consultant-request-detail">
       <section className="details-card consultant-safe-detail-grid">
-        <div><span>Inspection Type</span><strong>{request.inspectionType || "Not provided"}</strong></div>
+        <div><span>Service Type</span><strong>{request.serviceType || "Not provided"}</strong></div>
+        {request.serviceType === "Other"
+          ? <div><span>Service Details</span><strong>{request.serviceTypeOther || "Not provided"}</strong></div>
+          : <div><span>Inspection Type</span><strong>{request.inspectionType || "Not provided"}</strong></div>}
         <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
         <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
         <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
@@ -274,7 +277,7 @@ export default function ServiceRequestDetails() {
         <div>
           <div className="request-tags">
             <span className="outline-tag">{request.serviceType || "Service"}</span>
-            <span className="outline-tag">{request.serviceCategory || "General"}</span>
+            {request.serviceType !== "Other" && <span className="outline-tag">{request.serviceCategory || "General"}</span>}
             <span className={`urgency-tag ${request.urgency || ""}`}>
               {request.urgency || "routine"}
             </span>
@@ -322,6 +325,10 @@ export default function ServiceRequestDetails() {
 
       <section className="request-details-layout">
         <div className="request-main-col">
+          {request.serviceType === "Other" && <div className="details-card">
+            <h2>Service Details</h2>
+            <p>{request.serviceTypeOther || "No service details added."}</p>
+          </div>}
           <div className="details-card">
             <h2>Scope of Work</h2>
             <p>{request.scopeOfWork || "No scope added."}</p>

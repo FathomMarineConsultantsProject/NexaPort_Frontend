@@ -4,6 +4,19 @@
   padding: 38px 40px 48px;
 }
 
+.request-edit-grid select {
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 10px;
+  font: inherit;
+}
+
+.request-edit-error {
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* =========================
    HEADER
 ========================= */
