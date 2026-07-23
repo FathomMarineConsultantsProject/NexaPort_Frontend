@@ -23,30 +23,35 @@ export const ADMIN_DIRECTORY_GROUPS = [
     items: [
       {
         label: "Service Providers",
+        type: "service_provider",
         path: "/service-providers",
         icon: Wrench,
         description: "Organizations providing technical, operational, inspection, repair and specialist support to vessels and ports.",
       },
       {
         label: "Ship Agents",
+        type: "ship_agent",
         path: "/ship-agents",
         icon: ContactRound,
         description: "Port agents coordinating vessel calls, documentation, clearances and local marine services.",
       },
       {
         label: "Suppliers",
+        type: "supplier",
         path: "/suppliers",
         icon: PackageOpen,
         description: "Marine suppliers and chandlers providing provisions, equipment, spare parts and vessel stores.",
       },
       {
         label: "Shipyards",
+        type: "shipyard",
         path: "/shipyards",
         icon: Factory,
         description: "Shipbuilding, dry-docking, repair, conversion and maintenance facilities.",
       },
       {
         label: "Tug Boats",
+        type: "tug_boat",
         path: "/tug-boats",
         icon: Ship,
         description: "Towage operators and tug fleets supporting harbour, terminal and offshore operations.",

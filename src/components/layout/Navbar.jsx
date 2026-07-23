@@ -61,7 +61,7 @@ export default function Navbar() {
   const isSuperAdmin = roleId === 1;
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
-  const directoryActive = ADMIN_DIRECTORIES.some(({ path }) =>
+  const directoryActive = location.pathname.startsWith("/directories/") || ADMIN_DIRECTORIES.some(({ path }) =>
     matchPath({ path: `${path}/*` }, location.pathname)
   );
 

@@ -20,7 +20,9 @@ import FlagDirectory from "./pages/FlagDirectory";
 import FlagInspectorProfile from "./pages/FlagInspectorProfile";
 import AccreditedInspectorDirectory from "./pages/AccreditedInspectorDirectory";
 import AppointedSurveyorDirectory from "./pages/AppointedSurveyorDirectory";
-import DirectoryScaffold from "./components/directories/DirectoryScaffold";
+import MaritimeDirectoryPage from "./pages/MaritimeDirectoryPage";
+import MaritimeDirectoryDetails from "./pages/MaritimeDirectoryDetails";
+import MaritimeDirectoryForm from "./components/directories/MaritimeDirectoryForm";
 import { NEW_ADMIN_DIRECTORIES } from "./config/adminDirectories";
 import PostServiceRequest from "./pages/PostServiceRequest";
 import ServiceRequestDetails from "./pages/ServiceRequestDetails";
@@ -76,8 +78,11 @@ const Shell = () => (
         <Route path="/accredited-inspectors/:schemeSlug" element={<AdminOnly><AccreditedInspectorDirectory /></AdminOnly>} />
         <Route path="/appointed-surveyors" element={<AdminOnly><AppointedSurveyorDirectory /></AdminOnly>} />
         {NEW_ADMIN_DIRECTORIES.map((directory) => (
-          <Route key={directory.path} path={directory.path} element={<AdminOnly><DirectoryScaffold directory={directory} /></AdminOnly>} />
+          <Route key={directory.path} path={directory.path} element={<AdminOnly><MaritimeDirectoryPage directory={directory} /></AdminOnly>} />
         ))}
+        <Route path="/directories/:directoryType/new" element={<AdminOnly><MaritimeDirectoryForm /></AdminOnly>} />
+        <Route path="/directories/:directoryType/:entityId/edit" element={<AdminOnly><MaritimeDirectoryForm /></AdminOnly>} />
+        <Route path="/directories/:directoryType/:entityId" element={<AdminOnly><MaritimeDirectoryDetails /></AdminOnly>} />
         <Route path="/admin/client-registrations" element={<AdminOnly><AdminClientRegistrations /></AdminOnly>} />
       <Route
           path="/admin/client-registrations/register"
