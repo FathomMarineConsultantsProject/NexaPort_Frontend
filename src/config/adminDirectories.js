@@ -23,6 +23,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
     items: [
       {
         label: "Service Providers",
+        singular: "Service Provider",
         type: "service_provider",
         path: "/service-providers",
         icon: Wrench,
@@ -30,6 +31,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
       },
       {
         label: "Ship Agents",
+        singular: "Ship Agent",
         type: "ship_agent",
         path: "/ship-agents",
         icon: ContactRound,
@@ -37,6 +39,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
       },
       {
         label: "Suppliers",
+        singular: "Supplier",
         type: "supplier",
         path: "/suppliers",
         icon: PackageOpen,
@@ -44,6 +47,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
       },
       {
         label: "Shipyards",
+        singular: "Shipyard",
         type: "shipyard",
         path: "/shipyards",
         icon: Factory,
@@ -51,6 +55,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
       },
       {
         label: "Tug Boats",
+        singular: "Tug Boat",
         type: "tug_boat",
         path: "/tug-boats",
         icon: Ship,

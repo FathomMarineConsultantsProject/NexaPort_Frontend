@@ -1,64 +1,193 @@
-import { ArrowLeft, Building2, ExternalLink, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { activateMaritimeDirectoryEntity, approveMaritimeDirectoryEntity, deactivateMaritimeDirectoryEntity, getMaritimeDirectoryEntity, rejectMaritimeDirectoryEntity } from "../api/maritimeDirectoryApi";
-import CopyableContact from "../components/common/CopyableContact";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  activateMaritimeDirectoryEntity,
+  approveMaritimeDirectoryEntity,
+  deactivateMaritimeDirectoryEntity,
+  getMaritimeDirectoryEntity,
+  rejectMaritimeDirectoryEntity,
+} from "../api/maritimeDirectoryApi";
+import {
+  BranchList,
+  CompanyOverview,
+  ContactDetails,
+  DirectoryDetailHeader,
+  DirectorySection,
+  FaqAccordion,
+  Overview,
+  PortsCovered,
+  ProductList,
+  RecordGrid,
+  ServiceGroups,
+  ShipyardDimensions,
+} from "../components/directories/DirectoryUI";
 import ShipyardProfile from "../components/directories/ShipyardProfile";
-import { NEW_ADMIN_DIRECTORIES } from "../config/adminDirectories";
-import { getShipyardProfile, isShipyardDirectory } from "../utils/shipyardProfile";
-import "./MaritimeDirectoryDetails.css";
+import { DIRECTORY_BY_TYPE } from "../config/maritimeDirectories";
+import { directoryView } from "../utils/directoryData";
+import "../styles/maritimeDirectory.css";
 
-const TYPE_LABELS = Object.fromEntries(NEW_ADMIN_DIRECTORIES.map(({ type, label }) => [type, label]));
-const SECTION_FIELDS = {
-  services: ["Services", "service_name", ["category", "service_type", "service_description"]],
-  ports: ["Ports Covered", "port_name", ["country", "unlocode", "source_port_text"]],
-  branches: ["Branches and Offices", "branch_name", ["branch_type", "public_address", "city", "country", "public_telephone", "public_email"]],
-  certifications: ["Certifications", "certification_name", ["standard_code", "issuer", "expiry_date"]],
-  class_approvals: ["Class Approvals", "society_name", ["approval_details"]],
-  memberships: ["Memberships", "organization_name", ["membership_details"]],
-  products: ["Products", "product_name", ["category", "manufacturer"]],
-  faqs: ["FAQs", "question", ["answer"]],
+const SECTION_LABELS = {
+  overview: "Overview",
+  contact: "Contact",
+  services: "Services",
+  ports: "Ports Covered",
+  branches: "Branches",
+  offices: "Offices",
+  certifications: "Certifications",
+  class_approvals: "Class Approvals",
+  memberships: "Memberships",
+  products: "Products",
+  faqs: "FAQ",
+  dimensions: "Dimensions",
+  fleet: "Fleet",
 };
-const label = (value) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const DOSSIER_TYPES = new Set(["service_provider", "ship_agent", "supplier"]);
 
-function DetailSection({ name, rows }) {
-  const [title, primary, fields] = SECTION_FIELDS[name];
-  return <section className="maritime-detail__section"><h2>{title}</h2>{!rows.length ? <p className="maritime-detail__empty">No {title.toLowerCase()} recorded.</p> : <div className="maritime-detail__rows">{rows.map((row) => <article key={row.id}><strong>{row[primary]}</strong>{fields.map((field) => row[field] ? <p key={field}><span>{label(field)}</span>{row[field]}</p> : null)}</article>)}</div>}</section>;
-}
+const sectionExists = (section, view, directoryType) => {
+  if (section === "contact") return true;
+  if (section === "overview") return DOSSIER_TYPES.has(directoryType) || Boolean(view.description || view.aboutSections.length || view.yearsExperience);
+  if (section === "dimensions") return view.dimensions.length > 0;
+  if (section === "class_approvals") return view.classApprovals.length > 0;
+  return Array.isArray(view[section]) && view[section].length > 0;
+};
 
 export default function MaritimeDirectoryDetails() {
   const { directoryType, entityId } = useParams();
+  const directory = DIRECTORY_BY_TYPE[directoryType];
   const navigate = useNavigate();
-  const directory = NEW_ADMIN_DIRECTORIES.find((item) => item.type === directoryType);
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState("");
+  const [tabState, setTabState] = useState({ entityId, section: "overview" });
+  const tabRefs = useRef([]);
+
   useEffect(() => {
     let active = true;
     getMaritimeDirectoryEntity(entityId)
       .then((response) => { if (active) setRecord(response.data); })
-      .catch((requestError) => { if (active) setError(requestError.response?.data?.message || "Unable to load this entry."); })
+      .catch((requestError) => { if (active) setError(requestError.response?.data?.message || "Unable to load this company."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [entityId]);
 
-  if (!directory) return <main className="maritime-detail"><p>Unsupported directory type.</p></main>;
-  const run = async (work) => { setActing(true); setError(""); try { setRecord((await work()).data); } catch (requestError) { setError(requestError.response?.data?.message || "Unable to update this entry."); } finally { setActing(false); } };
-  const reject = () => { const reason = window.prompt("Reason for rejecting this imported entry:"); if (reason?.trim()) run(() => rejectMaritimeDirectoryEntity(entityId, reason)); };
-  const deactivate = () => { const reason = window.prompt("Reason for deactivating this entry:"); if (reason?.trim()) run(() => deactivateMaritimeDirectoryEntity(entityId, reason)); };
+  const view = useMemo(() => directoryView(record || {}, directoryType), [record, directoryType]);
+  const isDossier = DOSSIER_TYPES.has(directoryType);
+  const isShipyard = directoryType === "shipyard";
+  const visibleSections = useMemo(
+    () => directory?.sections.filter((section) => sectionExists(section, view, directoryType)) || [],
+    [directory, directoryType, view],
+  );
+  const activeSection = tabState.entityId === entityId ? tabState.section : "overview";
+  const selectedSection = visibleSections.includes(activeSection)
+    ? activeSection
+    : visibleSections.includes("overview") ? "overview" : visibleSections[0];
 
-  if (loading) return <main className="maritime-detail"><div className="maritime-detail__state">Loading entry...</div></main>;
-  if (!record) return <main className="maritime-detail"><button className="maritime-detail__back" onClick={() => navigate(directory.path)}><ArrowLeft size={16} /> Back to {directory.label}</button><div className="maritime-detail__state" role="alert">{error || "Directory entry not found."}</div></main>;
-  const entity = record.entity;
-  const isShipyard = isShipyardDirectory(directoryType);
-  const shipyardProfile = isShipyard ? getShipyardProfile(entity) : null;
-  const badges = isShipyard ? ["shipyard", ...record.directory_types.filter((type) => type !== "shipyard")] : record.directory_types;
-  return <main className={`maritime-detail${isShipyard ? " shipyard-profile" : ""}`}><button className="maritime-detail__back" onClick={() => navigate(directory.path)}><ArrowLeft size={16} /> Back to {directory.label}</button><header><div className="maritime-detail__identity">{entity.logo_url ? <img src={entity.logo_url} alt="" /> : <span><Building2 size={25} /></span>}<div><div className="maritime-detail__badges">{badges.map((type) => <span key={type}>{TYPE_LABELS[type]}</span>)}<span className={entity.review_status}>{entity.review_status === "pending" ? "Pending Review" : label(entity.review_status)}</span>{!entity.is_active && <span className="inactive">Inactive</span>}</div><h1>{entity.company_name}</h1>{isShipyard ? (shipyardProfile.city || shipyardProfile.country) && <p>{[shipyardProfile.city, shipyardProfile.country].filter(Boolean).join(", ")}</p> : <p>{entity.description || "No description provided."}</p>}</div></div><button onClick={() => navigate(`/directories/${directoryType}/${entityId}/edit`)}><Pencil size={16} /> Edit</button></header>{error && <div className="maritime-detail__error" role="alert">{error}</div>}
-    {isShipyard ? <ShipyardProfile entity={entity} /> : <>
-      <section className="maritime-detail__section"><h2>Overview</h2><dl className="maritime-detail__overview"><div><dt>Location</dt><dd>{[entity.city, entity.country].filter(Boolean).join(", ") || "—"}</dd></div><div><dt>Address</dt><dd>{entity.public_address || "—"}</dd></div><div><dt>Email</dt><dd>{entity.public_email ? <CopyableContact value={entity.public_email} href={`mailto:${entity.public_email}`} type="email" /> : "—"}</dd></div><div><dt>Phone</dt><dd>{entity.public_phone ? <CopyableContact value={entity.public_phone} href={`tel:${entity.public_phone}`} type="phone" /> : "—"}</dd></div><div><dt>Website</dt><dd>{entity.website ? <a href={entity.website} target="_blank" rel="noreferrer">Open website <ExternalLink size={13} /></a> : "—"}</dd></div><div><dt>Source</dt><dd>{entity.data_source === "manual_admin" ? "Manual admin entry" : entity.data_source}</dd></div><div><dt>Review status</dt><dd>{label(entity.review_status)}</dd></div><div><dt>Active status</dt><dd>{entity.is_active ? "Active" : "Inactive"}</dd></div><div><dt>Created</dt><dd>{new Date(entity.created_at).toLocaleString()}</dd></div><div><dt>Updated</dt><dd>{new Date(entity.updated_at).toLocaleString()}</dd></div></dl></section>
-      {Object.keys(SECTION_FIELDS).map((name) => <DetailSection key={name} name={name} rows={record[name] || []} />)}
-    </>}
-    <section className="maritime-detail__section maritime-detail__actions"><h2>Administrative Actions</h2><div><button disabled={acting} onClick={() => navigate(`/directories/${directoryType}/${entityId}/edit`)}>Edit</button>{entity.data_source !== "manual_admin" && entity.review_status !== "approved" && <button disabled={acting} onClick={() => run(() => approveMaritimeDirectoryEntity(entityId))}>Approve</button>}{entity.data_source !== "manual_admin" && entity.review_status !== "rejected" && <button className="danger" disabled={acting} onClick={reject}>Reject</button>}{entity.is_active ? <button className="danger" disabled={acting} onClick={deactivate}>Deactivate</button> : <button disabled={acting} onClick={() => run(() => activateMaritimeDirectoryEntity(entityId))}>Activate</button>}</div></section>
-  </main>;
+  if (!directory) return <main className="md-detail-page"><div className="md-empty-state">Unsupported directory type.</div></main>;
+  if (loading) return <main className="md-detail-page"><div className="md-empty-state">Loading company dossier…</div></main>;
+  if (!record) return <main className="md-detail-page"><Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link><div className="md-alert" role="alert">{error || "Company not found."}</div></main>;
+
+  const runAction = async (work) => {
+    setActing(true);
+    setError("");
+    try {
+      setRecord((await work()).data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to update this company.");
+    } finally {
+      setActing(false);
+    }
+  };
+  const reject = () => {
+    const reason = window.prompt("Reason for rejecting this directory entry:");
+    if (reason?.trim()) runAction(() => rejectMaritimeDirectoryEntity(entityId, reason));
+  };
+  const deactivate = () => {
+    const reason = window.prompt("Reason for deactivating this directory entry:");
+    if (reason?.trim()) runAction(() => deactivateMaritimeDirectoryEntity(entityId, reason));
+  };
+
+  const renderSection = (section) => {
+    if (section === "overview") return isDossier ? <CompanyOverview key={section} view={view} /> : <Overview key={section} view={view} />;
+    if (section === "contact") return <ContactDetails key={section} view={view} />;
+    if (section === "dimensions") return <ShipyardDimensions key={section} dimensions={view.dimensions} />;
+    if (section === "services") return <DirectorySection key={section} id={section} title={directory.serviceLabel} count={view.services.length} countLabel={view.services.length === 1 ? "capability listed" : "capabilities listed"}><ServiceGroups rows={view.services} /></DirectorySection>;
+    if (section === "ports") {
+      const title = directory.type === "tug_boat" ? "Operating Ports and Regions" : "Ports Covered";
+      return <DirectorySection key={section} id={section} title={title} count={view.ports.length} countLabel={view.ports.length === 1 ? "location" : "locations"} className="md-section--coverage"><PortsCovered rows={view.ports} /></DirectorySection>;
+    }
+    if (section === "products" && isDossier) return <DirectorySection key={section} id={section} title="Products" count={view.products.length} countLabel={view.products.length === 1 ? "product" : "products"}><ProductList rows={view.products} /></DirectorySection>;
+    if (section === "branches" || section === "offices") return <DirectorySection key={section} id={section} title={SECTION_LABELS[section]}><BranchList rows={view[section]} /></DirectorySection>;
+    if (section === "faqs") return <DirectorySection key={section} id={section} title="Frequently Asked Questions"><FaqAccordion rows={view.faqs} /></DirectorySection>;
+    const rows = section === "class_approvals" ? view.classApprovals : view[section];
+    return <DirectorySection key={section} id={section} title={SECTION_LABELS[section]} className={isDossier ? "md-section--credentials" : ""}><RecordGrid rows={rows} kind={section} /></DirectorySection>;
+  };
+
+  const tabLabel = (section) => section === "services" ? directory.serviceLabel : SECTION_LABELS[section];
+  const handleTabKeyDown = (event, index) => {
+    let nextIndex = null;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % visibleSections.length;
+    if (event.key === "ArrowLeft") nextIndex = (index - 1 + visibleSections.length) % visibleSections.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = visibleSections.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    setTabState({ entityId, section: visibleSections[nextIndex] });
+    tabRefs.current[nextIndex]?.focus();
+  };
+
+  return (
+    <main className={`md-detail-page md-detail-page--${directory.type}`}>
+      <Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link>
+      <DirectoryDetailHeader view={view} directory={directory} onEdit={() => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
+      {error && <div className="md-alert" role="alert">{error}</div>}
+
+      {isShipyard ? (
+        <ShipyardProfile view={view} />
+      ) : (
+        <>
+          {visibleSections.length > 0 && (
+            <div className="md-section-nav" role="tablist" aria-label="Company dossier sections">
+              {visibleSections.map((section, index) => (
+                <button
+                  key={section}
+                  ref={(element) => { tabRefs.current[index] = element; }}
+                  id={`${section}-tab`}
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedSection === section}
+                  aria-controls={`${section}-panel`}
+                  tabIndex={selectedSection === section ? 0 : -1}
+                  onClick={() => setTabState({ entityId, section })}
+                  onKeyDown={(event) => handleTabKeyDown(event, index)}
+                >
+                  {tabLabel(section)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div
+            id={`${selectedSection}-panel`}
+            className="md-detail-layout"
+            role="tabpanel"
+            aria-labelledby={`${selectedSection}-tab`}
+            tabIndex={0}
+          >
+            {selectedSection && renderSection(selectedSection)}
+          </div>
+        </>
+      )}
+
+      <section className="md-admin-actions" aria-label="Administrative actions">
+        <strong>Directory review</strong>
+        <div>
+          {view.entity.data_source !== "manual_admin" && view.reviewStatus !== "approved" && <button type="button" disabled={acting} onClick={() => runAction(() => approveMaritimeDirectoryEntity(entityId))}>Approve</button>}
+          {view.entity.data_source !== "manual_admin" && view.reviewStatus !== "rejected" && <button type="button" disabled={acting} onClick={reject}>Reject</button>}
+          {view.isActive ? <button type="button" disabled={acting} onClick={deactivate}>Deactivate</button> : <button type="button" disabled={acting} onClick={() => runAction(() => activateMaritimeDirectoryEntity(entityId))}>Activate</button>}
+        </div>
+      </section>
+    </main>
+  );
 }
