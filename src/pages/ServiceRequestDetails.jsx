@@ -623,7 +623,14 @@ export default function ServiceRequestDetails() {
 
                     <div className="client-total-preview">
                       Client Final Price: $
-                      {money(Number(getExpertQuote(quote)) + Number(markupByQuote[quote.id] || 0))}
+                      {money(
+                        Number(getExpertQuote(quote)) +
+                        Number(quote.travelCost || 0) +
+                        Number(quote.accommodationCost || 0) +
+                        Number(quote.reportFee || 0) +
+                        Number(quote.urgencySurcharge || 0) +
+                        Number(markupByQuote[quote.id] || 0)
+                      )}
                     </div>
 
                     <button
