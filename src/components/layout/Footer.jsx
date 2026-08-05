@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="np-footer">
       <div className="np-footer-left">
         <Anchor size={18} />
-        <span>NexaPort Maritime Marketplace</span>
+        <span>NexaPort Maritime Marketplace<small>Powered by Fathom Tech</small></span>
       </div>
 
       <div className="np-footer-right">

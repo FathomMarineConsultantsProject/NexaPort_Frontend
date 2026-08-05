@@ -14,8 +14,19 @@ import { acceptQuotation, createQuotation, getQuotations } from "../api/quotatio
 import { createExpertReview } from "../api/reviewApi";
 import { getServiceRequestById } from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
+import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
 import "./ServiceRequestDetails.css";
 import { useParams } from "react-router-dom";
+
+function Narrative({ title, text }) {
+  const blocks = String(text || "").trim().split(/\n\s*\n/).filter(Boolean);
+  if (!blocks.length) return null;
+  return <section className="request-narrative"><h2>{title}</h2><div>{blocks.map((block, index) => {
+    const lines = block.split(/\n/).map((line) => line.trim()).filter(Boolean);
+    const listed = lines.length > 1 && lines.every((line) => /^[-*•\d]+[.)]?\s*/.test(line));
+    return listed ? <ul key={index}>{lines.map((line) => <li key={line}>{line.replace(/^[-*•\d]+[.)]?\s*/, "")}</li>)}</ul> : <p key={index}>{lines.join("\n")}</p>;
+  })}</div></section>;
+}
 
 export default function ServiceRequestDetails() {
   const { id } = useParams();
@@ -79,14 +90,17 @@ export default function ServiceRequestDetails() {
 
   const formatDateTime = (date) => {
     if (!date) return "-";
-
-    return new Date(date).toLocaleString("en-GB", {
+    const d = new Date(date);
+    const datePart = d.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
       year: "numeric",
+    });
+    const timePart = d.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
     });
+    return `${datePart},\u00A0${timePart}`;
   };
 
   const money = (value) => Number(value || 0).toLocaleString();
@@ -270,11 +284,14 @@ export default function ServiceRequestDetails() {
   const getClientTotal = (quote) => {
     return quote.clientTotalUsd || quote.client_total_usd || 0;
   };
+  const overview = request.serviceType === "Other" ? request.serviceTypeOther : "";
+  const scope = request.scopeOfWork || "";
+  const showScope = Boolean(scope.trim()) && normalizeNarrative(scope) !== normalizeNarrative(overview);
 
   return (
     <main className="request-details-page">
       <section className="request-details-head">
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div className="request-tags">
             <span className="outline-tag">{request.serviceType || "Service"}</span>
             {request.serviceType !== "Other" && <span className="outline-tag">{request.serviceCategory || "General"}</span>}
@@ -292,6 +309,7 @@ export default function ServiceRequestDetails() {
             <span>
               <MapPin size={17} />
               {port.locationSummary || port.name || port.port_name || "Port not added"}
+              {port.country && !port.locationSummary ? `, ${port.country}` : ""}
             </span>
 
             <span>
@@ -325,14 +343,9 @@ export default function ServiceRequestDetails() {
 
       <section className="request-details-layout">
         <div className="request-main-col">
-          {request.serviceType === "Other" && <div className="details-card">
-            <h2>Service Details</h2>
-            <p>{request.serviceTypeOther || "No service details added."}</p>
-          </div>}
-          <div className="details-card">
-            <h2>Scope of Work</h2>
-            <p>{request.scopeOfWork || "No scope added."}</p>
-          </div>
+          {overview && <Narrative title="Request Overview" text={overview} />}
+          {showScope && <Narrative title="Scope of Work" text={scope} />}
+          {!overview && !scope && <section className="request-narrative empty"><h2>Request Overview</h2><p>No description was provided.</p></section>}
 
           <div className="quotation-head">
             <h2>
@@ -671,23 +684,23 @@ export default function ServiceRequestDetails() {
 
             <Info label="Port" value={port.name || port.port_name} />
             <Info label="Country" value={port.country} />
-            <Info label="ETA" value={formatDate(port.eta)} />
-            <Info label="Deadline" value={formatDate(request.requiredBy)} />
+            <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} />
+            <Info label="Deadline" value={request.requiredBy ? formatDate(request.requiredBy) : null} />
           </div>
 
-          <div className="side-info-card">
+          {request.requiredCertification && <div className="side-info-card">
             <h3>
               <Award size={18} />
-              Required Cert.
+              Required Qualifications
             </h3>
 
-            <p>{request.requiredCertification || "-"}</p>
-          </div>
+            <p>{displayCase(request.requiredCertification)}</p>
+          </div>}
 
           {!isExpert() && (
-            <div className="side-info-card">
+            request.requesterName && <div className="side-info-card">
               <h3>Requested By</h3>
-              <p>{request.requesterName || "-"}</p>
+              <p>{request.requesterName}</p>
             </div>
           )}
         </aside>
@@ -703,6 +716,7 @@ export default function ServiceRequestDetails() {
 }
 
 function Info({ label, value, icon }) {
+  if (value === null || value === undefined || value === "" || value === "-") return null;
   return (
     <div className="info-row">
       <span>{label}</span>

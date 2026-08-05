@@ -1,8 +1,10 @@
 import {
   Anchor,
   Bell,
+  Building2,
   Briefcase,
   ChevronDown,
+  ClipboardList,
   Grid2X2,
   LockKeyhole,
   LogOut,
@@ -20,7 +22,7 @@ import {
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
 } from "../../api/adminNotificationApi";
-import { getRoleId } from "../../utils/auth";
+import { getRoleId, isMaritimeCompany } from "../../utils/auth";
 import { ADMIN_DIRECTORIES, ADMIN_DIRECTORY_GROUPS } from "../../config/adminDirectories";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
@@ -59,6 +61,7 @@ export default function Navbar() {
   const roleId = getRoleId();
   const isClient = roleId === 3;
   const isSuperAdmin = roleId === 1;
+  const isCompany = isMaritimeCompany();
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
   const directoryActive = location.pathname.startsWith("/directories/") || ADMIN_DIRECTORIES.some(({ path }) =>
@@ -261,6 +264,7 @@ export default function Navbar() {
       </div>
 
       <nav className="np-navlinks">
+        {isCompany ? <NavLink to="/company-profile"><Building2 size={17} /> Company Profile</NavLink> : <>
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
@@ -268,6 +272,12 @@ export default function Navbar() {
         {!isClient && (
           <NavLink to="/experts">
             <Users size={17} /> Consultants
+          </NavLink>
+        )}
+
+        {!isClient && (
+          <NavLink to="/templates">
+            <ClipboardList size={17} /> Templates
           </NavLink>
         )}
 
@@ -322,6 +332,7 @@ export default function Navbar() {
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
+        </>}
       </nav>
 
       <button
@@ -485,6 +496,7 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
+          {isCompany ? <NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} /> Company Profile</NavLink> : <>
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>
@@ -492,6 +504,12 @@ export default function Navbar() {
           {!isClient && (
             <NavLink to="/experts" onClick={closeMobileNavigation}>
               <Users size={18} /> Consultants
+            </NavLink>
+          )}
+
+          {!isClient && (
+            <NavLink to="/templates" onClick={closeMobileNavigation}>
+              <ClipboardList size={18} /> Templates
             </NavLink>
           )}
 
@@ -540,6 +558,7 @@ export default function Navbar() {
           <NavLink to="/dashboard" onClick={closeMobileNavigation}>
             <Grid2X2 size={18} /> Dashboard
           </NavLink>
+          </>}
         </nav>
       )}
 

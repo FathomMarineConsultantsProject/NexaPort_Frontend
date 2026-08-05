@@ -376,11 +376,6 @@ export default function ServiceRequests() {
                     <span className="request-type-badge">
                       {request.serviceType || request.service_type || "-"}
                     </span>
-                    <span className="request-category-badge">
-                      {request.serviceType === "Other"
-                        ? request.serviceTypeOther || "Details not provided"
-                        : request.serviceCategory || request.service_category || "-"}
-                    </span>
                     <span className={`urgency-badge ${request.urgency || ""}`}>
                       {request.urgency || "-"}
                     </span>
@@ -403,11 +398,13 @@ export default function ServiceRequests() {
                       )}
                     </div>
 
-                    <div className="detail-item">
-                      <MapPin size={16} />
-                      {port.name || port.port_name || "-"},{" "}
-                      {port.country || "-"}
-                    </div>
+                    {(port.name || port.port_name) && (
+                      <div className="detail-item">
+                        <MapPin size={16} />
+                        {port.name || port.port_name}
+                        {port.country ? `, ${port.country}` : ""}
+                      </div>
+                    )}
 
                     <div className="detail-item">
                       <Calendar size={16} />

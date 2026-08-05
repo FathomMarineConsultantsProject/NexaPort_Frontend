@@ -13,3 +13,4 @@ export const isSuperAdmin = () => getRoleId() === 1;
 export const isExpert = () => getRoleId() === 2;
 export const isClient = () => getRoleId() === 3;
 export const isApprovedClient = () => isClient() && getVerificationStatus() === "approved";
+export const isMaritimeCompany = () => getStoredUser()?.account_type === "maritime_company" || getRoleId() === 4;

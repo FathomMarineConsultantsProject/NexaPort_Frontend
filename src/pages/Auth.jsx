@@ -1,4 +1,4 @@
-import { Anchor, Eye, EyeOff } from "lucide-react";
+import { Anchor, Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/Auth";
@@ -25,7 +25,7 @@ export default function Auth() {
       localStorage.setItem("np_token", response.token);
       localStorage.setItem("np_user", JSON.stringify(response.user));
       const isRestrictedClient = Number(response.user?.role_id) === 3 && response.user?.verification_status !== "approved";
-      navigate(isRestrictedClient ? "/client-verification-status" : "/dashboard", { replace: true });
+      navigate(response.user?.account_type === "maritime_company" ? "/company-profile" : isRestrictedClient ? "/client-verification-status" : "/dashboard", { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Invalid credentials");
     } finally {
@@ -39,7 +39,7 @@ export default function Auth() {
         <div className="auth-logo-icon"><Anchor size={22} /></div>
         <div className="auth-logo-text">Nexa<span>Port</span></div>
       </div>
-      <div className="auth-card">
+      <div className={`auth-card auth-card--${tab}`}>
         <div className="auth-tabs">
           <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => { setTab("login"); setError(""); }}>Sign In</button>
           <button className={`auth-tab ${tab === "register" ? "active" : ""}`} onClick={() => { setTab("register"); setError(""); }}>Register</button>
@@ -71,9 +71,12 @@ export default function Auth() {
           </>
         ) : (
           <>
-            <div className="auth-card-head"><h1>Create a Client account</h1><p>Complete a structured company verification before accessing inspection services.</p></div>
-            <Link to="/register-client" className="auth-submit-btn auth-registration-cta">Continue Client Registration</Link>
-            <div className="auth-divider auth-consultant-link">Want to sign up as a consultant? <Link to="/register-consultant">Register as a Consultant</Link>.</div>
+            <div className="auth-card-head"><h1>Create your NexaPort account</h1><p>Choose how you will use the maritime marketplace.</p></div>
+            <div className="auth-role-choices">
+              <Link to="/register-client"><span><Ship size={20} /></span><strong>Client / Ship Owner</strong><small>Post service requests · Review quotations · Manage vessels and inspections</small><b>Register as Client</b></Link>
+              <Link to="/register-consultant"><span><UserRoundCheck size={20} /></span><strong>Consultant / Surveyor</strong><small>Review available requests · Submit quotations · Build inspection reports and templates</small><b>Register as Consultant</b></Link>
+              <Link to="/register-maritime-company"><span><Building2 size={20} /></span><strong>Maritime Company</strong><small>Showcase maritime services · Manage your directory profile · Receive relevant enquiries</small><b>Register Company</b></Link>
+            </div>
             <div className="auth-divider">Already registered? <button type="button" className="auth-link-button" onClick={() => setTab("login")}>Sign in</button></div>
           </>
         )}

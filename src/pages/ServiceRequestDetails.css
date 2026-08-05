@@ -1,16 +1,26 @@
 .request-details-page {
   width: 100%;
-  max-width: 1040px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 32px 20px 42px;
-  color: #071437;
+  color: #071b39;
 }
 
+/* =========================
+   HEADER – summary card
+========================= */
+
 .request-details-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 24px;
   margin-bottom: 28px;
+  padding: 22px 26px;
+  border: 1px solid #d7e1ea;
+  border-top: 3px solid #0f8f83;
+  border-radius: 3px;
+  background: #fff;
 }
 
 .request-tags {
@@ -27,12 +37,13 @@
 .quote-status {
   height: 24px;
   padding: 0 12px;
-  border-radius: 6px;
+  border-radius: 3px;
   display: inline-flex;
   align-items: center;
   font-size: 11px;
   font-weight: 700;
   text-transform: lowercase;
+  white-space: nowrap;
 }
 
 .outline-tag {
@@ -82,12 +93,14 @@
   letter-spacing: -0.5px;
   color: #071437;
   font-weight: 700;
+  max-width: 780px;
+  overflow-wrap: anywhere;
 }
 
 .request-meta-line {
   display: flex;
-  align-items: left;
-  gap: 16px;
+  align-items: center;
+  gap: 18px;
   color: #526c9d;
   font-size: 13px;
 }
@@ -98,47 +111,70 @@
   gap: 6px;
 }
 
+/* =========================
+   BUDGET BLOCK – detail header right
+========================= */
+
 .budget-block {
   text-align: right;
-  min-width: 170px;
+  min-width: 160px;
+  padding: 8px 0;
 }
 
 .budget-block strong {
   display: block;
   color: #149d94;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: -0.5px;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .budget-block span {
+  display: block;
+  margin-top: 4px;
   color: #64748b;
   font-size: 13px;
 }
 
+/* =========================
+   MAIN LAYOUT
+========================= */
+
 .request-details-layout {
   display: grid;
-  grid-template-columns: 1fr 330px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 24px;
   align-items: start;
 }
 
-.request-main-col,
-.request-side-col {
+.request-main-col {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  min-width: 0;
 }
+
+.request-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* =========================
+   CARDS
+========================= */
 
 .details-card,
 .side-info-card,
 .quotation-card,
 .quote-form-card {
   background: white;
-  border: 1px solid #d8e1ed;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.08);
+  border: 1px solid #d7e1ea;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
 }
 
 .details-card {
@@ -160,13 +196,73 @@
   line-height: 1.55;
 }
 
+/* =========================
+   NARRATIVE (Request Overview / Scope)
+========================= */
+
+.request-narrative {
+  padding: 24px 26px;
+  border: 1px solid #d7e1ea;
+  border-radius: 3px;
+  background: #fff;
+  align-self: start;
+}
+
+.request-narrative h2 {
+  margin: 0 0 15px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid #d7e1ea;
+  color: #071b39;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.request-narrative p,
+.request-narrative li {
+  max-width: 72ch;
+  color: #40546c;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.request-narrative p {
+  margin: 0 0 12px;
+}
+
+.request-narrative p:last-child {
+  margin-bottom: 0;
+}
+
+.request-narrative ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.request-narrative.empty {
+  color: #6b7c8f;
+}
+
+/* =========================
+   SIDE INFO CARDS
+========================= */
+
 .side-info-card {
-  padding: 22px 24px;
+  padding: 20px 22px;
+  border: 1px solid #d7e1ea;
+  border-radius: 3px;
+  box-shadow: none;
 }
 
 .side-info-card h3 {
-  margin: 0 0 18px;
-  font-size: 16px;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e6edf3;
+  font-size: 15px;
   font-weight: 600;
   color: #071437;
   display: flex;
@@ -181,18 +277,27 @@
 .side-info-card p {
   margin: 0;
   color: #111827;
-  font-size: 15px;
-  font-weight: 300;
+  font-size: 14px;
+  font-weight: 400;
   line-height: 1.5;
 }
 
+/* =========================
+   INFO ROWS – label/value grid
+========================= */
+
 .info-row {
   display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 14px;
-  margin-bottom: 12px;
-  font-size: 13px;  
-  font-weight: 300;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 400;
+  align-items: start;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
 }
 
 .info-row span {
@@ -205,12 +310,19 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
+
+/* =========================
+   QUOTATION HEADER
+========================= */
 
 .quotation-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 12px;
 }
 
 .quotation-head h2 {
@@ -231,6 +343,10 @@
   gap: 8px;
   cursor: pointer;
 }
+
+/* =========================
+   QUOTE FORM
+========================= */
 
 .quote-form-card {
   padding: 25px 28px;
@@ -320,6 +436,10 @@
   color: #071437;
   border: 1px solid #071437;
 }
+
+/* =========================
+   QUOTATION CARD
+========================= */
 
 .quotation-card {
   padding: 22px 26px;
@@ -428,6 +548,10 @@
   gap: 6px;
 }
 
+/* =========================
+   TOAST
+========================= */
+
 .request-toast {
   position: fixed;
   right: 34px;
@@ -453,20 +577,9 @@
   font-size: 15px;
 }
 
-@media (max-width: 900px) {
-  .request-details-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .request-details-head {
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  .budget-block {
-    text-align: left;
-  }
-}
+/* =========================
+   ADMIN
+========================= */
 
 .admin-accept-box {
   margin-top: 16px;
@@ -510,6 +623,10 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+/* =========================
+   REVIEW
+========================= */
 
 .inline-review-card {
   margin-top: 18px;
@@ -582,6 +699,102 @@
   margin-top: 18px;
 }
 
+/* =========================
+   CONSULTANT-SPECIFIC
+========================= */
+
+.consultant-request-detail {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.consultant-safe-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.consultant-safe-detail-grid div {
+  display: grid;
+  gap: 7px;
+}
+
+.consultant-safe-detail-grid span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #728096;
+  font-weight: 800;
+}
+
+.consultant-safe-detail-grid strong {
+  font-size: 17px;
+  color: #173453;
+}
+
+.consultant-quote-section {
+  margin-top: 22px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+  .request-details-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .request-details-head {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .budget-block {
+    text-align: left;
+    padding: 0;
+  }
+
+  .request-side-col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .consultant-safe-detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .request-details-page {
+    padding: 24px 16px 38px;
+  }
+
+  .request-side-col {
+    grid-template-columns: 1fr;
+  }
+
+  .request-narrative {
+    padding: 19px 17px;
+  }
+
+  .budget-block {
+    width: 100%;
+  }
+
+  .request-details-head {
+    padding: 18px 16px;
+  }
+
+  .request-meta-line {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
 @media (max-width: 480px) {
   .inline-review-card {
     padding: 16px;
@@ -596,4 +809,9 @@
     flex-wrap: wrap;
   }
 }
-.consultant-request-detail{max-width:1000px;margin:0 auto}.consultant-safe-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}.consultant-safe-detail-grid div{display:grid;gap:7px}.consultant-safe-detail-grid span{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#728096;font-weight:800}.consultant-safe-detail-grid strong{font-size:17px;color:#173453}.consultant-quote-section{margin-top:22px}@media(max-width:720px){.consultant-safe-detail-grid{grid-template-columns:1fr 1fr}}@media(max-width:430px){.consultant-safe-detail-grid{grid-template-columns:1fr}}
+
+@media (max-width: 430px) {
+  .consultant-safe-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
