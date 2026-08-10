@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import PhotoFieldEditor from "./PhotoFieldEditor";
 
 const FIELD_TYPES = [["text","Text"],["textarea","Narrative"],["number","Number"],["date","Date"],["checkbox","Checkbox"],["yes_no","Yes / No"],["select","Select"],["signature","Signature"],["photo","Photo"],["section_heading","Section heading"]];
-const newField = (type = "text", firstPhoto = false) => ({ fieldKey: firstPhoto ? "photo_evidence" : `field_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`, label: type === "photo" ? "Photo Evidence" : "New field", type, fieldType: type, required: false, section: type === "photo" ? "Photo Evidence" : "General", sortOrder: 0, defaultValue: "", options: [], sourceFieldName: null, sourcePageNumber: null, sourceCoordinates: null, captionEnabled: type === "photo" });
+const newField = (type = "text", firstPhoto = false) => ({ fieldKey: firstPhoto ? "photo_evidence" : `field_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`, label: type === "photo" ? "Photo Evidence" : "New field", type, fieldType: type, required: false, section: type === "photo" ? "Photo Evidence" : "General", sortOrder: 0, defaultValue: "", options: [], sourceFieldName: null, sourcePageNumber: null, sourceCoordinates: null, captionEnabled: type === "photo", maxPhotos: type === "photo" ? 1 : undefined });
 
 export default function FieldEditor({ fields, onChange, readOnly = false }) {
   const update = (index, changes) => onChange(fields.map((field, position) => position === index ? { ...field, ...changes } : field));

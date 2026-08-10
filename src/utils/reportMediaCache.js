@@ -26,8 +26,14 @@ const mediaId = (reportId, fieldKey, itemId) => `${reportId}:${fieldKey}:${itemI
 
 export const getReportMedia = (reportId) => transact("readonly", (store) => store.getAll()).then((items) => items.filter((item) => item.reportId === String(reportId)));
 export const removeReportMedia = async (reportId, fieldKey) => Promise.all((await getReportMedia(reportId)).filter((item) => item.fieldKey === fieldKey).map((item) => transact("readwrite", (store) => store.delete(item.id))));
+export const removeReportMediaItem = async (reportId, fieldKey, itemId) => transact("readwrite", (store) => store.delete(mediaId(reportId, fieldKey, itemId)));
 export const cacheReportMedia = async (reportId, fieldKey, file, caption = "", type = "photo", itemId = crypto.randomUUID()) => {
   await removeReportMedia(reportId, fieldKey);
+  const item = { id: mediaId(reportId, fieldKey, itemId), itemId, reportId: String(reportId), fieldKey, type, caption, name: file.name, mimeType: file.type, blob: file, updatedAt: Date.now() };
+  await transact("readwrite", (store) => store.put(item));
+  return item;
+};
+export const cacheReportMediaItem = async (reportId, fieldKey, file, caption = "", type = "photo", itemId = crypto.randomUUID()) => {
   const item = { id: mediaId(reportId, fieldKey, itemId), itemId, reportId: String(reportId), fieldKey, type, caption, name: file.name, mimeType: file.type, blob: file, updatedAt: Date.now() };
   await transact("readwrite", (store) => store.put(item));
   return item;

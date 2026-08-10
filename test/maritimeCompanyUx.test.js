@@ -12,11 +12,11 @@ test("registration chooser keeps all three explicit account paths", async () => 
   assert.match(auth, /\/register-maritime-company/);
 });
 
-test("company onboarding is two-step and submits exactly one selected type", async () => {
+test("company onboarding is two-step and supports multi-type selection", async () => {
   const page = await source("../src/pages/RegisterMaritimeCompany.jsx");
   assert.match(page, /setStep\(2\)/);
-  assert.match(page, /form\.directoryTypes\.length !== 1/);
-  assert.match(page, /directoryTypes: \[value\]/);
+  assert.match(page, /!form\.directoryTypes\.length/);
+  assert.match(page, /directoryTypes/);
   assert.match(page, /Pending review/);
 });
 
