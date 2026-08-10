@@ -19,7 +19,7 @@ function pdfLines(items, styles = {}) {
 }
 
 async function recognizeScannedPdf(pdf, signal, onProgress, onWorker) {
-  if (pdf.numPages > SOURCE_LIMITS.ocrPages) throw new Error("This document exceeds the supported OCR page limit."); const { createWorker } = await import("tesseract.js"); let worker; const cancel = () => worker?.terminate(); signal?.addEventListener("abort", cancel, { once: true });
+  if (pdf.numPages > SOURCE_LIMITS.ocrPages) throw new Error(`This document has ${pdf.numPages} pages; the supported OCR limit is ${SOURCE_LIMITS.ocrPages}.`); const { createWorker } = await import("tesseract.js"); let worker; const cancel = () => worker?.terminate(); signal?.addEventListener("abort", cancel, { once: true });
   try {
     onProgress?.({ stage: "Detecting text", percent: 20 }); worker = await createWorker("eng", undefined, { logger: (entry) => { if (entry.status === "recognizing text") onProgress?.({ stage: "Detecting text", percent: 20 + Math.round(entry.progress * 65) }); } }); onWorker?.(worker); const pages = [];
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) { if (signal?.aborted) throw new DOMException("Extraction cancelled.", "AbortError"); onProgress?.({ stage: `Reading page ${pageNumber} of ${pdf.numPages}`, percent: 20 + Math.round(pageNumber / pdf.numPages * 65) }); const page = await pdf.getPage(pageNumber); const viewport = page.getViewport({ scale: 1.5 }); const canvas = document.createElement("canvas"); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height); const context = canvas.getContext("2d", { alpha: false }); await page.render({ canvasContext: context, viewport }).promise; const recognized = await worker.recognize(canvas); pages.push({ name: `Page ${pageNumber}`, lines: (recognized.data.text || "").split(/\r?\n/).map((text) => ({ text })) }); context.clearRect(0, 0, canvas.width, canvas.height); page.cleanup(); }
@@ -30,7 +30,7 @@ async function recognizeScannedPdf(pdf, signal, onProgress, onWorker) {
 async function extractPdf(file, options) {
   options.onProgress?.({ stage: "Preparing document", percent: 5 }); const bytes = await file.arrayBuffer(); let loadingTask; let pdfDocument;
   try {
-    const pdfjs = await import("pdfjs-dist/build/pdf.mjs"); pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl; loadingTask = pdfjs.getDocument({ data: bytes }); pdfDocument = await loadingTask.promise; if (pdfDocument.numPages > SOURCE_LIMITS.pdfPages) throw new Error("This document exceeds the supported page limit."); const formFields = []; const pages = [];
+    const pdfjs = await import("pdfjs-dist/build/pdf.mjs"); pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl; loadingTask = pdfjs.getDocument({ data: bytes }); pdfDocument = await loadingTask.promise; if (pdfDocument.numPages > SOURCE_LIMITS.pdfPages) throw new Error(`This document has ${pdfDocument.numPages} pages; the supported limit is ${SOURCE_LIMITS.pdfPages}.`); const formFields = []; const pages = [];
     for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) { if (options.signal?.aborted) throw new DOMException("Extraction cancelled.", "AbortError"); options.onProgress?.({ stage: `Reading page ${pageNumber} of ${pdfDocument.numPages}`, percent: 10 + Math.round(pageNumber / pdfDocument.numPages * 55) }); const page = await pdfDocument.getPage(pageNumber); const annotations = await page.getAnnotations(); annotations.forEach((annotation) => { const field = annotationField(annotation, pageNumber, formFields.length); if (field) formFields.push(field); }); const content = await page.getTextContent(); pages.push({ name: `Page ${pageNumber}`, lines: pdfLines(content.items, content.styles) }); page.cleanup(); }
     for (const field of formFields) pages[field.sourcePageNumber - 1]?.lines.push({ text: field.label, x: field.sourceCoordinates?.x, y: field.sourceCoordinates?.y }); options.onProgress?.({ stage: "Building field suggestions", percent: 95 }); const evidence = buildStructuredEvidence(pages); const meaningful = evidence.flatMap((page) => page.lines).map((line) => line.text).join("").replace(/\W/g, "").length;
     if (formFields.length) return { mode: "acroform", fields: normalizeLocalFields(formFields), pageCount: pdfDocument.numPages, evidence: { pagesOrSheets: evidence }, aiMappingRecommended: false, message: "Fillable PDF fields were read locally. Review them before saving." };
@@ -41,8 +41,19 @@ async function extractPdf(file, options) {
 }
 
 function extractXml(fileText) {
-  if (/<!DOCTYPE|<!ENTITY/i.test(fileText) || /<\?(?!xml(?:\s|\?>))/i.test(fileText)) throw new Error("This XML contains unsafe declarations or processing instructions."); const documentNode = new DOMParser().parseFromString(fileText, "application/xml"); if (documentNode.querySelector("parsererror")) throw new Error("Unable to parse this XML file.");
-  const explicit = [...documentNode.querySelectorAll("inspectionTemplate section field")].map((node) => ({ fieldKey: node.getAttribute("fieldKey") || node.getAttribute("key"), label: node.getAttribute("label") || node.textContent.trim(), type: node.getAttribute("fieldType") || node.getAttribute("type") || "text", required: node.getAttribute("required") === "true", section: node.closest("section")?.getAttribute("title") || "General", defaultValue: node.getAttribute("defaultValue") || "" })); const generic = [...documentNode.querySelectorAll("*")].filter((node) => !node.children.length && node.textContent.trim()).map((node) => ({ label: node.localName.replace(/[_-]+/g, " "), type: "text", section: node.parentElement?.localName || "XML fields", defaultValue: node.textContent.trim(), suggested: true })); const fields = normalizeLocalFields(explicit.length ? explicit : generic); if (!fields.length) throw new Error("No supported field definitions were found in this XML file."); const evidence = buildStructuredEvidence([{ name: "XML", lines: [...documentNode.querySelectorAll("*")].filter((node) => !node.children.length && node.textContent.trim()).map((node) => ({ text: `${node.localName}: ${node.textContent.trim()}` })) }]); return { mode: explicit.length ? "nexaport_xml" : "generic_xml", fields, pageCount: null, evidence: { pagesOrSheets: evidence }, aiMappingRecommended: !explicit.length, message: explicit.length ? "NexaPort XML fields were read locally." : "XML text is ready for field mapping." };
+  const source = String(fileText || "").replace(/^\uFEFF/, "");
+  if (/<!DOCTYPE|<!ENTITY|<\?(?!xml(?:\s|\?>))/i.test(source)) throw new Error("This XML contains unsafe declarations or processing instructions.");
+  const documentNode = new DOMParser().parseFromString(source, "application/xml");
+  if (documentNode.querySelector("parsererror")) throw new Error("Unable to parse this XML file.");
+  const nodes = [...documentNode.querySelectorAll("*")]; const pathFor = (node) => { const parts = []; for (let current = node; current?.nodeType === 1; current = current.parentElement) parts.unshift(current.localName); return `/${parts.join("/")}`; };
+  const sectionFor = (node) => { let current = node.parentElement; while (current) { if (/section|part|group|category/i.test(current.localName)) return current.getAttribute("title") || current.getAttribute("name") || current.getAttribute("label") || current.localName.replace(/[_-]+/g, " "); current = current.parentElement; } return "General"; };
+  const lines = []; const candidates = [];
+  nodes.forEach((node, order) => { const attrs = Object.fromEntries([...node.attributes].map((a) => [a.name, a.value])); const name = node.localName || node.nodeName; const text = clean(node.textContent, 1000); const fieldLike = /field|input|control|question|item/i.test(name); const label = attrs.label || attrs.name || attrs.title || (fieldLike ? text : "");
+    lines.push({ text: text || label || name, sourceText: text || label || name, elementName: node.nodeName, localName: name, elementPath: pathFor(node), attributes: attrs, depth: pathFor(node).split("/").length - 1, order, section: sectionFor(node), blockType: fieldLike ? "field" : "paragraph" });
+    if (fieldLike && label) candidates.push({ fieldKey: attrs.fieldKey || attrs.key || attrs.name, label, type: attrs.fieldType || attrs.type || "text", required: attrs.required === "true", section: sectionFor(node), defaultValue: attrs.defaultValue || attrs.value || "", suggested: true });
+    else if (!node.children.length && text && !/^(?:value|id|code)$/i.test(name)) candidates.push({ label: name.replace(/[_-]+/g, " "), type: "text", section: sectionFor(node), defaultValue: text, suggested: true });
+  });
+  const fields = normalizeLocalFields(candidates); if (!fields.length) throw new Error("No supported field definitions were found in this XML file."); const evidence = buildStructuredEvidence([{ name: "XML", lines }]); return { mode: nodes.some((node) => node.localName === "inspectionTemplate") ? "nexaport_xml" : "generic_xml", fields, pageCount: null, evidence: { pagesOrSheets: evidence }, aiMappingRecommended: true, message: "XML fields were read locally. Review mapping suggestions." };
 }
 
 async function extractDocx(file) {
@@ -58,91 +69,39 @@ async function extractDocx(file) {
   if (!body) throw new Error("The DOCX file could not be read.");
 
   const HEADING_FONT = { H1: 18, H2: 16, H3: 15, H4: 14, H5: 13, H6: 12 };
-  const PLACEHOLDER_RE = /^[-–—_.\s/\\|*☐□☑✓✔]+$/;
-  const ABBREV_HEADER_RE = /\b(abbreviat|code|meaning|definition|acronym|symbol|legend)\b/i;
-  const CHECKLIST_HEADER_RE = /\b(yes|no|n\/a|status|pass|fail|ok|check)\b/i;
-  const QUESTION_MARKER_RE = /[?*:]/;
-
-  const lines = [];
-
-  /** Emit a single evidence line */
-  const emit = (text, bold = false, fontSize = 12) => {
-    const trimmed = clean(text, 1000);
-    if (trimmed) lines.push({ text: trimmed, bold, fontSize });
-  };
-
-  /** Process a <table> element */
-  const processTable = (table) => {
-    const tableRows = [...table.querySelectorAll("tr")];
-    if (!tableRows.length) return;
-
-    // Read header row to detect table type
-    const headerCells = [...(tableRows[0]?.querySelectorAll("th,td") || [])].map(
-      (cell) => clean(cell.textContent, 200)
-    );
-    const headerText = headerCells.join(" ").toLowerCase();
-
-    // Skip abbreviation / reference tables
-    if (ABBREV_HEADER_RE.test(headerText)) return;
-
-    // Detect checklist tables (headers contain Yes / No / Status columns)
-    const isChecklist = headerCells.length >= 2 && CHECKLIST_HEADER_RE.test(headerText);
-
-    // Detect label/value tables (exactly 2 content columns)
-    const isLabelValue = headerCells.length === 2 && !isChecklist;
-
-    const dataRows = tableRows.slice(headerCells.some((c) => c) ? 1 : 0);
-    for (const row of dataRows) {
-      const cells = [...row.querySelectorAll("th,td")].map((cell) => clean(cell.textContent, 500));
-      const nonEmpty = cells.filter(Boolean);
-      if (!nonEmpty.length) continue;
-
-      if (isChecklist && cells[0]) {
-        // Emit the question text with "Yes No" appended for type detection
-        const question = clean(cells[0], 500);
-        if (question && !PLACEHOLDER_RE.test(question)) {
-          emit(`${question} Yes No`);
-        }
-      } else if (isLabelValue) {
-        const label = cells[0];
-        const value = cells[1];
-        if (!label) continue;
-        // If value is empty or a placeholder, emit just the label
-        if (!value || PLACEHOLDER_RE.test(value)) {
-          emit(label);
-        } else {
-          emit(label);
-        }
-      } else {
-        // Regular table: emit each non-empty cell
-        for (const cell of nonEmpty) {
-          if (!PLACEHOLDER_RE.test(cell)) emit(cell);
-        }
-      }
+  const PLACEHOLDER_RE = /^[-–—_.\s/\\|*☐□☑✓✔]+$/; const PART_RE = /^part\s+[a-z](?:\d+)?\b/i; const QUESTION_HEADER_RE = /question|requirement|inspection item|check|description|verification/i; const RESPONSE_RE = /yes|no|n\/?a|status|remarks?|comments?|pass|fail/i;
+  const lines = []; let order = 0;
+  const emit = (text, extra = {}) => { const trimmed = clean(text, 1000); if (trimmed) lines.push({ text: trimmed, sourceText: trimmed, order: order++, ...extra }); };
+  const processTable = (table, tableIndex) => {
+    const rows = [...table.querySelectorAll("tr")]; if (!rows.length) return; const header = [...rows[0].querySelectorAll("th,td")].map((cell) => clean(cell.textContent, 200)); const headerText = header.join(" "); const checklist = RESPONSE_RE.test(headerText); const abbreviation = /^(?:code|abbreviation|acronym|symbol)\b.*\b(?:meaning|definition|description)\b/i.test(headerText) && !checklist;
+    for (let rowIndex = abbreviation ? 1 : 0; rowIndex < rows.length; rowIndex += 1) { const cells = [...rows[rowIndex].querySelectorAll("th,td")].map((cell) => clean(cell.textContent, 500)); const nonEmpty = cells.filter(Boolean); if (!nonEmpty.length) continue;
+      if (cells.length === 1 && PART_RE.test(cells[0])) { emit(cells[0], { blockType: "heading", tableIndex, rowIndex, cells }); continue; }
+      if (abbreviation) { emit(cells.join(" | "), { blockType: "reference", isInstruction: true, tableIndex, rowIndex, cells }); continue; }
+      if (checklist && rowIndex > 0) { let questionIndex = header.findIndex((value) => QUESTION_HEADER_RE.test(value)); if (questionIndex < 0) questionIndex = cells.reduce((best, value, index) => (!PART_RE.test(value) && /[?]/.test(value) ? index : best), -1); if (questionIndex < 0) questionIndex = cells.reduce((best, value, index) => value.length > (cells[best]?.length || 0) && !PART_RE.test(value) ? index : best, 0); const question = cells[questionIndex]; const options = header.filter((value) => /^(yes|no|n\/?a)$/i.test(value)); const suffix = options.join(" ") || (/(?:yes|no)/i.test(headerText) ? "Yes No" : ""); if (question && !PLACEHOLDER_RE.test(question)) emit(`${question} ${suffix}`.trim(), { blockType: "checklist_row", tableIndex, rowIndex, columnIndex: questionIndex, cells, itemCode: questionIndex ? cells[0] : null, options }); const remarksIndex = header.findIndex((value) => /remarks?|comments?/i.test(value)); if (remarksIndex >= 0 && cells[remarksIndex] !== undefined) emit(header[remarksIndex], { blockType: "paragraph", tableIndex, rowIndex, columnIndex: remarksIndex, cells }); continue; }
+      for (let columnIndex = 0; columnIndex < cells.length; columnIndex += 1) if (cells[columnIndex] && !PLACEHOLDER_RE.test(cells[columnIndex])) emit(cells[columnIndex], { blockType: "table_row", tableIndex, rowIndex, columnIndex, cells });
     }
   };
 
   // Process all child nodes of <body> in document order
-  const walker = (parent) => {
+  let tableIndex = 0; const walker = (parent) => {
     for (const node of parent.childNodes) {
       if (node.nodeType !== 1) continue; // Element nodes only
       const tag = node.tagName?.toUpperCase();
 
       if (tag && HEADING_FONT[tag]) {
         // Heading element -> section heading
-        emit(node.textContent, true, HEADING_FONT[tag]);
+        emit(node.textContent, { blockType: "heading", headingLevel: Number(tag.slice(1)), bold: true, fontSize: HEADING_FONT[tag] });
       } else if (tag === "TABLE") {
-        processTable(node);
+        processTable(node, tableIndex++);
       } else if (tag === "OL" || tag === "UL") {
         for (const li of node.querySelectorAll("li")) {
-          emit(li.textContent);
+          emit(li.textContent, { blockType: "list_item" });
         }
       } else if (tag === "P" || tag === "DIV") {
         const text = clean(node.textContent, 1000);
         if (!text) continue;
-        // Skip long instructional paragraphs without question markers
-        if (text.length > 200 && !QUESTION_MARKER_RE.test(text)) continue;
-        emit(text);
+        const instruction = /^(?:instructions?|the following|to avoid|please |ensure |complete |the codes?\b)/i.test(text);
+        emit(text, { blockType: instruction ? "instruction" : PART_RE.test(text) ? "heading" : "paragraph", isInstruction: instruction, bold: PART_RE.test(text), fontSize: PART_RE.test(text) ? 15 : 12 });
       } else {
         // For other container elements, walk their children
         if (node.children?.length) walker(node);
@@ -409,4 +368,4 @@ async function extractXlsx(file) {
 }
 
 
-export async function extractTemplateSource(file, options = {}) { if (!file) throw new Error("Choose a PDF, XML, DOCX or XLSX file."); const extension = file.name.toLowerCase().split(".").pop(); if (extension === "pdf") return extractPdf(file, options); if (extension === "xml") { options.onProgress?.({ stage: "Preparing document", percent: 10 }); options.onProgress?.({ stage: "Building field suggestions", percent: 90 }); return extractXml(await file.text()); } if (extension === "docx") return extractDocx(file); if (extension === "xlsx") return extractXlsx(file); throw new Error("Choose a PDF, XML, DOCX or XLSX file."); }
+export async function extractTemplateSource(file, options = {}) { const sourceMode = options.sourceMode; if (!file || !["pdf", "xml", "docx", "xlsx"].includes(sourceMode)) throw new Error("Choose a supported source file."); const extension = file.name.toLowerCase().split(".").pop(); if (extension !== sourceMode) throw new Error(`Please select a ${sourceMode.toUpperCase()} file.`); if (sourceMode === "pdf") return extractPdf(file, options); if (sourceMode === "xml") { options.onProgress?.({ stage: "Preparing document", percent: 10 }); options.onProgress?.({ stage: "Building field suggestions", percent: 90 }); return extractXml(await file.text()); } if (sourceMode === "docx") return extractDocx(file); return extractXlsx(file); }
