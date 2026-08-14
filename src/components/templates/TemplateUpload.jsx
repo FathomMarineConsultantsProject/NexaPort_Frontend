@@ -14,7 +14,7 @@ const SOURCE_CONFIG = {
   xlsx: { accept: ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", label: "XLSX" },
 };
 
-export default function TemplateUpload({ file, onFile, sourceMode, onSourceMode, progress, progressText, disabled, inputKey }) {
+export default function TemplateUpload({ file, onFile, sourceMode, onSourceMode, disabled, inputKey }) {
   const source = SOURCE_CONFIG[sourceMode];
   return <div className="template-source-selector">
     <div className="template-source-tabs" role="tablist" aria-label="Template source type">
@@ -22,9 +22,8 @@ export default function TemplateUpload({ file, onFile, sourceMode, onSourceMode,
     </div>
     {sourceMode !== "manual" && <div className="template-upload">
       <FileUp size={28} />
-      <div><strong>{file ? file.name : `Choose a ${source.label} source file`}</strong><span>PDF/DOCX/XLSX up to 10 MB · XML up to 2 MB</span></div>
+      <div><strong>{file ? file.name : `Choose a ${source.label} source file`}</strong><span>PDF up to 50 MB · DOCX/XLSX up to 25 MB · XML up to 5 MB</span></div>
       <label className="template-secondary">Browse<input key={inputKey} disabled={disabled} hidden type="file" accept={source.accept} onChange={(event) => onFile(event.target.files?.[0] || null)} /></label>
-      {progress > 0 && progress < 100 && <div className="template-local-progress"><span>{progressText}</span><progress value={progress} max="100" aria-label="Local extraction progress">{progress}%</progress></div>}
     </div>}
     {sourceMode === "manual" && <div className="template-blank-notice"><strong>Blank template</strong><span>No source document required. Add fields manually below.</span></div>}
   </div>;

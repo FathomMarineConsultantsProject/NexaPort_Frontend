@@ -364,17 +364,17 @@ describe('Extraction Quality Tests - Frontend', () => {
         test('Source-file assertions', async () => {
             const code = await source('../src/utils/templateSourceExtraction.js');
 
-            // extractXlsx no longer joins cells with " | "
+            // extractXlsx preserves structured cells and their coordinates.
             const xlsxBlock = code.slice(code.indexOf('async function extractXlsx'));
-            assert.ok(!xlsxBlock.includes('join(" | ")'), 'extractXlsx should not flatten cells with join(" | ")');
+            assert.ok(xlsxBlock.includes('rawValue') && xlsxBlock.includes('displayedValue') && xlsxBlock.includes('reference'), 'extractXlsx should preserve structured cells');
 
             // extractXlsx no longer uses Merged heading coordinate labels
             assert.ok(!xlsxBlock.includes('Merged heading ${range}'), 'extractXlsx should not use coordinate-based labels');
             assert.ok(!xlsxBlock.includes('`Merged heading'), 'extractXlsx should not use Merged heading prefix');
 
-            // extractDocx processes nodes in document order using walker/childNodes
+            // extractDocx processes direct body children in document order.
             const docxBlock = code.slice(code.indexOf('async function extractDocx'), code.indexOf('async function extractXlsx'));
-            assert.ok(docxBlock.includes('childNodes') || docxBlock.includes('walker'), 'extractDocx should process nodes in document order');
+            assert.ok(docxBlock.includes('body?.children'), 'extractDocx should process nodes in document order');
 
             // extractXlsx reads styles.xml for date format detection
             assert.ok(xlsxBlock.includes('styles.xml'), 'extractXlsx should read styles.xml for date detection');

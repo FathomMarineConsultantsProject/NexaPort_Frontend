@@ -7,18 +7,25 @@ const INSTRUCTION = /^(?:instructions?(?:\s+for)?|the following|to avoid|please 
 const clean = (value, max = 200) => [...String(value ?? "")].filter((character) => character !== "<" && character !== ">" && character.charCodeAt(0) >= 32).join("").trim().slice(0, max);
 const canonical = (value) => clean(value, 1000).replace(/\s+/g, " ").trim().toLowerCase();
 const keyFor = (label, index) => `${canonical(label).replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 60) || "field"}_${index + 1}`;
-const strippedOptions = (value) => clean(value, 200).replace(/[☐□☑✓✔\[\]]/g, " ").replace(/\s+/g, " ").trim();
+const strippedOptions = (value) => clean(value, 200).replace(/[☐□☑✓✔[\]]/g, " ").replace(/\s+/g, " ").trim();
 const optionOnly = (value) => /^(?:yes|no|yes no|good|fair|poor|good fair poor|acceptable|unacceptable|acceptable unacceptable)$/i.test(strippedOptions(value));
-const placeholderOnly = (value) => /^(?:[-–—_.\/\\|*\s]|☐|□|☑|✓|✔)+$/.test(clean(value, 500)) || /^(?:_+|\.+)\s*[\/.]\s*(?:_+|\.+)(?:\s*[\/.]\s*(?:_+|\.+))?$/.test(clean(value, 500));
+const placeholderOnly = (value) => /^(?:[-–—_./\\|*\s]|☐|□|☑|✓|✔)+$/.test(clean(value, 500)) || /^(?:_+|\.+)\s*[/.]\s*(?:_+|\.+)(?:\s*[/.]\s*(?:_+|\.+))?$/.test(clean(value, 500));
 const junkLine = (value) => { const text = clean(value, 1000); return !text || !/[\p{L}\p{N}]/u.test(text) || placeholderOnly(text) || MARKETING.test(text) || /^(?:page\s*)?\d+(?:\s+of\s+\d+)?$/i.test(text) || optionOnly(text); };
 const normalizeLabel = (value) => clean(value, 160).replace(/[☐□☑✓✔]/g, " ").replace(/\s*\*+\s*/g, " ").replace(/\s+/g, " ").replace(/\s*:\s*$/, "").trim();
+
+export function isProvenanceOnlyLabel(value) {
+  const label = clean(value, 500);
+  return /^(?:[A-Z]{1,3}\d+)(?::[A-Z]{1,3}\d+)?$/i.test(label) || /^(?:block|part)-\d+$/i.test(label) || /^cell\s+\d+$/i.test(label)
+    || /^(?:blank\s+)?(?:cell|input)\s+[A-Z]{1,3}\d+$/i.test(label) || /^(?:word\/)?(?:header|footer)\d*\.xml$/i.test(label)
+    || /^\/(?:[^/\s]+\/)*[^/\s]+(?:\[\d+\])?$/.test(label) || /^(?:x|left)\s*[:=]?\s*-?\d+(?:\.\d+)?\s*[,; ]+\s*(?:y|top)\s*[:=]?\s*-?\d+(?:\.\d+)?$/i.test(label);
+}
 
 export function normalizeLocalFields(input) {
   const seen = new Set();
   return input.slice(0, 250).map((raw, index) => {
     let fieldKey = /^[a-zA-Z][a-zA-Z0-9_-]{0,79}$/.test(raw.fieldKey || "") ? raw.fieldKey : keyFor(raw.label, index); while (seen.has(fieldKey)) fieldKey = `${fieldKey.slice(0, 74)}_${index + 1}`; seen.add(fieldKey); const type = TYPES.has(raw.type) ? raw.type : "text";
     return { fieldKey, label: normalizeLabel(raw.label), type, required: Boolean(raw.required), section: clean(raw.section || "General", 100), sortOrder: index, defaultValue: type === "checkbox" ? Boolean(raw.defaultValue) : clean(raw.defaultValue, 1000), options: ["select", "yes_no"].includes(type) ? [...new Set((raw.options || []).map((value) => clean(value, 100)).filter(Boolean))].slice(0, 50) : [], sourceFieldName: clean(raw.sourceFieldName, 200) || null, sourcePageNumber: Number.isInteger(raw.sourcePageNumber) ? raw.sourcePageNumber : null, sourceCoordinates: raw.sourceCoordinates || null, sourceBlockOrder: Number.isInteger(raw.sourceBlockOrder) ? raw.sourceBlockOrder : null, sourceTableIndex: Number.isInteger(raw.sourceTableIndex) ? raw.sourceTableIndex : null, sourceRow: Number.isInteger(raw.sourceRow) ? raw.sourceRow : null, sourceColumn: Number.isInteger(raw.sourceColumn) ? raw.sourceColumn : null, sourceSheet: clean(raw.sourceSheet, 120) || null, sourceElementPath: clean(raw.sourceElementPath, 500) || null, captionEnabled: type === "photo" && Boolean(raw.captionEnabled), suggested: Boolean(raw.suggested) };
-  }).filter((field) => field.label && !junkLine(field.label));
+  }).filter((field) => field.label && !junkLine(field.label) && !isProvenanceOnlyLabel(field.label));
 }
 
 function groupOptionRows(lines) {
@@ -47,9 +54,22 @@ export function suggestFieldsFromEvidence(pages, fallbackSection = "General") {
 
 export function suggestFieldsFromText(text, section = "General") { return suggestFieldsFromEvidence(buildStructuredEvidence([{ name: "Page 1", lines: String(text || "").split(/\r?\n/).map((line) => ({ text: line })) }]), section); }
 export const usefulLocalFields = (fields) => fields.filter((field) => field?.label && !junkLine(field.label));
+export const chooseBestExtractionFields = (aiFields, fallbackFields) => aiFields?.length ? aiFields : (fallbackFields || []);
 
 export function mergeMappedFields(currentFields, baselineFields, mappedFields, sections) {
-  const baseline = new Map(baselineFields.map((field) => [field.fieldKey, JSON.stringify(field)])); const manual = usefulLocalFields(currentFields).filter((field) => !field.suggested || baseline.get(field.fieldKey) !== JSON.stringify(field)); const mapped = mappedFields.slice().sort((a, b) => (a.sourceBlockOrder ?? Infinity) - (b.sourceBlockOrder ?? Infinity) || (a.tableIndex ?? Infinity) - (b.tableIndex ?? Infinity) || (a.rowIndex ?? Infinity) - (b.rowIndex ?? Infinity) || (a.columnIndex ?? Infinity) - (b.columnIndex ?? Infinity)).map((field) => ({ fieldKey: field.fieldKey, label: field.label, type: field.fieldType, required: field.required, section: sections.get(field.sectionKey), options: field.options, defaultValue: "", sourceFieldName: null, sourcePageNumber: null, sourceCoordinates: null, captionEnabled: field.fieldType === "photo", suggested: true })); const manualLabels = new Set(manual.map((field) => `${canonical(field.section)}|${canonical(field.label)}`)); return [...mapped.filter((field) => !manualLabels.has(`${canonical(field.section)}|${canonical(field.label)}`)), ...manual].map((field, sortOrder) => ({ ...field, sortOrder }));
+  const baseline = new Map(baselineFields.map((field) => [field.fieldKey, JSON.stringify(field)]));
+  const manual = usefulLocalFields(currentFields).filter((field) => !field.suggested || baseline.get(field.fieldKey) !== JSON.stringify(field));
+  const mapped = mappedFields.filter((field) => field?.label && !isProvenanceOnlyLabel(field.label)).slice().sort((a, b) => (a.sourceOrder ?? Infinity) - (b.sourceOrder ?? Infinity)).map((field) => ({
+    fieldKey: field.fieldKey, label: field.label, type: field.fieldType, fieldType: field.fieldType, required: field.required,
+    section: sections.get(field.sectionKey) || "General", options: field.options, defaultValue: "", captionEnabled: field.fieldType === "photo", maxPhotos: field.fieldType === "photo" ? Math.max(1, Math.min(10, Number(field.maxPhotos) || 1)) : undefined,
+    suggested: true, evidenceRefs: field.evidenceRefs || [], confidence: field.confidence ?? null, reviewWarning: field.warning || null, sourceText: field.sourceText || null,
+    sourceLocation: field.sourceLocation || null, sourcePageNumber: field.sourceLocation?.pageNumber || null, sourceCoordinates: field.sourceLocation?.bounds || null,
+    sourceBlockOrder: field.sourceLocation?.globalOrder ?? field.sourceOrder ?? null, sourceTableIndex: field.sourceLocation?.tableIndex ?? null,
+    sourceRow: field.sourceLocation?.rowIndex ?? null, sourceColumn: field.sourceLocation?.columnIndex ?? null, sourceSheet: field.sourceLocation?.sheetName ?? null,
+    sourceElementPath: field.sourceLocation?.elementPath ?? null,
+  }));
+  const manualLabels = new Set(manual.map((field) => `${canonical(field.section)}|${canonical(field.label)}`));
+  return [...mapped.filter((field) => !manualLabels.has(`${canonical(field.section)}|${canonical(field.label)}`)), ...manual].sort((a, b) => (a.sourceBlockOrder ?? Infinity) - (b.sourceBlockOrder ?? Infinity)).map((field, sortOrder) => ({ ...field, sortOrder }));
 }
 
 export { clean, keyFor };

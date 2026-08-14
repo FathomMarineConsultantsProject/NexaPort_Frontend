@@ -27,7 +27,15 @@ export default function Auth() {
       const isRestrictedClient = Number(response.user?.role_id) === 3 && response.user?.verification_status !== "approved";
       navigate(response.user?.account_type === "maritime_company" ? "/company-profile" : isRestrictedClient ? "/client-verification-status" : "/dashboard", { replace: true });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Invalid credentials");
+      if (!requestError.response) {
+        setError("Unable to connect to the server. Please try again.");
+      } else if (requestError.response.status === 401) {
+        setError(requestError.response.data?.message || "Invalid login credentials");
+      } else if (requestError.response.status === 503) {
+        setError(requestError.response.data?.message || "Service temporarily unavailable. Please try again later.");
+      } else {
+        setError(requestError.response.data?.message || "Unable to sign in. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

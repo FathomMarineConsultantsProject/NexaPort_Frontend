@@ -4,7 +4,16 @@ import PhotoFieldEditor from "./PhotoFieldEditor";
 const FIELD_TYPES = [["text","Text"],["textarea","Narrative"],["number","Number"],["date","Date"],["checkbox","Checkbox"],["yes_no","Yes / No"],["select","Select"],["signature","Signature"],["photo","Photo"],["section_heading","Section heading"]];
 const newField = (type = "text", firstPhoto = false) => ({ fieldKey: firstPhoto ? "photo_evidence" : `field_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`, label: type === "photo" ? "Photo Evidence" : "New field", type, fieldType: type, required: false, section: type === "photo" ? "Photo Evidence" : "General", sortOrder: 0, defaultValue: "", options: [], sourceFieldName: null, sourcePageNumber: null, sourceCoordinates: null, captionEnabled: type === "photo", maxPhotos: type === "photo" ? 1 : undefined });
 
-export default function FieldEditor({ fields, onChange, errors = [], readOnly = false }) {
+const sourceLabel = (field) => {
+  const source = field.sourceLocation || {};
+  if (source.pageNumber) return `Page ${source.pageNumber}`;
+  if (source.sheetName) return `Sheet “${source.sheetName}”${source.rowIndex != null ? `, row ${source.rowIndex}` : ""}`;
+  if (source.tableIndex != null) return `DOCX table ${source.tableIndex + 1}${source.rowIndex != null ? `, row ${source.rowIndex + 1}` : ""}`;
+  if (source.elementPath) return "XML source";
+  return null;
+};
+
+export default function FieldEditor({ fields, onChange, errors = [], readOnly = false, onOpenSource = null }) {
   const update = (index, changes) => onChange(fields.map((field, position) => position === index ? { ...field, ...changes } : field));
   const move = (index, offset) => { const next = [...fields]; [next[index], next[index + offset]] = [next[index + offset], next[index]]; onChange(next.map((field, sortOrder) => ({ ...field, sortOrder }))); };
   const remove = (index) => onChange(fields.filter((_, position) => position !== index).map((field, sortOrder) => ({ ...field, sortOrder })));
@@ -25,7 +34,7 @@ export default function FieldEditor({ fields, onChange, errors = [], readOnly = 
         {field.type === "select" && <label className="template-field-wide">Options, separated by commas<input disabled={readOnly} value={(field.options || []).join(", ")} aria-invalid={Boolean(errorFor("options"))} aria-describedby={errorFor("options") ? `field-${index}-options-error` : undefined} onChange={(event) => update(index, { options: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} />{errorFor("options") && <small id={`field-${index}-options-error`} className="template-field-error">{errorFor("options").message}</small>}</label>}
         {field.type !== "section_heading" && <label className="template-field-checkbox"><input disabled={readOnly} type="checkbox" checked={field.required} onChange={(event) => update(index, { required: event.target.checked })} /><span>Required</span></label>}
         {field.type === "photo" && <><PhotoFieldEditor field={field} onChange={(changes) => update(index, changes)} />{errorFor("maxPhotos") && <small className="template-field-error">{errorFor("maxPhotos").message}</small>}</>}
-        {(field.sourceFieldName || field.suggested) && <small className="template-source-note">{field.sourceFieldName ? `Detected field: ${field.sourceFieldName}${field.sourcePageNumber ? ` · page ${field.sourcePageNumber}` : ""}` : "Suggested from document text · review required"}</small>}
+        {(field.sourceFieldName || field.suggested || field.evidenceRefs?.length) && <small className="template-source-note">{sourceLabel(field) ? <>Source: {sourceLabel(field)}{Number.isFinite(field.confidence) ? ` · ${Math.round(field.confidence * 100)}% confidence` : ""}{onOpenSource && <button type="button" onClick={() => onOpenSource(field.evidenceRefs?.[0] || field.sourceLocation?.blockId)}>View</button>}</> : "Suggested from document text · review required"}{field.reviewWarning && <span> · Review: {field.reviewWarning}</span>}</small>}
       </div>
       {!readOnly && <button type="button" className="template-icon-danger" aria-label={`Remove ${field.label}`} onClick={() => remove(index)}><Trash2 size={17} /></button>}
     </article>; })}
