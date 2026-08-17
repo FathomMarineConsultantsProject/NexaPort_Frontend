@@ -27,7 +27,16 @@ export function DashboardSection({ title, description, children, urgent = false,
 
 export function DashboardStatus({ value }) {
   const normalized = String(value || "unknown").toLowerCase().replace(/[^a-z]+/g, "-");
-  return <span className={`dashboard-status dashboard-status--${normalized}`}>{String(value || "Unknown").replaceAll("_", " ")}</span>;
+  const semantic = ["approved", "accepted", "completed"].includes(normalized)
+    ? "positive"
+    : ["pending", "pending-review", "submitted", "not-submitted"].includes(normalized)
+      ? "pending"
+      : ["rejected", "cancelled", "inactive"].includes(normalized)
+        ? "negative"
+        : ["active", "assigned", "open"].includes(normalized)
+          ? "active"
+          : "neutral";
+  return <span className={`dashboard-status dashboard-status--${semantic}`}>{String(value || "Unknown").replaceAll("_", " ")}</span>;
 }
 
 export function DashboardEmptyState({ children }) {
@@ -76,9 +85,14 @@ export function DashboardError({ onRetry }) {
 
 export function DashboardLoading() {
   return (
-    <div className="dashboard-loading" aria-live="polite">
-      <span className="dashboard-loading__line" />
-      <span>Loading operational data…</span>
+    <div className="dashboard-loading" aria-live="polite" aria-label="Loading operational data">
+      <div className="dashboard-loading__header" />
+      <div className="dashboard-loading__metrics">
+        <span /><span /><span /><span />
+      </div>
+      <div className="dashboard-loading__rows">
+        <span /><span /><span />
+      </div>
     </div>
   );
 }

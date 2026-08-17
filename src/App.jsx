@@ -45,13 +45,17 @@ function RequireAuth({ children }) {
 function GuestOnly({ children }) {
   if (!localStorage.getItem("np_token")) return children;
   const user = getStoredUser();
-  const destination = user.account_type === "maritime_company" || Number(user.role_id) === 4 ? "/company-profile" : Number(user.role_id) === 3 && user.verification_status !== "approved" ? "/client-verification-status" : "/dashboard";
+  const destination = Number(user.role_id) === 3 && user.verification_status !== "approved" ? "/client-verification-status" : "/dashboard";
   return <Navigate to={destination} replace />;
 }
 
 function CompanyBoundary({ children }) {
   const location = useLocation();
-  return isMaritimeCompany() && location.pathname !== "/company-profile" ? <Navigate to="/company-profile" replace /> : children;
+  const allowedPaths = ["/dashboard", "/company-profile", "/profile"];
+  if (isMaritimeCompany() && !allowedPaths.some((p) => location.pathname.startsWith(p))) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
 }
 
 function AdminOnly({ children }) {

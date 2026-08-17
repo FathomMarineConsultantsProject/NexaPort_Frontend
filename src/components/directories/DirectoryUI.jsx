@@ -142,10 +142,8 @@ export function StatusBadge({ status, active = true }) {
 }
 
 export function DirectoryPageHeader({ directory, total, canAdd = false }) {
-  const Icon = directory.icon;
   return (
     <header className="md-page-header">
-      <div className="md-page-header__mark" aria-hidden="true"><Icon size={23} /></div>
       <div className="md-page-header__copy">
         <div className="md-eyebrow">Maritime company directory</div>
         <h1>{directory.label}</h1>

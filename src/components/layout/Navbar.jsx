@@ -264,7 +264,7 @@ export default function Navbar() {
       </div>
 
       <nav className="np-navlinks">
-        {isCompany ? <NavLink to="/company-profile"><Building2 size={17} /> Company Profile</NavLink> : <>
+        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} /> Company Profile</NavLink></> : <>
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
@@ -496,7 +496,7 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
-          {isCompany ? <NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} /> Company Profile</NavLink> : <>
+          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} /> Company Profile</NavLink></> : <>
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>

@@ -38,7 +38,7 @@ export default function ExpertDashboard() {
   const kpis = data?.kpis || {};
   return (
     <main className="dashboard-page">
-      <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Consultant operations</span><h1>Work and assignments</h1></div></header>
+      <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Consultant operations</span><h1>Dashboard</h1><p>Available assignments and quotation activity</p></div></header>
       <div className="dashboard-kpi-grid dashboard-kpi-grid--expert">
         <DashboardKpiCard label="Available requests" value={kpis.available_requests} />
         <DashboardKpiCard label="Matching requests" value={kpis.matching_requests} priority={kpis.matching_requests > 0} />

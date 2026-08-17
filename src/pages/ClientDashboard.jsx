@@ -54,7 +54,8 @@ export default function ClientDashboard() {
   return (
     <main className="dashboard-page">
       <header className="dashboard-page__header">
-        <div><span className="dashboard-eyebrow">Client operations</span><h1>Requests and inspections</h1></div>
+        <div><span className="dashboard-eyebrow">Client operations</span><h1>Dashboard</h1><p>Your service requests and current inspections</p></div>
+        <Link className="dashboard-primary-action" to="/requests/new">Create request</Link>
       </header>
 
       <div className="dashboard-kpi-grid dashboard-kpi-grid--seven">

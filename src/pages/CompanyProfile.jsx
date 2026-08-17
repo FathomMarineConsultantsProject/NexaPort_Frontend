@@ -27,7 +27,7 @@ const emptyRow = (sectionFields) => Object.fromEntries(sectionFields.map(([key])
 
 function RepeatableSection({ name, title, fields, rows, errors, onChange }) {
   const add = () => onChange([...rows, emptyRow(fields)]);
-  return <section className="company-repeatable">
+  return <section className="company-repeatable" id={`company-${name}`}>
     <div className="company-repeatable__head"><h3>{title}</h3><button type="button" onClick={add}><Plus size={15} /> Add</button></div>
     {!rows.length ? <p className="company-repeatable__empty">Optional — no rows added.</p> : rows.map((row, index) => <div className="company-repeatable__row" key={row.id || index}>
       <div className="company-repeatable__fields">{fields.map(([key, label, type]) => <label key={key}><span>{label}</span><input type={type || "text"} value={row[key] ?? ""} onChange={(event) => onChange(rows.map((item, pos) => pos === index ? { ...item, [key]: event.target.value } : item))} />{errors[`${name}.${index}.${key}`] && <small>{errors[`${name}.${index}.${key}`]}</small>}</label>)}</div>
@@ -104,10 +104,14 @@ export default function CompanyProfile() {
 
   return <div className="company-workspace">
     <header className="company-workspace__hero"><div><small>Company workspace</small><h1>{company.companyName || "Maritime Company"}</h1><p>Maintain the public directory information mariners use to find your business.</p></div><div className={`company-status ${approved ? "approved" : "pending"}`}>{approved ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}<span><small>Approval status</small><strong>{status}</strong></span></div></header>
+    <nav className="company-workspace__nav" aria-label="Company profile sections">
+      <a href="#company-overview">Overview</a>
+      {Object.entries(SECTIONS).map(([name, config]) => <a key={name} href={`#company-${name}`}>{config.title}</a>)}
+    </nav>
     {!approved && <div className="company-workspace__notice"><Clock3 size={18} /><span><strong>Your profile is under review.</strong> You can keep editing it. It will appear publicly after Super Admin approval.</span></div>}
     {message && <div className="company-workspace__message" role="status">{message}</div>}
     <form onSubmit={save} className="company-workspace__form">
-      <section>
+      <section id="company-overview">
         <div className="company-section-head">
           <span><Building2 size={18} /></span>
           <div><h2>Company profile</h2><p>Select all categories that describe your company's operations.</p></div>

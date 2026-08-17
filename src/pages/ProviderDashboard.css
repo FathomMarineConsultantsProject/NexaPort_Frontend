@@ -1,0 +1,163 @@
+/* =============================================
+   PROVIDER DASHBOARD — NexaPort
+   Supplements shared Dashboard.css
+============================================= */
+
+/* Header action link */
+.pd-header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid #9aa9b5;
+  background: #fff;
+  color: var(--dash-ink, #102a43);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.pd-header-action:hover {
+  border-color: var(--dash-teal, #087f78);
+  color: var(--dash-teal, #087f78);
+}
+
+/* Directory status bar */
+.pd-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1540px;
+  margin: 0 auto 16px;
+  padding: 10px 16px;
+  background: var(--dash-surface, #fff);
+  border: 1px solid var(--dash-line, #d9e1e8);
+  border-left: 3px solid var(--dash-teal, #087f78);
+  font-size: 12px;
+}
+
+.pd-status-label {
+  color: var(--dash-muted, #62758a);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.pd-rejection-reason {
+  color: var(--dash-red, #a43a3a);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+/* Profile Setup — missing items list */
+.pd-missing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pd-missing-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--dash-line, #d9e1e8);
+  color: #324b60;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pd-missing-list li:last-child {
+  border-bottom: 0;
+}
+
+.pd-missing-list li > svg {
+  color: var(--dash-amber, #b16a10);
+  flex-shrink: 0;
+}
+
+/* Company Overview */
+.pd-overview {
+  padding: 18px;
+}
+
+.pd-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+
+.pd-overview-grid > div {
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2f5;
+}
+
+.pd-overview-grid > div:nth-last-child(-n+2) {
+  border-bottom: 0;
+}
+
+.pd-overview-grid dt {
+  color: var(--dash-muted, #62758a);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 3px;
+}
+
+.pd-overview-grid dd {
+  color: var(--dash-ink, #102a43);
+  font-size: 13px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.pd-website-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dash-teal, #087f78);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pd-website-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 720px) {
+  .pd-header-action {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .pd-status-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 14px;
+  }
+
+  .pd-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-overview-grid > div:nth-last-child(-n+2) {
+    border-bottom: 1px solid #eef2f5;
+  }
+
+  .pd-overview-grid > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .pd-overview {
+    padding: 14px;
+  }
+}

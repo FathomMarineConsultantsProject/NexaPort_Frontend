@@ -32,7 +32,7 @@ export default function AdminDashboard() {
 
   return (
     <main className="dashboard-page dashboard-page--admin">
-      <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Super admin operations</span><h1>Marketplace control</h1></div></header>
+      <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Super admin operations</span><h1>Operations dashboard</h1><p>Requests, quotations and platform activity</p></div></header>
       <div className="dashboard-kpi-grid dashboard-kpi-grid--admin">
         <DashboardKpiCard label="Total clients" value={kpis.total_clients} />
         <DashboardKpiCard label="Total consultants" value={kpis.total_consultants} />

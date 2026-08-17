@@ -3,6 +3,7 @@ import { getRoleId } from "../utils/auth";
 import AdminDashboard from "./AdminDashboard";
 import ClientDashboard from "./ClientDashboard";
 import ExpertDashboard from "./ExpertDashboard";
+import ProviderDashboard from "./ProviderDashboard";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -10,6 +11,6 @@ export default function Dashboard() {
   if (roleId === 1) return <AdminDashboard />;
   if (roleId === 2) return <ExpertDashboard />;
   if (roleId === 3) return <ClientDashboard />;
-  if (roleId === 4) return <Navigate to="/company-profile" replace />;
+  if (roleId === 4) return <ProviderDashboard />;
   return <Navigate to="/login" replace />;
 }

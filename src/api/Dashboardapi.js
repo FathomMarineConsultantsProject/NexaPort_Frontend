@@ -19,3 +19,8 @@ export const getAdminDashboard = async () => {
   const res = await axiosClient.get("/dashboard/admin");
   return res.data;
 };
+
+export const getProviderDashboard = async () => {
+  const res = await axiosClient.get("/dashboard/provider");
+  return res.data;
+};

@@ -18,7 +18,6 @@ export default function MaritimeDirectoryPage({ directory }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const Icon = directory.icon;
 
   useEffect(() => {
     let active = true;
@@ -85,7 +84,6 @@ export default function MaritimeDirectoryPage({ directory }) {
         </div>
       ) : (
         <div className="md-empty-state">
-          <Icon size={28} aria-hidden="true" />
           <h2>No companies match these filters</h2>
           <p>Change or clear a filter to broaden the directory.</p>
         </div>
