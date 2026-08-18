@@ -153,12 +153,18 @@ export default function ServiceRequests() {
         ).toLocaleString()}`;
       }
 
-      return request.status === "assigned"
-        ? `$${Number(request.budgetUsd || request.budget_usd || 0).toLocaleString()}`
-        : "Awaiting approval";
+      if (request.status === "assigned") {
+        return `$${Number(request.budgetUsd || request.budget_usd || 0).toLocaleString()}`;
+      }
+
+      const clientBudget = request.clientBudgetUsd ?? request.client_budget_usd ?? request.budgetUsd ?? request.budget_usd;
+      if (clientBudget == null) return "Awaiting approval";
+      return `$${Number(clientBudget).toLocaleString()}`;
     }
 
-    return `$${Number(request.budgetUsd || request.budget_usd || 0).toLocaleString()}`;
+    const budget = request.approvedBudgetUsd ?? request.approved_budget_usd ?? request.clientBudgetUsd ?? request.client_budget_usd ?? request.budgetUsd ?? request.budget_usd;
+    if (budget == null) return "Not provided";
+    return `$${Number(budget).toLocaleString()}`;
   };
 
   const getQuotationText = (request) => {
@@ -289,7 +295,7 @@ export default function ServiceRequests() {
       </div>
 
       {isSuperAdmin() && <div className="moderation-tabs" role="tablist">
-        {["pending", "approved", "all"].map((item) => <button type="button" role="tab" aria-selected={moderation === item} className={moderation === item ? "active" : ""} key={item} onClick={() => setModeration(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
+        {["pending", "approved", "rejected", "all"].map((item) => <button type="button" role="tab" aria-selected={moderation === item} className={moderation === item ? "active" : ""} key={item} onClick={() => setModeration(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
       </div>}
 
       {notice && (

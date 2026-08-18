@@ -1,22 +1,35 @@
-// D:\Fathhom Marine\FMC\NexaPort\NexaPort_Frontend\src\pages\ServiceRequestDetails.jsx
 import {
+  AlertTriangle,
   Award,
   Briefcase,
   CalendarDays,
   CheckCircle2,
+  DollarSign,
+  Edit3,
   Flag,
   MapPin,
   Ship,
   Star,
+  X,
+  XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { acceptQuotation, createQuotation, getQuotations } from "../api/quotationApi";
 import { createExpertReview } from "../api/reviewApi";
-import { getServiceRequestById } from "../api/serviceRequestApi";
+import {
+  approveServiceRequest,
+  getServiceRequestById,
+  rejectServiceRequest,
+  updateServiceRequest,
+} from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
 import "./ServiceRequestDetails.css";
 import { useParams } from "react-router-dom";
+
+/* ────────────────────────────────────────────
+   Narrative block — rich text renderer
+──────────────────────────────────────────── */
 
 function Narrative({ title, text }) {
   const blocks = String(text || "").trim().split(/\n\s*\n/).filter(Boolean);
@@ -28,6 +41,43 @@ function Narrative({ title, text }) {
   })}</div></section>;
 }
 
+/* ────────────────────────────────────────────
+   Info — always renders, never suppresses rows
+──────────────────────────────────────────── */
+
+function Info({ label, value, icon, required, isPendingReview }) {
+  const empty = value === null || value === undefined || String(value).trim() === "" || value === "-";
+  const showWarning = empty && required && isPendingReview;
+  return (
+    <div className="info-row">
+      <span>{label}</span>
+      <strong className={empty ? "info-empty" : ""}>
+        {icon}
+        {empty ? "Not provided" : value}
+        {showWarning && <small className="info-required-hint">Required</small>}
+      </strong>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────
+   Budget Preview Helper
+──────────────────────────────────────────── */
+
+function calcApprovedPreview(clientBudget, adjType, adjMode, adjValue) {
+  if (clientBudget == null || adjType === "none" || adjMode === "none") return clientBudget;
+  const base = Number(clientBudget);
+  const val = Number(adjValue || 0);
+  if (!Number.isFinite(base) || !Number.isFinite(val)) return clientBudget;
+  let delta = adjType === "percentage" ? base * (val / 100) : val;
+  const approved = adjMode === "markup" ? base + delta : base - delta;
+  return Math.max(0, Math.round(approved * 100) / 100);
+}
+
+/* ────────────────────────────────────────────
+   MAIN COMPONENT
+──────────────────────────────────────────── */
+
 export default function ServiceRequestDetails() {
   const { id } = useParams();
 
@@ -36,6 +86,24 @@ export default function ServiceRequestDetails() {
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [markupByQuote, setMarkupByQuote] = useState({});
+
+  // Admin review state
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [approvalErrors, setApprovalErrors] = useState([]);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejecting, setRejecting] = useState(false);
+
+  // Budget adjustment state
+  const [budgetAdj, setBudgetAdj] = useState({
+    mode: "none",
+    type: "none",
+    value: "",
+    explicitApproved: "",
+  });
 
   const [reviewQuoteId, setReviewQuoteId] = useState(null);
   const [reviewForm, setReviewForm] = useState({
@@ -79,7 +147,7 @@ export default function ServiceRequestDetails() {
   }, [loadPage]);
 
   const formatDate = (date) => {
-    if (!date) return "-";
+    if (!date) return "Not provided";
 
     return new Date(date).toLocaleDateString("en-GB", {
       day: "numeric",
@@ -89,7 +157,7 @@ export default function ServiceRequestDetails() {
   };
 
   const formatDateTime = (date) => {
-    if (!date) return "-";
+    if (!date) return "Not provided";
     const d = new Date(date);
     const datePart = d.toLocaleDateString("en-GB", {
       day: "numeric",
@@ -103,7 +171,17 @@ export default function ServiceRequestDetails() {
     return `${datePart},\u00A0${timePart}`;
   };
 
-  const money = (value) => Number(value || 0).toLocaleString();
+  const money = (value) => {
+    if (value == null) return "Not provided";
+    return Number(value || 0).toLocaleString();
+  };
+
+  const moneyOrNull = (value) => {
+    if (value == null) return null;
+    return `$${Number(value).toLocaleString()}`;
+  };
+
+  /* ────── Quote handlers ────── */
 
   const submitQuotation = async (e) => {
     e.preventDefault();
@@ -148,6 +226,123 @@ export default function ServiceRequestDetails() {
       setTimeout(() => setToast(""), 3000);
     }
   };
+
+  /* ────── Admin moderation handlers ────── */
+
+  const beginEdit = () => {
+    if (!request) return;
+    setEditForm({
+      serviceType: request.serviceType || "",
+      serviceCategory: request.serviceCategory || "",
+      serviceTypeOther: request.serviceTypeOther || "",
+      title: request.title || "",
+      scopeOfWork: request.scopeOfWork || "",
+      urgency: request.urgency || "routine",
+      requiredBy: request.requiredBy ? String(request.requiredBy).slice(0, 10) : "",
+      vesselName: request.vessel?.name || "",
+      imoNumber: request.vessel?.imoNumber || "",
+      vesselType: request.vessel?.type || "",
+      flagState: request.vessel?.flagState || "",
+      portName: request.port?.name || "",
+      country: request.port?.country || "",
+      eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
+      locationSummary: request.port?.locationSummary || "",
+      requiredCertification: request.requiredCertification || "",
+    });
+    setBudgetAdj({
+      mode: request.adminBudgetAdjustmentMode || "none",
+      type: request.adminBudgetAdjustmentType || "none",
+      value: request.adminBudgetAdjustmentValue || "",
+      explicitApproved: "",
+    });
+    setEditing(true);
+    setApprovalErrors([]);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setEditForm({});
+    setApprovalErrors([]);
+  };
+
+  const saveEdit = async () => {
+    setEditSaving(true);
+    try {
+      const payload = { ...editForm };
+
+      // Include budget adjustment fields for admin
+      if (budgetAdj.mode !== "none" && budgetAdj.type !== "none") {
+        payload.adminBudgetAdjustmentMode = budgetAdj.mode;
+        payload.adminBudgetAdjustmentType = budgetAdj.type;
+        payload.adminBudgetAdjustmentValue = Number(budgetAdj.value || 0);
+      } else {
+        payload.adminBudgetAdjustmentMode = "none";
+        payload.adminBudgetAdjustmentType = "none";
+        payload.adminBudgetAdjustmentValue = 0;
+      }
+
+      // Explicit approved budget when no client budget
+      if (budgetAdj.explicitApproved !== "" && request.clientBudgetUsd == null) {
+        payload.approvedBudgetUsd = Number(budgetAdj.explicitApproved);
+      }
+
+      const response = await updateServiceRequest(request.id, payload);
+      setToast("Request updated successfully.");
+      setEditing(false);
+      setRequest(response.data);
+      setApprovalErrors([]);
+      setTimeout(() => setToast(""), 3000);
+    } catch (error) {
+      setToast(error.response?.data?.message || "Failed to update request.");
+      setTimeout(() => setToast(""), 4000);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!window.confirm("Approve this request and notify all active Consultants?")) return;
+    setApproving(true);
+    setApprovalErrors([]);
+    try {
+      const response = await approveServiceRequest(request.id);
+      setToast("Request approved. Eligible Consultants were notified.");
+      setRequest(response.data);
+      setTimeout(() => setToast(""), 3000);
+    } catch (error) {
+      const data = error.response?.data;
+      if (data?.missingFields) {
+        setApprovalErrors(data.missingFields);
+        setToast("Approval blocked — required details are missing.");
+      } else {
+        setToast(data?.message || "Approval failed.");
+      }
+      setTimeout(() => setToast(""), 5000);
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    const reason = rejectionReason.trim();
+    if (!reason) return;
+    setRejecting(true);
+    try {
+      const response = await rejectServiceRequest(request.id, { rejectionReason: reason });
+      setToast("Request rejected.");
+      setRequest(response.data);
+      setShowRejectModal(false);
+      setRejectionReason("");
+      setTimeout(() => setToast(""), 3000);
+    } catch (error) {
+      setToast(error.response?.data?.message || "Rejection failed.");
+      setTimeout(() => setToast(""), 4000);
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  /* ────── Review handlers ────── */
 
   if (loading) {
     return <main className="request-details-page">Loading request...</main>;
@@ -211,6 +406,8 @@ export default function ServiceRequestDetails() {
     return <main className="request-details-page">Request not found.</main>;
   }
 
+  /* ────── Consultant View (unchanged) ────── */
+
   if (isExpert()) {
     const ownQuotes = request._ownQuotations || [];
     return <main className="request-details-page consultant-request-detail">
@@ -222,6 +419,7 @@ export default function ServiceRequestDetails() {
         <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
         <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
         <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
+        {request.approvedBudgetUsd != null && <div><span>Budget</span><strong>${money(request.approvedBudgetUsd)}</strong></div>}
       </section>
       <section className="consultant-quote-section">
         <div className="quotation-head"><h2>Your Quotation</h2>{!ownQuotes.length && <button className="submit-quote-toggle" onClick={() => setShowQuoteForm(!showQuoteForm)}><Briefcase size={17}/> Submit Quotation</button>}</div>
@@ -234,6 +432,8 @@ export default function ServiceRequestDetails() {
     </main>;
   }
 
+  /* ────── Admin / Client View ────── */
+
   const quotations = request?.quotations || [];
   const vessel = request?.vessel || {};
   const port = request?.port || {};
@@ -241,6 +441,9 @@ export default function ServiceRequestDetails() {
   const canAcceptQuote = isSuperAdmin();
   const acceptedQuote = quotations.find((q) => q.status === "accepted");
   const currentUser = getStoredUser();
+  const isPendingReview = isSuperAdmin() && request.moderationStatus === "pending";
+  const isRejected = request.moderationStatus === "rejected";
+  const isApproved = request.moderationStatus === "approved";
 
   const visibleQuotations = isClient()
     ? acceptedQuote
@@ -288,8 +491,87 @@ export default function ServiceRequestDetails() {
   const scope = request.scopeOfWork || "";
   const showScope = Boolean(scope.trim()) && normalizeNarrative(scope) !== normalizeNarrative(overview);
 
+  // Budget display values
+  const clientBudgetDisplay = moneyOrNull(request.clientBudgetUsd);
+  const approvedBudgetDisplay = moneyOrNull(request.approvedBudgetUsd);
+  const hasBudgetAdjustment = request.adminBudgetAdjustmentType && request.adminBudgetAdjustmentType !== "none";
+
+  // Budget preview for edit mode
+  const editBudgetPreview = (() => {
+    if (!editing) return null;
+    const clientBudget = request.clientBudgetUsd;
+    if (clientBudget == null && budgetAdj.explicitApproved) {
+      return Number(budgetAdj.explicitApproved);
+    }
+    if (clientBudget == null) return null;
+    return calcApprovedPreview(clientBudget, budgetAdj.type, budgetAdj.mode, budgetAdj.value);
+  })();
+
   return (
     <main className="request-details-page">
+      {/* ────── Admin Moderation Banner ────── */}
+      {isSuperAdmin() && (isPendingReview || isRejected) && (
+        <div className={`moderation-banner ${isRejected ? "rejected" : "pending"}`}>
+          <div className="moderation-banner-content">
+            <div>
+              <strong>
+                {isRejected ? "Request Rejected" : "Pending Super Admin Review"}
+              </strong>
+              {isRejected && request.rejectionReason && (
+                <p className="rejection-reason-text">{request.rejectionReason}</p>
+              )}
+              {request.requesterName && <span className="moderation-client-name">Client: {request.requesterName}</span>}
+            </div>
+            {isPendingReview && !editing && (
+              <div className="moderation-banner-actions">
+                <button type="button" className="secondary-btn" onClick={beginEdit}>
+                  <Edit3 size={14} /> Edit Request
+                </button>
+                <button type="button" className="reject-btn" onClick={() => setShowRejectModal(true)}>
+                  <XCircle size={14} /> Reject
+                </button>
+                <button type="button" className="accept-btn" disabled={approving} onClick={handleApprove}>
+                  <CheckCircle2 size={14} /> {approving ? "Approving..." : "Approve Request"}
+                </button>
+              </div>
+            )}
+            {editing && (
+              <div className="moderation-banner-actions">
+                <button type="button" className="secondary-btn" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
+                <button type="button" className="accept-btn" onClick={saveEdit} disabled={editSaving}>
+                  {editSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            )}
+          </div>
+          {approvalErrors.length > 0 && (
+            <div className="approval-errors">
+              <AlertTriangle size={14} />
+              <span>Missing required fields: {approvalErrors.join(", ")}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ────── Client Pending Notice ────── */}
+      {isClient() && request.moderationStatus === "pending" && (
+        <div className="moderation-banner pending">
+          <div className="moderation-banner-content">
+            <strong>This request is currently under review by Nexaport.</strong>
+          </div>
+        </div>
+      )}
+      {isClient() && isRejected && (
+        <div className="moderation-banner rejected">
+          <div className="moderation-banner-content">
+            <div>
+              <strong>Request Rejected</strong>
+              {request.rejectionReason && <p className="rejection-reason-text">{request.rejectionReason}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="request-details-head">
         <div style={{ minWidth: 0 }}>
           <div className="request-tags">
@@ -301,9 +583,14 @@ export default function ServiceRequestDetails() {
             <span className={`status-tag ${request.status || ""}`}>
               {request.status || "open"}
             </span>
+            {request.moderationStatus && (
+              <span className={`status-tag moderation-${request.moderationStatus}`}>
+                {request.moderationStatus}
+              </span>
+            )}
           </div>
 
-          <h1>{request.title}</h1>
+          <h1>{request.title || "Untitled request"}</h1>
 
           <div className="request-meta-line">
             <span>
@@ -320,33 +607,176 @@ export default function ServiceRequestDetails() {
         </div>
 
         <div className="budget-block">
-          <strong>
-            $
-            {money(
-              isClient() && acceptedQuote
-                ? getQuotePrice(acceptedQuote)
-                : request.budgetUsd
-            )}
-          </strong>
-          <span>
-            {isClient()
-              ? acceptedQuote
-                ? "Accepted quotation"
-                : "Awaiting approval"
-              : `${Number(request.quotationCount || quotations.length || 0)} ${Number(request.quotationCount || quotations.length || 0) === 1
-                ? "quotation"
-                : "quotations"
-              }`}
-          </span>
+          {isSuperAdmin() ? (
+            <>
+              <strong>
+                {approvedBudgetDisplay || clientBudgetDisplay || "No budget"}
+              </strong>
+              <span>{approvedBudgetDisplay ? "Approved budget" : "Client budget"}</span>
+            </>
+          ) : isClient() ? (
+            <>
+              <strong>
+                $
+                {money(
+                  acceptedQuote
+                    ? getQuotePrice(acceptedQuote)
+                    : request.approvedBudgetUsd ?? request.clientBudgetUsd ?? request.budgetUsd
+                )}
+              </strong>
+              <span>
+                {acceptedQuote
+                  ? "Accepted quotation"
+                  : isApproved ? "Approved budget" : "Submitted budget"}
+              </span>
+            </>
+          ) : (
+            <>
+              <strong>${money(request.budgetUsd)}</strong>
+              <span>{`${Number(request.quotationCount || quotations.length || 0)} ${Number(request.quotationCount || quotations.length || 0) === 1 ? "quotation" : "quotations"}`}</span>
+            </>
+          )}
         </div>
       </section>
 
       <section className="request-details-layout">
         <div className="request-main-col">
-          {overview && <Narrative title="Request Overview" text={overview} />}
-          {showScope && <Narrative title="Scope of Work" text={scope} />}
-          {!overview && !scope && <section className="request-narrative empty"><h2>Request Overview</h2><p>No description was provided.</p></section>}
+          {/* ────── Admin Edit Form ────── */}
+          {editing && (
+            <div className="admin-edit-card">
+              <h2><Edit3 size={18} /> Edit Request Details</h2>
+              <div className="admin-edit-grid">
+                <label>Service Type
+                  <select value={editForm.serviceType} onChange={(e) => {
+                    const v = e.target.value;
+                    setEditForm({ ...editForm, serviceType: v, serviceCategory: v === "Other" ? "Other" : "", serviceTypeOther: "" });
+                  }}>
+                    {["Audit", "Inspection", "Survey", "Other"].map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </label>
+                {editForm.serviceType === "Other"
+                  ? <label className="wide">Specify Service<textarea maxLength={500} value={editForm.serviceTypeOther} onChange={(e) => setEditForm({ ...editForm, serviceTypeOther: e.target.value })} /></label>
+                  : <label>Service Category<input value={editForm.serviceCategory} onChange={(e) => setEditForm({ ...editForm, serviceCategory: e.target.value })} /></label>
+                }
+                <label>Title<input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></label>
+                <label>Urgency
+                  <select value={editForm.urgency} onChange={(e) => setEditForm({ ...editForm, urgency: e.target.value })}>
+                    {["routine", "urgent", "emergency"].map((u) => <option key={u}>{u}</option>)}
+                  </select>
+                </label>
+                <label>Required Date<input type="date" value={editForm.requiredBy} onChange={(e) => setEditForm({ ...editForm, requiredBy: e.target.value })} /></label>
+                <label>Vessel Name<input value={editForm.vesselName} onChange={(e) => setEditForm({ ...editForm, vesselName: e.target.value })} /></label>
+                <label>IMO Number<input value={editForm.imoNumber} onChange={(e) => setEditForm({ ...editForm, imoNumber: e.target.value })} /></label>
+                <label>Vessel Type<input value={editForm.vesselType} onChange={(e) => setEditForm({ ...editForm, vesselType: e.target.value })} /></label>
+                <label>Flag<input value={editForm.flagState} onChange={(e) => setEditForm({ ...editForm, flagState: e.target.value })} /></label>
+                <label>Port<input value={editForm.portName} onChange={(e) => setEditForm({ ...editForm, portName: e.target.value })} /></label>
+                <label>Country<input value={editForm.country} onChange={(e) => setEditForm({ ...editForm, country: e.target.value })} /></label>
+                <label>ETA<input type="date" value={editForm.eta} onChange={(e) => setEditForm({ ...editForm, eta: e.target.value })} /></label>
+                <label>Location Summary<input value={editForm.locationSummary} onChange={(e) => setEditForm({ ...editForm, locationSummary: e.target.value })} /></label>
+                <label>Required Certification<input value={editForm.requiredCertification} onChange={(e) => setEditForm({ ...editForm, requiredCertification: e.target.value })} /></label>
+                <label className="wide">Scope of Work<textarea value={editForm.scopeOfWork} onChange={(e) => setEditForm({ ...editForm, scopeOfWork: e.target.value })} /></label>
+              </div>
+            </div>
+          )}
 
+          {/* ────── Admin Budget Review ────── */}
+          {isSuperAdmin() && (isPendingReview || editing) && (
+            <div className="admin-budget-review">
+              <h3><DollarSign size={16} /> Budget Review</h3>
+              <div className="budget-review-row">
+                <div className="budget-review-item">
+                  <span>Client Submitted Budget</span>
+                  <strong>{clientBudgetDisplay || "Not provided"}</strong>
+                </div>
+              </div>
+              {editing && (
+                <>
+                  {request.clientBudgetUsd != null ? (
+                    <div className="budget-adjustment-controls">
+                      <label>Adjustment
+                        <div className="budget-adj-row">
+                          <select value={budgetAdj.mode} onChange={(e) => setBudgetAdj({ ...budgetAdj, mode: e.target.value })}>
+                            <option value="none">No adjustment</option>
+                            <option value="markup">Markup</option>
+                            <option value="markdown">Markdown</option>
+                          </select>
+                          {budgetAdj.mode !== "none" && (
+                            <>
+                              <select value={budgetAdj.type} onChange={(e) => setBudgetAdj({ ...budgetAdj, type: e.target.value })}>
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed ($)</option>
+                              </select>
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder={budgetAdj.type === "percentage" ? "10" : "100"}
+                                value={budgetAdj.value}
+                                onChange={(e) => setBudgetAdj({ ...budgetAdj, value: e.target.value })}
+                              />
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="budget-adjustment-controls">
+                      <label>Set Approved Market Budget
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          placeholder="Enter approved budget"
+                          value={budgetAdj.explicitApproved}
+                          onChange={(e) => setBudgetAdj({ ...budgetAdj, explicitApproved: e.target.value })}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <div className="budget-review-row">
+                    <div className="budget-review-item approved-preview">
+                      <span>Approved Consultant Budget</span>
+                      <strong className="approved-budget-value">
+                        {editBudgetPreview != null ? `$${Number(editBudgetPreview).toLocaleString()}` : "Not set"}
+                      </strong>
+                    </div>
+                  </div>
+                </>
+              )}
+              {!editing && (
+                <div className="budget-review-row">
+                  {hasBudgetAdjustment && (
+                    <div className="budget-review-item">
+                      <span>Adjustment</span>
+                      <strong>
+                        {request.adminBudgetAdjustmentMode === "markup" ? "+" : "-"}
+                        {request.adminBudgetAdjustmentType === "percentage"
+                          ? `${request.adminBudgetAdjustmentValue}%`
+                          : `$${money(request.adminBudgetAdjustmentValue)}`
+                        }
+                      </strong>
+                    </div>
+                  )}
+                  <div className="budget-review-item">
+                    <span>Approved Consultant Budget</span>
+                    <strong className="approved-budget-value">{approvedBudgetDisplay || "Not set"}</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!editing && (
+            <>
+              {overview && <Narrative title="Request Overview" text={overview} />}
+              {showScope && <Narrative title="Scope of Work" text={scope} />}
+              {!overview && !scope && <section className="request-narrative empty"><h2>Request Overview</h2><p>No description was provided.</p></section>}
+              {!overview && scope && !showScope && <section className="request-narrative empty"><h2>Request Overview</h2><p>No description was provided.</p></section>}
+              {!showScope && scope && overview && null}
+            </>
+          )}
+
+          {/* ────── Quotations ────── */}
           <div className="quotation-head">
             <h2>
               {isClient() ? "Accepted Quote" : `Quotations (${visibleQuotations.length})`}
@@ -527,7 +957,7 @@ export default function ServiceRequestDetails() {
                   </div>
                 )}
 
-                {quote.coverLetter && <blockquote>“{quote.coverLetter}”</blockquote>}
+                {quote.coverLetter && <blockquote>"{quote.coverLetter}"</blockquote>}
 
                 {(isClient() || isSuperAdmin()) && quote.status === "accepted" && (
                   <>
@@ -666,13 +1096,14 @@ export default function ServiceRequestDetails() {
               Vessel Particulars
             </h3>
 
-            <Info label="Name" value={vessel.name || vessel.vessel_name} />
-            <Info label="IMO" value={vessel.imoNumber || vessel.imo_number} />
-            <Info label="Type" value={vessel.type || vessel.vessel_type} />
+            <Info label="Name" value={vessel.name || vessel.vessel_name} required isPendingReview={isPendingReview} />
+            <Info label="IMO" value={vessel.imoNumber || vessel.imo_number} isPendingReview={isPendingReview} />
+            <Info label="Type" value={vessel.type || vessel.vessel_type} required isPendingReview={isPendingReview} />
             <Info
               label="Flag"
               value={vessel.flagState || vessel.flag_state}
               icon={<Flag size={14} />}
+              isPendingReview={isPendingReview}
             />
           </div>
 
@@ -682,29 +1113,69 @@ export default function ServiceRequestDetails() {
               Port & Schedule
             </h3>
 
-            <Info label="Port" value={port.name || port.port_name} />
-            <Info label="Country" value={port.country} />
-            <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} />
-            <Info label="Deadline" value={request.requiredBy ? formatDate(request.requiredBy) : null} />
+            <Info label="Port" value={port.name || port.port_name} required isPendingReview={isPendingReview} />
+            <Info label="Country" value={port.country} isPendingReview={isPendingReview} />
+            <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} isPendingReview={isPendingReview} />
+            <Info label="Deadline" value={request.requiredBy ? formatDate(request.requiredBy) : null} required isPendingReview={isPendingReview} />
           </div>
 
-          {request.requiredCertification && <div className="side-info-card">
+          <div className="side-info-card">
             <h3>
               <Award size={18} />
               Required Qualifications
             </h3>
-
-            <p>{displayCase(request.requiredCertification)}</p>
-          </div>}
+            <p>{request.requiredCertification ? displayCase(request.requiredCertification) : "Not provided"}</p>
+          </div>
 
           {!isExpert() && (
-            request.requesterName && <div className="side-info-card">
+            <div className="side-info-card">
               <h3>Requested By</h3>
-              <p>{request.requesterName}</p>
+              <p>{request.requesterName || "Not provided"}</p>
+            </div>
+          )}
+
+          {/* Client budget info for Client view */}
+          {isClient() && (
+            <div className="side-info-card">
+              <h3><DollarSign size={18} /> Budget</h3>
+              <Info label="Submitted" value={clientBudgetDisplay} />
+              {isApproved && approvedBudgetDisplay && approvedBudgetDisplay !== clientBudgetDisplay && (
+                <Info label="Approved" value={approvedBudgetDisplay} />
+              )}
             </div>
           )}
         </aside>
       </section>
+
+      {/* ────── Reject Modal ────── */}
+      {showRejectModal && (
+        <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
+          if (e.target === e.currentTarget && !rejecting) setShowRejectModal(false);
+        }}>
+          <section className="delete-request-dialog" role="dialog" aria-modal="true">
+            <h2>Reject Service Request</h2>
+            <p>Provide a reason for rejection. This will be visible to the Client.</p>
+            <textarea
+              className="reject-reason-input"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Please provide the vessel IMO number and confirmed inspection date."
+              maxLength={1000}
+            />
+            <div className="delete-request-actions">
+              <button type="button" onClick={() => { setShowRejectModal(false); setRejectionReason(""); }} disabled={rejecting}>Cancel</button>
+              <button
+                type="button"
+                className="confirm-delete-request"
+                disabled={rejecting || !rejectionReason.trim()}
+                onClick={handleReject}
+              >
+                {rejecting ? "Rejecting..." : "Reject Request"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {toast && (
         <div className="request-toast">
@@ -712,18 +1183,5 @@ export default function ServiceRequestDetails() {
         </div>
       )}
     </main>
-  );
-}
-
-function Info({ label, value, icon }) {
-  if (value === null || value === undefined || value === "" || value === "-") return null;
-  return (
-    <div className="info-row">
-      <span>{label}</span>
-      <strong>
-        {icon}
-        {value || "-"}
-      </strong>
-    </div>
   );
 }

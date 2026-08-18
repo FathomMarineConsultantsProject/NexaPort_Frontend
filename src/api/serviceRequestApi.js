@@ -29,3 +29,8 @@ export const approveServiceRequest = async (id) => {
   const res = await axiosClient.post(`/service-requests/${id}/approve`);
   return res.data;
 };
+
+export const rejectServiceRequest = async (id, payload) => {
+  const res = await axiosClient.post(`/service-requests/${id}/reject`, payload);
+  return res.data;
+};
