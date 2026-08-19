@@ -1,0 +1,8 @@
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { QuoteBreakdown } from "./StageData";
+import { dateTime, money } from "./formatters";
+
+export default function StageQuote({data,onSelect,busy}) { const eligible=new Set(["pending","submitted"]); return <section className="workflow-stage"><header className="stage-heading"><div><span>Stage 02</span><h2>Consultant quotations</h2><p>Compare genuine submissions against the approved request budget.</p></div><div className="budget-reference"><span>Approved Request Budget</span><strong>{money(data.request.approvedBudgetUsd)}</strong></div></header>
+    <div className="quotation-list">{data.quotations.length?data.quotations.map((quote)=>{const selectable=eligible.has(String(quote.status).toLowerCase());return <article key={quote.id} className={`workflow-quote ${data.selectedQuotation?.id===quote.id?"selected":""}`}><header><div><span className="quote-id">Quotation #{quote.id}</span><h3>{quote.consultantName||"Consultant not provided"}</h3><p>{dateTime(quote.createdAt)} · {quote.consultantLocation||"Location not provided"}</p></div><span className={`workflow-status ${quote.status}`}>{quote.status}</span></header><QuoteBreakdown quote={quote}/>{quote.coverLetter&&<p className="quote-note">{quote.coverLetter}</p>}<button type="button" className="workflow-secondary" disabled={!selectable||busy} onClick={()=>onSelect(quote.id)}>{data.selectedQuotation?.id===quote.id?<><CheckCircle2 size={16}/> Selected</>:<>Select &amp; Continue <ArrowRight size={16}/></>}</button></article>; }):<div className="workflow-empty"><h3>No quotations submitted</h3><p>This workflow remains at Overview until a Consultant submits a quotation.</p></div>}</div>
+  </section>;
+}

@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   if (loading) return <main className="dashboard-page"><DashboardLoading /></main>;
   if (failed) return <main className="dashboard-page"><DashboardError onRetry={load} /></main>;
   const kpis = data?.kpis || {};
+  const workflow = data?.inspection_workflow || {};
 
   return (
     <main className="dashboard-page dashboard-page--admin">
@@ -45,6 +46,22 @@ export default function AdminDashboard() {
         <DashboardKpiCard label="Completed jobs" value={kpis.completed_jobs} />
         <DashboardKpiCard label="Accepted commission value" value={formatMoney(kpis.commission_value_usd)} note="Accepted markup; not settlement" />
       </div>
+
+      <DashboardSection title="Inspections Requiring Action" description="Current commercial, inspection, reporting and finance handoffs." action={<Link to="/admin/inspection-workflows">Open workflow queue</Link>} urgent>
+        <div className="workflow-summary-grid">
+          <div><span>Commercial</span><strong>{workflow.awaiting_quotation_review || 0}</strong><small>Awaiting quotation review</small></div>
+          <div><span>Inspection</span><strong>{workflow.inspection_in_progress || 0}</strong><small>Preparation, checklist or report</small></div>
+          <div><span>Reporting</span><strong>{(workflow.report_awaiting_review||0)+(workflow.report_awaiting_confirmation||0)+(workflow.inspection_awaiting_completion||0)}</strong><small>Review, confirmation or completion</small></div>
+          <div><span>Finance</span><strong>{(workflow.invoice_approval_required||0)+(workflow.payment_pending||0)}</strong><small>Approval or payment action</small></div>
+        </div>
+        <DashboardTable columns={[
+          { key: "request", label: "Request", render: requestTitle },
+          { key: "vessel", label: "Vessel", render: (row) => row.vessel_name || "—" },
+          { key: "stage", label: "Current stage", render: (row) => <DashboardStatus value={row.current_stage} /> },
+          { key: "required", label: "Required by", render: (row) => formatDate(row.required_by) },
+          { key: "action", label: "Action", primary: true, render: () => "Open Workflow" },
+        ]} rows={workflow.recent} getRowHref={(row)=>`/admin/inspection-workflow/${row.service_request_id}`} emptyMessage="No inspection workflows currently require action." />
+      </DashboardSection>
 
       <DashboardSection title="Requests awaiting moderation" description="Oldest pending submissions appear first." urgent>
         <DashboardTable columns={[

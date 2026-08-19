@@ -161,10 +161,10 @@ test("21. Required Qualifications uses the full heading", async () => {
   assert.doesNotMatch(jsx, /Required Cert\./);
 });
 
-test("22. Empty side-card rows are hidden", async () => {
+test("22. Empty side-card rows remain visible as Not provided", async () => {
   const jsx = await source("../src/pages/ServiceRequestDetails.jsx");
-  // Info component returns null for empty values
-  assert.match(jsx, /if \(value === null/);
+  assert.match(jsx, /empty \? "Not provided" : value/);
+  assert.match(jsx, /Info — always renders, never suppresses rows/);
 });
 
 test("23. Overview card does not stretch to right-column height", async () => {

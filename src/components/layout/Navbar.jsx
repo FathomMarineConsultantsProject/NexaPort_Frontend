@@ -9,6 +9,7 @@ import {
   LockKeyhole,
   LogOut,
   MapPin,
+  Route as RouteIcon,
   Menu,
   Ship,
   User,
@@ -283,6 +284,9 @@ export default function Navbar() {
 
         {isSuperAdmin && (
           <>
+            <NavLink to="/admin/inspection-workflows">
+              <RouteIcon size={17} /> Inspection Workflow
+            </NavLink>
             <NavLink to="/admin/client-registrations">
               <Users size={17} /> Owners &amp; Managers
             </NavLink>
@@ -515,6 +519,9 @@ export default function Navbar() {
 
           {isSuperAdmin && (
             <>
+              <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>
+                <RouteIcon size={18} /> Inspection Workflow
+              </NavLink>
               <NavLink to="/admin/client-registrations" onClick={closeMobileNavigation}>
                 <Users size={18} /> Owners &amp; Managers
               </NavLink>

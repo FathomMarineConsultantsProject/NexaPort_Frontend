@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { approveServiceRequest, deleteServiceRequest, getServiceRequests, updateServiceRequest } from "../api/serviceRequestApi";
-import { isClient, isExpert, isSuperAdmin } from "../utils/auth";
+import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
+import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
 
 import "./ServiceRequests.css";
 
@@ -30,6 +31,7 @@ function FilterDropdown({ label, options, value, onChange, setDropdownRef, openD
 export default function ServiceRequests() {
   const navigate = useNavigate();
   const location = useLocation();
+  const currentUser = getStoredUser();
 
   const [notice, setNotice] = useState(location.state?.notice || "");
   const [requests, setRequests] = useState([]);
@@ -222,13 +224,14 @@ export default function ServiceRequests() {
     setEditFieldErrors({});
     setEditingRequest({
     id: request.id,
+    moderationStatus: request.moderationStatus,
     serviceType: request.serviceType || "",
     serviceCategory: request.serviceCategory || "",
     serviceTypeOther: request.serviceTypeOther || "",
     title: request.title || "",
     scopeOfWork: request.scopeOfWork || "",
     urgency: request.urgency || "routine",
-    budgetUsd: request.budgetUsd ?? "",
+    budgetUsd: request.clientBudgetUsd ?? request.budgetUsd ?? "",
     requiredBy: request.requiredBy ? String(request.requiredBy).slice(0, 10) : "",
     vesselName: request.vessel?.name || "",
     imoNumber: request.vessel?.imoNumber || "",
@@ -264,7 +267,7 @@ export default function ServiceRequests() {
         serviceTypeOther: editingRequest.serviceType === "Other" ? serviceTypeOther : null,
       });
       setRequests((current) => current.map((item) => item.id === editingRequest.id ? response.data : item));
-      setEditingRequest(null); setNotice("Pending request updated.");
+      setEditingRequest(null); setNotice(response.message || "Request updated.");
     } catch (error) {
       setEditFieldErrors(error.response?.data?.field_errors || {});
       setNotice(error.response?.data?.message || "Request update failed.");
@@ -374,6 +377,8 @@ export default function ServiceRequests() {
             );
             const vessel = request.vessel || {};
             const port = request.port || {};
+            const editPermission = getRequestEditPermission(request, currentUser);
+            const editLabel = isClient() && request.moderationStatus === "rejected" ? "Edit & Resubmit" : "Edit";
 
             return (
               <div key={request.id} className="request-card">
@@ -449,8 +454,12 @@ export default function ServiceRequests() {
                     >
                       View Details
                     </button>
+                    {(isSuperAdmin() || isClient()) && <>
+                      <button type="button" className="edit-request-btn" onClick={() => beginEdit(request)} disabled={!editPermission.allowed} title={editPermission.reason || undefined}><Edit3 size={15}/> {editLabel}</button>
+                      {!editPermission.allowed && <small className="request-edit-lock-reason">{editPermission.reason}</small>}
+                    </>}
                     {isSuperAdmin() && (
-                      <><button type="button" className="edit-request-btn" onClick={() => beginEdit(request)} disabled={request.moderationStatus !== "pending"}><Edit3 size={15}/> Edit</button>
+                      <>
                       {request.moderationStatus === "pending" && <button type="button" className="approve-request-btn" disabled={approvingId === request.id} onClick={() => handleApprove(request)}><CheckCircle2 size={15}/> {approvingId === request.id ? "Approving..." : "Approve"}</button>}
                       <button
                         type="button"
@@ -491,7 +500,7 @@ export default function ServiceRequests() {
         </div>
       )}
 
-      {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>Edit Pending Request</h2><div className="request-edit-grid">
+      {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>{isClient() && editingRequest.moderationStatus === "rejected" ? "Edit & Resubmit Request" : "Edit Request"}</h2><div className="request-edit-grid">
         <label>Service type<select value={editingRequest.serviceType} onChange={(event) => {
           const serviceType = event.target.value;
           setEditFieldErrors({});

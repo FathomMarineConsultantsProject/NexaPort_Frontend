@@ -34,6 +34,8 @@ import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
 import FillReportPage from "./pages/FillReportPage";
 import ReportDetailPage from "./pages/ReportDetailPage";
+import InspectionWorkflowQueue from "./pages/InspectionWorkflowQueue";
+import InspectionWorkflowWorkspace from "./pages/InspectionWorkflowWorkspace";
 import { getRoleId, getStoredUser, isMaritimeCompany } from "./utils/auth";
 import "./App.css";
 
@@ -95,6 +97,8 @@ const Shell = () => (
         <Route path="/requests" element={<ServiceRequests />} />
         <Route path="/requests/new" element={<RequestCreatorOnly><PostServiceRequest /></RequestCreatorOnly>} />
         <Route path="/requests/:id" element={<ServiceRequestDetails />} />
+        <Route path="/admin/inspection-workflows" element={<AdminOnly><InspectionWorkflowQueue /></AdminOnly>} />
+        <Route path="/admin/inspection-workflow/:requestId" element={<AdminOnly><InspectionWorkflowWorkspace /></AdminOnly>} />
         <Route path="/experts" element={<HideFromClient><ExpertDirectory /></HideFromClient>} />
         <Route path="/experts/register" element={<AdminOnly><RegisterExpert /></AdminOnly>} />
         <Route path="/experts/:id" element={<HideFromClient><ExpertProfile /></HideFromClient>} />

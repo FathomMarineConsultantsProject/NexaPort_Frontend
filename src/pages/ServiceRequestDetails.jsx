@@ -9,8 +9,8 @@ import {
   Flag,
   MapPin,
   Ship,
+  Route as RouteIcon,
   Star,
-  X,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -24,8 +24,9 @@ import {
 } from "../api/serviceRequestApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
+import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
 import "./ServiceRequestDetails.css";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 /* ────────────────────────────────────────────
    Narrative block — rich text renderer
@@ -80,6 +81,7 @@ function calcApprovedPreview(clientBudget, adjType, adjMode, adjValue) {
 
 export default function ServiceRequestDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [request, setRequest] = useState(null);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
@@ -238,6 +240,7 @@ export default function ServiceRequestDetails() {
       title: request.title || "",
       scopeOfWork: request.scopeOfWork || "",
       urgency: request.urgency || "routine",
+      budgetUsd: request.clientBudgetUsd ?? request.budgetUsd ?? "",
       requiredBy: request.requiredBy ? String(request.requiredBy).slice(0, 10) : "",
       vesselName: request.vessel?.name || "",
       imoNumber: request.vessel?.imoNumber || "",
@@ -270,20 +273,19 @@ export default function ServiceRequestDetails() {
     try {
       const payload = { ...editForm };
 
-      // Include budget adjustment fields for admin
-      if (budgetAdj.mode !== "none" && budgetAdj.type !== "none") {
-        payload.adminBudgetAdjustmentMode = budgetAdj.mode;
-        payload.adminBudgetAdjustmentType = budgetAdj.type;
-        payload.adminBudgetAdjustmentValue = Number(budgetAdj.value || 0);
-      } else {
-        payload.adminBudgetAdjustmentMode = "none";
-        payload.adminBudgetAdjustmentType = "none";
-        payload.adminBudgetAdjustmentValue = 0;
-      }
-
-      // Explicit approved budget when no client budget
-      if (budgetAdj.explicitApproved !== "" && request.clientBudgetUsd == null) {
-        payload.approvedBudgetUsd = Number(budgetAdj.explicitApproved);
+      if (isSuperAdmin()) {
+        if (budgetAdj.mode !== "none" && budgetAdj.type !== "none") {
+          payload.adminBudgetAdjustmentMode = budgetAdj.mode;
+          payload.adminBudgetAdjustmentType = budgetAdj.type;
+          payload.adminBudgetAdjustmentValue = Number(budgetAdj.value || 0);
+        } else {
+          payload.adminBudgetAdjustmentMode = "none";
+          payload.adminBudgetAdjustmentType = "none";
+          payload.adminBudgetAdjustmentValue = 0;
+        }
+        if (budgetAdj.explicitApproved !== "" && request.clientBudgetUsd == null) {
+          payload.approvedBudgetUsd = Number(budgetAdj.explicitApproved);
+        }
       }
 
       const response = await updateServiceRequest(request.id, payload);
@@ -441,6 +443,7 @@ export default function ServiceRequestDetails() {
   const canAcceptQuote = isSuperAdmin();
   const acceptedQuote = quotations.find((q) => q.status === "accepted");
   const currentUser = getStoredUser();
+  const editPermission = getRequestEditPermission(request, currentUser);
   const isPendingReview = isSuperAdmin() && request.moderationStatus === "pending";
   const isRejected = request.moderationStatus === "rejected";
   const isApproved = request.moderationStatus === "approved";
@@ -524,22 +527,11 @@ export default function ServiceRequestDetails() {
             </div>
             {isPendingReview && !editing && (
               <div className="moderation-banner-actions">
-                <button type="button" className="secondary-btn" onClick={beginEdit}>
-                  <Edit3 size={14} /> Edit Request
-                </button>
                 <button type="button" className="reject-btn" onClick={() => setShowRejectModal(true)}>
                   <XCircle size={14} /> Reject
                 </button>
                 <button type="button" className="accept-btn" disabled={approving} onClick={handleApprove}>
                   <CheckCircle2 size={14} /> {approving ? "Approving..." : "Approve Request"}
-                </button>
-              </div>
-            )}
-            {editing && (
-              <div className="moderation-banner-actions">
-                <button type="button" className="secondary-btn" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
-                <button type="button" className="accept-btn" onClick={saveEdit} disabled={editSaving}>
-                  {editSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             )}
@@ -606,6 +598,14 @@ export default function ServiceRequestDetails() {
           </div>
         </div>
 
+        <div className="request-head-actions">
+        {(isSuperAdmin() || isClient()) && !editing && <>
+          <button type="button" className="secondary-btn request-edit-action" onClick={beginEdit} disabled={!editPermission.allowed} title={editPermission.reason || undefined}>
+            <Edit3 size={14} /> {isClient() && isRejected ? "Edit & Resubmit" : "Edit Request"}
+          </button>
+          {!editPermission.allowed && <small className="request-edit-lock-reason">{editPermission.reason}</small>}
+        </>}
+        {isSuperAdmin() && isApproved && <button type="button" className="open-workflow-btn" onClick={() => navigate(`/admin/inspection-workflow/${id}`)}><RouteIcon size={16}/> Open Inspection Workflow</button>}
         <div className="budget-block">
           {isSuperAdmin() ? (
             <>
@@ -636,12 +636,12 @@ export default function ServiceRequestDetails() {
               <span>{`${Number(request.quotationCount || quotations.length || 0)} ${Number(request.quotationCount || quotations.length || 0) === 1 ? "quotation" : "quotations"}`}</span>
             </>
           )}
-        </div>
+        </div></div>
       </section>
 
       <section className="request-details-layout">
         <div className="request-main-col">
-          {/* ────── Admin Edit Form ────── */}
+          {/* ────── Request Edit Form ────── */}
           {editing && (
             <div className="admin-edit-card">
               <h2><Edit3 size={18} /> Edit Request Details</h2>
@@ -659,6 +659,7 @@ export default function ServiceRequestDetails() {
                   : <label>Service Category<input value={editForm.serviceCategory} onChange={(e) => setEditForm({ ...editForm, serviceCategory: e.target.value })} /></label>
                 }
                 <label>Title<input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></label>
+                {isClient() && <label>Budget (USD)<input type="number" min="0" value={editForm.budgetUsd} onChange={(e) => setEditForm({ ...editForm, budgetUsd: e.target.value })} /></label>}
                 <label>Urgency
                   <select value={editForm.urgency} onChange={(e) => setEditForm({ ...editForm, urgency: e.target.value })}>
                     {["routine", "urgent", "emergency"].map((u) => <option key={u}>{u}</option>)}
@@ -675,6 +676,10 @@ export default function ServiceRequestDetails() {
                 <label>Location Summary<input value={editForm.locationSummary} onChange={(e) => setEditForm({ ...editForm, locationSummary: e.target.value })} /></label>
                 <label>Required Certification<input value={editForm.requiredCertification} onChange={(e) => setEditForm({ ...editForm, requiredCertification: e.target.value })} /></label>
                 <label className="wide">Scope of Work<textarea value={editForm.scopeOfWork} onChange={(e) => setEditForm({ ...editForm, scopeOfWork: e.target.value })} /></label>
+              </div>
+              <div className="request-edit-form-actions">
+                <button type="button" className="secondary-btn" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
+                <button type="button" className="accept-btn" onClick={saveEdit} disabled={editSaving}>{editSaving ? "Saving..." : isClient() && isRejected ? "Save & Resubmit" : "Save Changes"}</button>
               </div>
             </div>
           )}
