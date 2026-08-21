@@ -1,14 +1,12 @@
 :root {
-  --md-ink: #10243f;
-  --md-muted: #62738a;
-  --md-faint: #8a98aa;
-  --md-line: #dce4ec;
-  --md-soft: #f2f6f8;
-  --md-paper: #ffffff;
-  --md-teal: #0f766e;
-  --md-teal-dark: #0b5f59;
-  --md-teal-soft: #e9f5f3;
-  --md-navy: #0a1929;
+  --md-ink: var(--np-navy-900, #0f172a);
+  --md-muted: var(--np-slate-600, #475569);
+  --md-faint: var(--np-slate-400, #94a3b8);
+  --md-line: var(--np-slate-300, #cbd5e1);
+  --md-soft: var(--np-slate-100, #f1f5f9);
+  --md-paper: var(--np-surface, #ffffff);
+  --md-teal: var(--np-teal-700, #0f766e);
+  --md-teal-dark: var(--np-teal-800, #115e59);
   --md-font: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
 }
 

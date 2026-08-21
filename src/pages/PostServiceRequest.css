@@ -1,79 +1,87 @@
+/* ============================================================
+   POST SERVICE REQUEST — NexaPort
+   Maritime survey & inspection request initiation
+============================================================ */
+
 .psr-page {
-  background: #f8fafc;
-  padding: 42px 24px 48px;
+  background: var(--np-ground, #f1f5f9);
+  padding: 28px 20px 48px;
+  font-family: var(--np-font-sans);
 }
 
 .psr-wrap {
   width: 100%;
-  max-width: 900px;
+  max-width: 860px;
   margin: 0 auto;
 }
 
 .psr-head {
-  margin-bottom: 32px;
+  margin-bottom: 22px;
 }
 
 .psr-head h1 {
-  font-size: 36px;
-  font-weight: 800;
-  color: #0a1929;
-  margin: 0 0 8px;
-  letter-spacing: -0.8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
 }
 
 .psr-head p {
-  max-width: 860px;
-  font-size: 19px;
-  color: #526c9d;
-  line-height: 1.45;
+  max-width: 760px;
+  font-size: 13px;
+  color: var(--np-slate-600, #475569);
+  line-height: 1.5;
   margin: 0;
 }
 
 .psr-form {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 18px;
 }
 
 .psr-card {
-  background: white;
-  border: 1px solid #d5dfeb;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
+  background: var(--np-surface, #ffffff);
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  padding: 22px 24px;
+  box-shadow: var(--np-shadow-card, 0 1px 3px rgba(15, 23, 42, 0.08));
 }
 
 .psr-card-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
 }
 
 .psr-card-header svg {
-  color: #149d94;
+  color: var(--np-teal-700, #0f766e);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .psr-card-header-content h2 {
-  font-size: 20px;
-  font-weight: 800;
-  color: #001b3f;
-  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 2px;
 }
 
 .psr-card-header-content p {
-  font-size: 16px;
-  color: #526c9d;
+  font-size: 12px;
+  color: var(--np-slate-600, #475569);
   margin: 0;
 }
 
 .psr-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .psr-row.three-col {
@@ -91,176 +99,115 @@
 }
 
 .psr-group label {
-  font-size: 16px;
-  font-weight: 600;
-  color: #001b3f;
-  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--np-slate-600, #475569);
+  margin-bottom: 5px;
   line-height: 1.2;
 }
 
 .psr-group label .opt {
-  color: #526c9d;
+  color: var(--np-slate-400, #94a3b8);
   font-weight: 400;
+  text-transform: none;
 }
 
 .psr-control,
 .psr-select {
   width: 100%;
-  height: 48px;
-  padding: 0 15px;
-  border: 1px solid #d5dfeb;
-  border-radius: 10px;
-  background-color: white;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background-color: var(--np-surface, #ffffff);
   font-family: inherit;
-  font-size: 16px;
-  color: #001b3f;
+  font-size: 13px;
+  color: var(--np-navy-900, #0f172a);
   outline: none;
-  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .psr-control::placeholder,
 .psr-textarea::placeholder {
-  color: #526c9d;
+  color: var(--np-slate-400, #94a3b8);
 }
 
 .psr-control:focus,
 .psr-select:focus,
 .psr-textarea:focus {
-  border-color: #149d94;
+  border-color: var(--np-blue-600, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
 }
 
 .psr-textarea {
   width: 100%;
-  min-height: 132px;
-  padding: 13px 15px;
-  border: 1px solid #d5dfeb;
-  border-radius: 10px;
-  background: white;
+  min-height: 90px;
+  padding: 8px 12px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
   font-family: inherit;
-  font-size: 16px;
-  color: #001b3f;
+  font-size: 13px;
+  color: var(--np-navy-900, #0f172a);
   outline: none;
-  box-shadow: 0 2px 5px rgba(10, 31, 68, 0.08);
   resize: vertical;
   line-height: 1.45;
+  box-sizing: border-box;
 }
 
 .psr-field-error {
-  color: #b42318;
-  font-size: 13px;
-  margin-top: 6px;
+  color: var(--np-red-800, #991b1b);
+  font-size: 11px;
+  margin-top: 4px;
+  font-weight: 600;
 }
 
 .psr-submit-btn {
   width: 100%;
-  height: 47px;
-  border: none;
-  border-radius: 6px;
-  background: #149d94;
-  color: white;
-  font-size: 16px;
+  min-height: 38px;
+  border: 1px solid var(--np-navy-900, #0f172a);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-navy-900, #0f172a);
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.psr-submit-btn:hover {
+  background: var(--np-navy-800, #1e293b);
 }
 
 .psr-error-alert {
-  padding: 14px;
-  background: #fee2e2;
-  color: #991b1b;
-  border-radius: 7px;
-  font-size: 14px;
-  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: var(--np-red-50, #fef2f2);
+  color: var(--np-red-800, #991b1b);
+  border: 1px solid var(--np-red-200, #fecaca);
+  border-radius: var(--np-radius, 4px);
+  font-size: 12px;
+  margin-bottom: 16px;
 }
 
 .psr-success-alert {
-  padding: 14px;
-  background: #d1fae5;
-  color: #065f46;
-  border-radius: 7px;
-  font-size: 14px;
-  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: var(--np-green-50, #f0fdf4);
+  color: var(--np-green-800, #166534);
+  border: 1px solid var(--np-green-200, #bbf7d0);
+  border-radius: var(--np-radius, 4px);
+  font-size: 12px;
+  margin-bottom: 16px;
 }
 
-/* =========================
-   SELECT / DROPDOWN STYLING
-========================= */
-
-.psr-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  background-color: #ffffff;
-  color: #0f172a;
-
-  border: 1px solid #d6dee8;
-  border-radius: 10px;
-
-  height: 48px;
-  width: 100%;
-
-  padding: 0 46px 0 16px;
-
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1;
-
-  cursor: pointer;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease;
-
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 14px;
-}
-
-.psr-select:hover {
-  border-color: #b8c5d6;
-}
-
-.psr-select:focus {
-  border-color: #14b8a6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
-}
-
-/* dropdown menu options */
-.psr-select option {
-  background: #ffffff;
-  color: #0f172a;
-  font-size: 15px;
-  padding: 12px;
-}
-
-/* selected option */
-.psr-select option:checked {
-  background: #14b8a6;
-  color: #ffffff;
-}
-
-/* firefox fix */
-.psr-select:-moz-focusring {
-  color: transparent;
-  text-shadow: 0 0 0 #0f172a;
-}
-
-/* remove old IE arrow */
-.psr-select::-ms-expand {
-  display: none;
-}
-
-.psr-select option {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-.psr-select option:hover,
-.psr-select option:focus,
-.psr-select option:checked {
-  background: #149d94 linear-gradient(0deg, #149d94 0%, #149d94 100%);
-  color: #ffffff;
+@media (max-width: 720px) {
+  .psr-row,
+  .psr-row.three-col {
+    grid-template-columns: 1fr;
+  }
+  .psr-page {
+    padding: 20px 14px 36px;
+  }
 }

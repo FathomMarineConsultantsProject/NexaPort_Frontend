@@ -746,7 +746,7 @@ export default function ExpertProfile() {
 
             <div className="expert-profile-meta">
               <div className="rating-row">
-                <Star size={18} fill="#14b8a6" color="#14b8a6" />
+                <Star size={18} fill="#f59e0b" color="#f59e0b" />
 
                 <strong>{Number(expert.rating || 0).toFixed(1)}</strong>
 

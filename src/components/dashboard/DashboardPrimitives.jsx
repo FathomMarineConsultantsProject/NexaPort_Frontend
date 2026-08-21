@@ -4,7 +4,7 @@ export function DashboardKpiCard({ label, value, note, priority = false }) {
   return (
     <div className={`dashboard-kpi${priority ? " dashboard-kpi--priority" : ""}`}>
       <span className="dashboard-kpi__label">{label}</span>
-      <strong className="dashboard-kpi__value">{value ?? 0}</strong>
+      <strong className="dashboard-kpi__value tabular-nums">{value ?? 0}</strong>
       {note && <span className="dashboard-kpi__note">{note}</span>}
     </div>
   );

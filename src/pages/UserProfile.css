@@ -1,9 +1,15 @@
+/* ============================================================
+   USER PROFILE — NexaPort
+   Professional maritime personnel record
+============================================================ */
+
 .profile-page-wrap {
-  min-height: calc(100vh - 134px);
-  background: #f8fafc;
-  padding: 42px 24px 56px;
+  min-height: calc(100vh - 110px);
+  background: var(--np-ground, #f1f5f9);
+  padding: 28px 20px 48px;
   display: flex;
   justify-content: center;
+  font-family: var(--np-font-sans);
 }
 
 .profile-page-inner {
@@ -15,8 +21,8 @@
 .uprofile-head {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 26px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .uprofile-head-main {
@@ -25,88 +31,91 @@
 }
 
 .uprofile-avatar {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: #14b8a6;
-  color: white;
-  font-size: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-navy-900, #0f172a);
+  color: var(--np-teal-700, #0f766e);
+  font-size: 22px;
   font-weight: 800;
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  box-shadow: 0 3px 8px rgba(20, 184, 166, 0.22);
+  border: 1px solid var(--np-slate-300, #cbd5e1);
   overflow: hidden;
 }
 
 .uprofile-name {
-  font-size: 30px;
-  font-weight: 800;
-  color: #071b39;
-  margin: 0 0 8px;
-  letter-spacing: -0.7px;
-  line-height: 1.1;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 6px;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
 }
 
 .uprofile-role {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 28px;
-  padding: 0 12px;
-  background: #f0fdfb;
-  border: 1px solid #99f6e4;
-  border-radius: 999px;
-  color: #0d9488;
-  font-size: 13px;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  background: var(--np-teal-50, #f0fdfa);
+  border: 1px solid var(--np-teal-200, #99f6e4);
+  border-radius: var(--np-radius-sm, 3px);
+  color: var(--np-teal-700, #0f766e);
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .uprofile-edit-btn {
-  height: 38px;
-  border: 1px solid #d5dfeb;
-  border-radius: 8px;
-  background: white;
-  color: #071b39;
+  min-height: 36px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
+  color: var(--np-navy-900, #0f172a);
   padding: 0 14px;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
 .uprofile-edit-btn:hover {
-  background: #f8fafc;
+  background: var(--np-slate-50, #f8fafc);
+  border-color: var(--np-slate-400, #94a3b8);
 }
 
 /* Card */
 .uprofile-card {
-  background: white;
-  border: 1px solid #dbe4ee;
-  border-radius: 14px;
-  padding: 28px 30px;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
-  margin-bottom: 22px;
+  background: var(--np-surface, #ffffff);
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  padding: 20px 24px;
+  box-shadow: var(--np-shadow-card, 0 1px 3px rgba(15, 23, 42, 0.08));
+  margin-bottom: 18px;
 }
 
 .uprofile-card-title {
-  font-size: 17px;
-  font-weight: 800;
-  color: #071b39;
-  margin: 0 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 14px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
 }
 
 .uprofile-card-title svg {
-  color: #14b8a6;
+  color: var(--np-teal-700, #0f766e);
 }
 
 .uprofile-rows {
@@ -116,11 +125,11 @@
 
 .uprofile-row {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 18px;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
   align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--np-slate-100, #f1f5f9);
 }
 
 .uprofile-row:last-child {
@@ -130,20 +139,22 @@
 .uprofile-row-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #7c8dab;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--np-slate-500, #64748b);
 }
 
 .uprofile-row-label svg {
-  color: #94a3b8;
+  color: var(--np-slate-400, #94a3b8);
 }
 
 .uprofile-row-value {
-  font-size: 14px;
-  font-weight: 700;
-  color: #071b39;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--np-navy-900, #0f172a);
   text-align: right;
   overflow-wrap: anywhere;
 }
@@ -152,78 +163,80 @@
 .uprofile-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .uprofile-form label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  color: #071b39;
-  font-size: 14px;
+  gap: 5px;
+  color: var(--np-slate-600, #475569);
+  font-size: 11px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .uprofile-form input {
-  height: 44px;
-  border: 1px solid #d5dfeb;
-  border-radius: 9px;
-  background: white;
-  color: #071b39;
-  padding: 0 14px;
+  height: 38px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
+  color: var(--np-navy-900, #0f172a);
+  padding: 0 12px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .uprofile-form input:focus {
-  border-color: #14b8a6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+  border-color: var(--np-blue-600, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
 }
 
 .uprofile-save-btn {
-  height: 44px;
-  border: none;
-  border-radius: 9px;
-  background: #14b8a6;
-  color: white;
+  min-height: 38px;
+  border: 1px solid var(--np-navy-900, #0f172a);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-navy-900, #0f172a);
+  color: #ffffff;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .uprofile-save-btn:hover {
-  background: #128a82;
+  background: var(--np-navy-800, #1e293b);
 }
 
 /* Logout button */
 .uprofile-logout-btn {
   width: 100%;
-  height: 48px;
-  border: 1.5px solid #fecaca;
-  border-radius: 10px;
-  background: white;
-  color: #dc2626;
+  min-height: 38px;
+  border: 1px solid var(--np-red-200, #fecaca);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-red-50, #fef2f2);
+  color: var(--np-red-800, #991b1b);
   font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 8px;
   cursor: pointer;
-  transition: all 0.18s;
+  transition: background 0.15s ease;
 }
 
 .uprofile-logout-btn:hover {
-  background: #fff5f5;
-  border-color: #f87171;
+  background: #fee2e2;
 }
 
 @media (max-width: 640px) {
@@ -233,7 +246,7 @@
 
   .uprofile-row {
     grid-template-columns: 1fr;
-    gap: 5px;
+    gap: 4px;
   }
 
   .uprofile-row-value {
@@ -244,23 +257,8 @@
 .uprofile-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-bottom: 20px;
-}
-
-.uprofile-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.uprofile-form input {
-  width: 100%;
-  height: 46px;
-  border: 1px solid #d5dfeb;
-  border-radius: 8px;
-  padding: 0 14px;
-  font-size: 14px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .uprofile-save-btn {

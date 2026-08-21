@@ -1,10 +1,13 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getMaritimeDirectory } from "../api/maritimeDirectoryApi";
 import {
   DirectoryPageHeader,
   DirectoryResultCard,
+  StatusBadge,
 } from "../components/directories/DirectoryUI";
+import ViewToggle from "../components/common/ViewToggle";
 import { isSuperAdmin } from "../utils/auth";
 import "../styles/maritimeDirectory.css";
 
@@ -16,6 +19,7 @@ export default function MaritimeDirectoryPage({ directory }) {
   const [filters, setFilters] = useState(initialFilters);
   const [applied, setApplied] = useState(initialFilters);
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState("grid");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -63,7 +67,11 @@ export default function MaritimeDirectoryPage({ directory }) {
       <DirectoryPageHeader directory={directory} total={pagination.total} canAdd={isSuperAdmin()} />
 
       <form className="md-filters" onSubmit={applyFilters}>
-        <div className="md-filters__label"><SlidersHorizontal size={17} aria-hidden="true" /><span>Filter directory</span></div>
+        <div className="md-filters__label">
+          <SlidersHorizontal size={17} aria-hidden="true" />
+          <span>Filter directory</span>
+          <ViewToggle value={viewMode} onChange={setViewMode} label="Directory layout" />
+        </div>
         <label className="md-filters__search">
           <span>Search</span>
           <div><Search size={16} aria-hidden="true" /><input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Company, service, port or product" /></div>
@@ -79,9 +87,47 @@ export default function MaritimeDirectoryPage({ directory }) {
       {loading ? (
         <div className="md-empty-state">Loading {directory.label.toLowerCase()}…</div>
       ) : sortedRows.length ? (
-        <div className="md-results" aria-live="polite">
-          {sortedRows.map((row) => <DirectoryResultCard key={row.id} row={row} directory={directory} />)}
-        </div>
+        viewMode === "grid" ? (
+          <div className="md-results" aria-live="polite">
+            {sortedRows.map((row) => <DirectoryResultCard key={row.id} row={row} directory={directory} />)}
+          </div>
+        ) : (
+          <div className="dashboard-table-wrap md-table-register" aria-live="polite">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Company Name</th>
+                  <th>Location</th>
+                  <th>Review Status</th>
+                  <th>Activity</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedRows.map((row) => {
+                  const location = [row.city, row.country].filter(Boolean).join(", ") || "—";
+                  return (
+                    <tr key={row.id}>
+                      <td className="dashboard-table__link">
+                        <Link to={`/directories/${directory.type}/${row.id}`}>
+                          <strong>{row.company_name || row.companyName}</strong>
+                        </Link>
+                      </td>
+                      <td>{location}</td>
+                      <td><StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} /></td>
+                      <td>{(row.is_active ?? row.isActive) !== false ? "Active" : "Inactive"}</td>
+                      <td>
+                        <Link className="dashboard-table__link" to={`/directories/${directory.type}/${row.id}`}>
+                          View Dossier
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div className="md-empty-state">
           <h2>No companies match these filters</h2>

@@ -1,4 +1,75 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+
+:root {
+  /* Maritime Primary Navy Palette */
+  --np-navy-950: #090d16;
+  --np-navy-900: #0f172a;
+  --np-navy-800: #1e293b;
+  --np-navy-700: #334155;
+
+  /* Neutrals / Slates */
+  --np-slate-700: #334155;
+  --np-slate-600: #475569;
+  --np-slate-500: #64748b;
+  --np-slate-400: #94a3b8;
+  --np-slate-300: #cbd5e1;
+  --np-slate-200: #e2e8f0;
+  --np-slate-100: #f1f5f9;
+  --np-slate-50:  #f8fafc;
+
+  /* Maritime Teals (Operational Accents) */
+  --np-teal-800: #115e59;
+  --np-teal-700: #0f766e;
+  --np-teal-600: #0d9488;
+  --np-teal-50:  #f0fdfa;
+
+  /* Operational Blues (Links, Focus, Info) */
+  --np-blue-700: #0369a1;
+  --np-blue-600: #0284c7;
+  --np-blue-100: #e0f2fe;
+  --np-blue-50:  #f0f9ff;
+
+  /* Operational Ambers (Caution, Under Review, Pending) */
+  --np-amber-800: #92400e;
+  --np-amber-700: #b45309;
+  --np-amber-200: #fde68a;
+  --np-amber-100: #fef3c7;
+  --np-amber-50:  #fffbeb;
+
+  /* Operational Reds (Emergency, Rejected, Inactive) */
+  --np-red-800: #991b1b;
+  --np-red-700: #b91c1c;
+  --np-red-200: #fecaca;
+  --np-red-100: #fee2e2;
+  --np-red-50:  #fef2f2;
+
+  /* Operational Greens (Approved, Verified, Active) */
+  --np-green-800: #166534;
+  --np-green-700: #15803d;
+  --np-green-200: #bbf7d0;
+  --np-green-100: #dcfce7;
+  --np-green-50:  #f0fdf4;
+
+  /* Surfaces & Structural Borders */
+  --np-ground: #f1f5f9;
+  --np-surface: #ffffff;
+  --np-border: 1px solid #cbd5e1;
+  --np-border-subtle: 1px solid #e2e8f0;
+  --np-border-strong: 1px solid #94a3b8;
+  --np-radius-sm: 3px;
+  --np-radius: 4px;
+  --np-radius-md: 6px;
+
+  /* Restrained Operational Elevations */
+  --np-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --np-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --np-shadow-dropdown: 0 10px 25px rgba(15, 23, 42, 0.14);
+  --np-shadow-modal: 0 16px 36px rgba(15, 23, 42, 0.2);
+
+  /* Typography */
+  --np-font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --np-font-mono: "IBM Plex Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
 
 * {
   box-sizing: border-box;
@@ -9,20 +80,24 @@ body,
 #root {
   margin: 0;
   min-height: 100%;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
+  font-family: var(--np-font-sans);
+  background: var(--np-ground);
+  color: var(--np-navy-900);
 }
 
 body {
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font-family: inherit;
+  font-size: 13px;
 }
 
 a {
@@ -30,24 +105,257 @@ a {
   text-decoration: none;
 }
 
-h1,
-h2,
-h3,
-p {
+h1, h2, h3, h4, h5, h6, p {
   margin: 0;
 }
 
-button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
+/* Numeric & Technical Formatting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--np-font-mono);
 }
 
-/* Scrollbar styling */
+/* Buttons Primitives */
+.np-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--np-radius);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.np-btn:focus-visible {
+  outline: 2px solid var(--np-blue-600);
+  outline-offset: 2px;
+}
+
+.np-btn-primary {
+  background: var(--np-navy-900);
+  color: #ffffff;
+  border: 1px solid var(--np-navy-900);
+}
+
+.np-btn-primary:hover {
+  background: var(--np-navy-800);
+  border-color: var(--np-navy-800);
+}
+
+.np-btn-secondary {
+  background: #ffffff;
+  color: var(--np-slate-700);
+  border: 1px solid var(--np-slate-300);
+}
+
+.np-btn-secondary:hover {
+  background: var(--np-slate-50);
+  border-color: var(--np-slate-400);
+  color: var(--np-navy-900);
+}
+
+.np-btn-quiet {
+  background: transparent;
+  color: var(--np-slate-600);
+  border: 1px solid transparent;
+}
+
+.np-btn-quiet:hover {
+  background: var(--np-slate-100);
+  color: var(--np-navy-900);
+}
+
+.np-btn-danger {
+  background: var(--np-red-50);
+  color: var(--np-red-800);
+  border: 1px solid var(--np-red-200);
+}
+
+.np-btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* Form Controls */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+select,
+textarea {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--np-slate-300);
+  border-radius: var(--np-radius);
+  background: #ffffff;
+  color: var(--np-navy-900);
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+textarea {
+  height: auto;
+  padding: 8px 10px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--np-blue-600);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+/* Technical Status Badges (Sharp 3px radius, non-pill) */
+.np-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border-radius: var(--np-radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.np-badge--positive,
+.np-badge--approved,
+.np-badge--completed,
+.np-badge--verified {
+  border: 1px solid var(--np-green-200);
+  background: var(--np-green-50);
+  color: var(--np-green-800);
+}
+
+.np-badge--pending,
+.np-badge--submitted,
+.np-badge--review {
+  border: 1px solid var(--np-amber-200);
+  background: var(--np-amber-50);
+  color: var(--np-amber-800);
+}
+
+.np-badge--negative,
+.np-badge--rejected,
+.np-badge--inactive,
+.np-badge--cancelled {
+  border: 1px solid var(--np-red-200);
+  background: var(--np-red-50);
+  color: var(--np-red-800);
+}
+
+.np-badge--active,
+.np-badge--assigned,
+.np-badge--open {
+  border: 1px solid #bae6fd;
+  background: var(--np-blue-50);
+  color: #0369a1;
+}
+
+.np-badge--neutral {
+  border: 1px solid var(--np-slate-300);
+  background: var(--np-slate-100);
+  color: var(--np-slate-600);
+}
+
+/* Operational Tables */
+.np-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--np-slate-300);
+  border-radius: var(--np-radius);
+  background: var(--np-surface);
+}
+
+.np-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.np-table th {
+  padding: 8px 12px;
+  background: var(--np-slate-50);
+  border-bottom: 1px solid var(--np-slate-300);
+  color: var(--np-slate-600);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.np-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--np-slate-200);
+  color: var(--np-navy-900);
+  vertical-align: middle;
+}
+
+.np-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.np-table tbody tr:hover {
+  background: var(--np-slate-50);
+}
+
+/* Operational Panels / Sections */
+.np-panel {
+  background: var(--np-surface);
+  border: 1px solid var(--np-slate-300);
+  border-radius: var(--np-radius);
+}
+
+.np-panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--np-slate-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.np-panel-header h2,
+.np-panel-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--np-navy-900);
+}
+
+.np-panel-body {
+  padding: 16px;
+}
+
+/* Empty State Primitives */
+.np-empty-state {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--np-slate-500);
+  font-size: 13px;
+}
+
+.np-empty-state h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--np-slate-700);
+  margin-bottom: 6px;
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -56,7 +364,7 @@ button {
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

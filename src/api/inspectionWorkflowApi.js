@@ -12,6 +12,19 @@ export const getWorkflowTemplates = async (requestId) => (await axiosClient.get(
 export const selectChecklistTemplate = async (requestId, templateId) => (await axiosClient.post(`/inspection-workflows/${requestId}/checklist/template`, { templateId })).data;
 export const saveWorkflowChecklist = async (requestId, values) => (await axiosClient.put(`/inspection-workflows/${requestId}/checklist`, { values })).data;
 export const completeWorkflowChecklist = async (requestId) => (await axiosClient.post(`/inspection-workflows/${requestId}/checklist/complete`)).data;
+export const getDailyReports = async (requestId) => (await axiosClient.get(`/inspection-workflows/${requestId}/daily-reports`)).data;
+export const getDailyReport = async (requestId, dailyReportId) => (await axiosClient.get(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}`)).data;
+export const createDailyReport = async (requestId, payload = {}) => (await axiosClient.post(`/inspection-workflows/${requestId}/daily-reports`, payload)).data;
+export const saveDailyReport = async (requestId, dailyReportId, payload) => (await axiosClient.put(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}`, payload)).data;
+export const generateDailyReportPdf = async (requestId, dailyReportId) => (await axiosClient.post(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}/generate`)).data;
+export const finalizeDailyReport = async (requestId, dailyReportId) => (await axiosClient.post(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}/finalize`)).data;
+export const uploadDailyReportPhoto = async (requestId, dailyReportId, { file, caption = "", inspectionArea = "", relatedActivityId = "" }) => {
+  const signed=(await axiosClient.post(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}/photos/upload-url`,{contentType:file.type,size:file.size})).data.data;
+  const uploaded=await fetch(signed.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type},body:file});
+  if(!uploaded.ok)throw new Error("Daily Report photograph upload failed");
+  return (await axiosClient.post(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}/photos`,{uploadId:signed.uploadId,contentType:file.type,caption,inspectionArea,relatedActivityId})).data;
+};
+export const removeDailyReportPhoto = async (requestId, dailyReportId, photoId) => (await axiosClient.delete(`/inspection-workflows/${requestId}/daily-reports/${dailyReportId}/photos/${photoId}`)).data;
 export const uploadWorkflowEvidence = async (requestId, { fieldKey, file, caption = "" }) => {
   const signed=(await axiosClient.post(`/inspection-workflows/${requestId}/evidence/upload-url`,{fieldKey,contentType:file.type,size:file.size})).data.data;
   const uploaded=await fetch(signed.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type},body:file});

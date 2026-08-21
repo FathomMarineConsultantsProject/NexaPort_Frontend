@@ -265,7 +265,7 @@ export default function Navbar() {
       </div>
 
       <nav className="np-navlinks">
-        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} /> Company Profile</NavLink></> : <>
+        {isCompany ? <NavLink to="/company-profile"><Building2 size={17} /> Company Profile</NavLink> : <>
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>

@@ -1,53 +1,63 @@
+/* ============================================================
+   FLEET MANAGEMENT — NexaPort
+   Vessel inventory and technical particulars register
+============================================================ */
+
 .fleet-page {
-  min-height: calc(100vh - 120px);
-  background: #f8fafc;
-  padding: 38px 40px 48px;
+  min-height: calc(100vh - 110px);
+  background: var(--np-ground, #f1f5f9);
+  padding: 24px clamp(16px, 2.5vw, 40px) 48px;
+  font-family: var(--np-font-sans);
+  color: var(--np-navy-900, #0f172a);
 }
 
 .fleet-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--np-slate-300, #cbd5e1);
+  padding-bottom: 14px;
 }
 
 .fleet-header-content h1 {
-  font-size: 36px;
+  font-size: clamp(20px, 2vw, 26px);
   font-weight: 700;
-  color: #0a1929;
-  margin: 0 0 8px;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 4px;
   line-height: 1.2;
+  letter-spacing: -0.025em;
 }
 
 .fleet-header-content p {
-  font-size: 16px;
-  color: #64748b;
+  font-size: 13px;
+  color: var(--np-slate-600, #475569);
   margin: 0;
 }
 
 .register-vessel-btn {
-  height: 44px;
-  padding: 0 20px;
-  border: none;
-  border-radius: 8px;
-  background: #14b8a6;
-  color: white;
-  font-size: 15px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--np-navy-900, #0f172a);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-navy-900, #0f172a);
+  color: #ffffff;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: background 0.2s;
+  gap: 6px;
+  transition: background 0.15s ease;
 }
 
 .register-vessel-btn:hover {
-  background: #0d9488;
+  background: var(--np-navy-800, #1e293b);
 }
 
 .fleet-search {
   max-width: 400px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
 .search-input-wrapper {
@@ -56,80 +66,81 @@
 
 .search-input-wrapper svg {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--np-slate-400, #94a3b8);
 }
 
 .search-input {
   width: 100%;
-  height: 48px;
-  padding: 0 16px 0 48px;
-  border: 1px solid #d5dfeb;
-  border-radius: 8px;
-  background: white;
-  font-size: 15px;
-  color: #0a1929;
+  height: 38px;
+  padding: 0 12px 0 38px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
+  font-size: 13px;
+  color: var(--np-navy-900, #0f172a);
   outline: none;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
-  transition: border-color 0.2s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-input::placeholder {
-  color: #94a3b8;
+  color: var(--np-slate-400, #94a3b8);
 }
 
 .search-input:focus {
-  border-color: #14b8a6;
+  border-color: var(--np-blue-600, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
 }
 
 .vessel-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 16px;
 }
 
 .vessel-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.05);
-  transition: all 0.2s;
+  background: var(--np-surface, #ffffff);
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  padding: 18px 20px;
+  box-shadow: var(--np-shadow-card, 0 1px 3px rgba(15, 23, 42, 0.08));
+  transition: border-color 0.15s ease;
   cursor: pointer;
 }
 
 .vessel-card:hover {
-  box-shadow: 0 4px 12px rgba(10, 31, 68, 0.08);
-  border-color: #cbd5e1;
+  border-color: var(--np-slate-400, #94a3b8);
 }
 
 .vessel-card-header {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .vessel-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  background: #f1f5f9;
-  color: #475569;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--np-radius-sm, 3px);
+  background: var(--np-slate-100, #f1f5f9);
+  color: var(--np-navy-900, #0f172a);
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  border: 1px solid var(--np-slate-200, #e2e8f0);
 }
 
 .vessel-type-badge {
-  height: 28px;
-  padding: 0 12px;
-  border: 1.5px solid #334155;
-  border-radius: 6px;
-  color: #334155;
-  font-size: 13px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius-sm, 3px);
+  color: var(--np-slate-700, #334155);
+  background: var(--np-slate-50, #f8fafc);
+  font-size: 11px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -137,56 +148,59 @@
 }
 
 .vessel-name {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-  color: #0a1929;
-  margin: 0 0 6px;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 4px;
 }
 
 .vessel-imo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #64748b;
-  font-size: 13px;
+  gap: 6px;
+  color: var(--np-slate-500, #64748b);
+  font-size: 12px;
+  font-family: var(--np-font-mono);
   font-weight: 500;
 }
 
 .vessel-imo svg {
-  color: #94a3b8;
+  color: var(--np-slate-400, #94a3b8);
 }
 
 .vessel-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 24px;
-  margin-top: 20px;
+  gap: 12px 18px;
+  margin-top: 16px;
+  border-top: 1px solid var(--np-slate-100, #f1f5f9);
+  padding-top: 14px;
 }
 
 .vessel-info-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .vessel-info-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--np-slate-500, #64748b);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
 }
 
 .vessel-info-value {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  color: #0a1929;
+  color: var(--np-navy-900, #0f172a);
 }
 
 .vessel-info-value svg {
   display: inline;
   margin-right: 4px;
-  color: #64748b;
+  color: var(--np-slate-500, #64748b);
 }
 
 /* Register Form Modal */
@@ -196,85 +210,81 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.55);
   z-index: 1000;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   overflow-y: auto;
-  padding: 40px 20px;
+  padding: 32px 20px;
 }
 
 .register-modal {
-  background: #f8fafc;
+  background: var(--np-surface, #ffffff);
   width: 100%;
-  max-width: 1400px;
-  border-radius: 12px;
+  max-width: 1200px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius-md, 6px);
   position: relative;
   margin: auto;
-  margin-top: 32px;
+  box-shadow: var(--np-shadow-modal, 0 16px 40px rgba(15, 23, 42, 0.18));
 }
 
 .register-modal-header {
-  background: white;
-  padding: 32px 40px;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--np-surface, #ffffff);
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
 }
 
 .register-modal-title h2 {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0a1929;
-  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--np-navy-900, #0f172a);
+  margin: 0 0 4px;
 }
 
 .register-modal-title p {
-  font-size: 15px;
-  color: #64748b;
+  font-size: 13px;
+  color: var(--np-slate-600, #475569);
   margin: 0;
 }
 
 .cancel-btn {
-  height: 44px;
-  padding: 0 20px;
-  border: none;
-  border-radius: 8px;
-  background: #14b8a6;
-  color: white;
-  font-size: 15px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
+  color: var(--np-navy-900, #0f172a);
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: background 0.2s;
+  gap: 6px;
+  transition: background 0.15s ease;
 }
 
 .cancel-btn:hover {
-  background: #0d9488;
+  background: var(--np-slate-50, #f8fafc);
 }
 
 .register-form-content {
-  padding: 40px;
-  
+  padding: 24px 28px;
 }
 
 .register-vessel-form {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 22px;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.05);
+  background: var(--np-surface, #ffffff);
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .form-field {
@@ -283,128 +293,158 @@
 }
 
 .form-field label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0a1929;
-  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--np-slate-600, #475569);
+  margin-bottom: 5px;
 }
 
 .form-field label .opt {
-  color: #94a3b8;
+  color: var(--np-slate-400, #94a3b8);
   font-weight: 400;
+  text-transform: none;
 }
 
 .form-field input,
 .form-field select {
-  height: 48px;
-  padding: 0 16px;
-  border: 1px solid #d5dfeb;
-  border-radius: 8px;
-  background: white;
-  font-size: 15px;
-  color: #0a1929;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
+  font-size: 13px;
+  color: var(--np-navy-900, #0f172a);
   outline: none;
-  box-shadow: 0 1px 3px rgba(10, 31, 68, 0.06);
   font-family: inherit;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
 .form-field select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 16px center;
+  background-position: right 12px center;
   cursor: pointer;
 }
 
 .form-field input::placeholder {
-  color: #94a3b8;
+  color: var(--np-slate-400, #94a3b8);
 }
 
 .form-field input:focus,
 .form-field select:focus {
-  border-color: #14b8a6;
+  border-color: var(--np-blue-600, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
 }
 
 .submit-vessel-btn {
-  height: 48px;
-  padding: 0 32px;
-  border: none;
-  border-radius: 8px;
-  background: #14b8a6;
-  color: white;
-  font-size: 16px;
+  min-height: 38px;
+  padding: 0 24px;
+  border: 1px solid var(--np-navy-900, #0f172a);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-navy-900, #0f172a);
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s ease;
 }
 
 .submit-vessel-btn:hover {
-  background: #0d9488;
+  background: var(--np-navy-800, #1e293b);
 }
 
 .submit-vessel-btn:disabled {
-  background: #94a3b8;
+  background: var(--np-slate-400, #94a3b8);
+  border-color: var(--np-slate-400, #94a3b8);
   cursor: not-allowed;
 }
 
 .error-alert {
-  padding: 16px;
-  background: #fee2e2;
-  color: #991b1b;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 24px;
+  padding: 10px 14px;
+  background: var(--np-red-50, #fef2f2);
+  color: var(--np-red-800, #991b1b);
+  border: 1px solid var(--np-red-200, #fecaca);
+  border-radius: var(--np-radius, 4px);
+  font-size: 12px;
+  margin-bottom: 18px;
 }
 
 .empty-state {
   text-align: center;
-  padding: 80px 20px;
-  color: #94a3b8;
+  padding: 60px 20px;
+  color: var(--np-slate-500, #64748b);
 }
 
 .empty-state svg {
-  color: #cbd5e1;
-  margin-bottom: 16px;
+  color: var(--np-slate-400, #94a3b8);
+  margin-bottom: 12px;
 }
 
 .empty-state p {
-  font-size: 16px;
+  font-size: 14px;
   margin: 0;
 }
 
 .vessel-admin-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--np-slate-100, #f1f5f9);
 }
 
 .vessel-edit-btn {
-  border: 1px solid #cbd5e1;
-  background: white;
-  color: #0a1929;
-  padding: 8px 14px;
-  border-radius: 8px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  background: var(--np-surface, #ffffff);
+  color: var(--np-navy-900, #0f172a);
+  padding: 4px 10px;
+  border-radius: var(--np-radius-sm, 3px);
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .vessel-delete-btn {
-  border: 1px solid #fecaca;
-  background: white;
-  color: #dc2626;
-  padding: 8px 14px;
-  border-radius: 8px;
+  border: 1px solid var(--np-red-200, #fecaca);
+  background: var(--np-surface, #ffffff);
+  color: var(--np-red-800, #991b1b);
+  padding: 4px 10px;
+  border-radius: var(--np-radius-sm, 3px);
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .vessel-edit-btn:hover {
-  background: #f8fafc;
+  background: var(--np-slate-50, #f8fafc);
 }
 
 .vessel-delete-btn:hover {
-  background: #fef2f2;
+  background: var(--np-red-50, #fef2f2);
+}
+
+@media (max-width: 1100px) {
+  .vessel-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .vessel-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .fleet-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .fleet-page {
+    padding: 20px 14px 36px;
+  }
 }

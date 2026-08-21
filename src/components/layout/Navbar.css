@@ -2,12 +2,12 @@
   position: sticky;
   top: 0;
   z-index: 9999;
-  height: 60px;
-  background: #0a1929;
+  height: 56px;
+  background: var(--np-navy-900);
   display: flex;
   align-items: center;
-  padding: 0 40px;
-  border-bottom: 1px solid #203246;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--np-navy-800);
   box-shadow: none;
 }
 
@@ -16,33 +16,30 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 180px;
+  min-width: 170px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .np-logo {
-  width: 36px;
-  height: 36px;
-  background: #14b8a6;
-  color: white;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  background: var(--np-teal-700);
+  color: #ffffff;
+  border-radius: var(--np-radius);
   display: grid;
   place-items: center;
 }
 
-.np-brand {
-  cursor: pointer;
-}
-
 .np-brand-text {
-  color: white;
+  color: #ffffff;
   font-weight: 700;
-  font-size: 21px;
-  letter-spacing: -0.5px;
+  font-size: 19px;
+  letter-spacing: -0.4px;
 }
 
 .np-brand-text span {
-  color: #14b8a6;
+  color: var(--np-teal-600);
 }
 
 /* ── Nav links ── */
@@ -57,12 +54,12 @@
 
 .np-navlinks > a,
 .np-directories-trigger {
-  color: #94a3b8;
-  font-size: 14px;
+  color: var(--np-slate-400);
+  font-size: 13px;
   font-weight: 500;
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--np-radius);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -70,27 +67,27 @@
   background: transparent;
   font-family: inherit;
   text-decoration: none;
-  transition: color 0.18s, background 0.18s;
+  transition: color 0.15s ease, background 0.15s ease;
   cursor: pointer;
 }
 
 .np-navlinks > a:hover,
 .np-directories-trigger:hover {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .np-navlinks > a.active,
 .np-directories-trigger.active,
 .np-directories-trigger[aria-expanded="true"] {
-  background: #1e293b;
-  color: white;
+  background: var(--np-navy-800);
+  color: #ffffff;
 }
 
 .np-navlinks > a:focus-visible,
 .np-directories-trigger:focus-visible,
 .np-mobile-toggle:focus-visible {
-  outline: 2px solid #5eead4;
+  outline: 2px solid var(--np-blue-600);
   outline-offset: 2px;
 }
 
@@ -99,7 +96,7 @@
 }
 
 .np-directories-trigger svg {
-  transition: transform .16s ease;
+  transition: transform 0.16s ease;
 }
 
 .np-directories-trigger[aria-expanded="true"] svg {
@@ -111,55 +108,56 @@
   top: 44px;
   right: 0;
   width: min(350px, calc(100vw - 24px));
-  padding: 10px;
-  border: 1px solid #d8e1eb;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 14px 34px rgba(6, 20, 38, .2);
+  padding: 8px;
+  border: 1px solid var(--np-slate-300);
+  border-radius: var(--np-radius-md);
+  background: var(--np-surface);
+  box-shadow: var(--np-shadow-dropdown);
   white-space: normal;
   z-index: 220;
 }
 
 .np-directories-popover section + section {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #e7edf3;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--np-slate-200);
 }
 
 .np-directories-popover section > span,
 .np-mobile-directory-links section > span {
   display: block;
-  padding: 6px 10px;
-  color: #718096;
+  padding: 4px 8px;
+  color: var(--np-slate-500);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .08em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .np-directories-popover a {
-  min-height: 38px;
-  padding: 0 10px;
+  min-height: 34px;
+  padding: 0 8px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  border-radius: 6px;
-  color: #33455e;
+  gap: 8px;
+  border-radius: var(--np-radius);
+  color: var(--np-slate-700);
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   text-decoration: none;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .np-directories-popover a:hover,
 .np-directories-popover a:focus-visible {
-  background: #f1f7f7;
-  color: #0f6f67;
+  background: var(--np-slate-100);
+  color: var(--np-navy-900);
   outline: none;
 }
 
 .np-directories-popover a.active {
-  background: #e8f5f2;
-  color: #0b6c63;
+  background: var(--np-teal-50);
+  color: var(--np-teal-700);
 }
 
 .np-mobile-toggle,
@@ -172,8 +170,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 9px;
-  min-width: 190px;
+  gap: 8px;
+  min-width: 170px;
 }
 
 .np-profile-wrap {
@@ -188,15 +186,16 @@
 
 .np-notification-button {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--np-radius);
   background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
+  color: var(--np-slate-200);
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .np-notification-button:hover,
@@ -206,79 +205,86 @@
 
 .np-notification-badge {
   position: absolute;
-  top: -6px;
-  right: -7px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
   display: grid;
   place-items: center;
-  border: 2px solid #0a1929;
-  border-radius: 999px;
-  background: #dc2626;
-  color: white;
+  border: 1.5px solid var(--np-navy-900);
+  border-radius: var(--np-radius-sm);
+  background: var(--np-red-700);
+  color: #ffffff;
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 700;
+  font-family: var(--np-font-mono);
 }
 
 .np-notification-menu {
   position: absolute;
-  top: 46px;
+  top: 44px;
   right: 0;
   width: min(390px, calc(100vw - 28px));
-  border: 1px solid #dbe4ee;
-  border-radius: 10px;
-  background: white;
-  box-shadow: 0 10px 28px rgba(10, 25, 41, 0.18);
+  border: 1px solid var(--np-slate-300);
+  border-radius: var(--np-radius-md);
+  background: var(--np-surface);
+  box-shadow: var(--np-shadow-dropdown);
   overflow: hidden;
   z-index: 210;
 }
 
 .np-notification-menu-head {
-  min-height: 52px;
-  padding: 0 15px;
+  min-height: 46px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e8edf3;
-  color: #071b39;
+  border-bottom: 1px solid var(--np-slate-200);
+  color: var(--np-navy-900);
+}
+
+.np-notification-menu-head h3 {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .np-notification-menu-head button,
 .np-notification-state button {
   border: 0;
   background: none;
-  color: #0f766e;
+  color: var(--np-teal-700);
   font: inherit;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .np-notification-list {
-  max-height: min(520px, calc(100vh - 130px));
+  max-height: min(480px, calc(100vh - 130px));
   overflow-y: auto;
 }
 
 .np-notification-item {
   position: relative;
   width: 100%;
-  padding: 13px 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: 2px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
-  background: white;
-  color: #334155;
+  border-bottom: 1px solid var(--np-slate-200);
+  background: var(--np-surface);
+  color: var(--np-slate-700);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background 0.12s ease;
 }
 
 .np-notification-item.unread {
-  background: #effaf8;
+  background: var(--np-teal-50);
   padding-left: 20px;
 }
 
@@ -286,29 +292,30 @@
   content: "";
   position: absolute;
   left: 8px;
-  top: 19px;
+  top: 16px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #14b8a6;
+  background: var(--np-teal-700);
 }
 
 .np-notification-item:hover,
 .np-notification-item:focus-visible {
-  background: #f1f7f7;
+  background: var(--np-slate-100);
   outline: none;
 }
 
 .np-notification-item strong {
-  color: #10233f;
+  color: var(--np-navy-900);
   font-size: 13px;
+  font-weight: 600;
 }
 
 .np-notification-type {
-  color: #0f766e;
+  color: var(--np-teal-700);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .05em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -316,60 +323,60 @@
 .np-notification-item small,
 .np-notification-item time {
   overflow-wrap: anywhere;
-  color: #66758a;
+  color: var(--np-slate-600);
   font-size: 11px;
 }
 
 .np-notification-item time {
-  margin-top: 4px;
-  color: #8894a5;
+  margin-top: 3px;
+  color: var(--np-slate-400);
 }
 
 .np-notification-state {
   min-height: 120px;
-  padding: 22px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #718096;
-  font-size: 13px;
+  color: var(--np-slate-500);
+  font-size: 12px;
   text-align: center;
 }
 
 .np-notification-state.error {
-  color: #9f3028;
+  color: var(--np-red-800);
 }
 
 .np-avatar-btn {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 0 12px 0 6px;
-  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--np-radius);
+  padding: 0 10px 0 5px;
+  height: 36px;
   cursor: pointer;
-  color: #e2e8f0;
-  font-size: 14px;
+  color: var(--np-slate-200);
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  transition: background 0.18s;
+  transition: background 0.15s ease;
 }
 
 .np-avatar-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .np-avatar-initial {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #14b8a6;
-  color: white;
-  font-size: 13px;
+  background: var(--np-teal-700);
+  color: #ffffff;
+  font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -387,13 +394,13 @@
 /* ── Dropdown menu ── */
 .np-profile-menu {
   position: absolute;
-  top: 46px;
+  top: 44px;
   right: 0;
   width: 240px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgba(10, 25, 41, 0.16);
+  background: var(--np-surface);
+  border: 1px solid var(--np-slate-300);
+  border-radius: var(--np-radius-md);
+  box-shadow: var(--np-shadow-dropdown);
   overflow: hidden;
   z-index: 200;
 }
@@ -401,17 +408,17 @@
 .np-profile-menu-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
 }
 
 .np-profile-menu-avatar {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #14b8a6;
-  color: white;
-  font-size: 16px;
+  background: var(--np-teal-700);
+  color: #ffffff;
+  font-size: 15px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -420,72 +427,73 @@
 }
 
 .np-profile-menu-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: #071b39;
+  color: var(--np-navy-900);
   line-height: 1.3;
 }
 
 .np-profile-menu-email {
-  font-size: 12px;
-  color: #7c8dab;
+  font-size: 11px;
+  color: var(--np-slate-500);
   margin-top: 2px;
 }
 
 .np-profile-menu-divider {
   height: 1px;
-  background: #f1f5f9;
+  background: var(--np-slate-200);
 }
 
 .np-profile-menu-item {
   width: 100%;
-  height: 42px;
-  padding: 0 16px;
+  height: 38px;
+  padding: 0 14px;
   border: none;
   background: transparent;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: var(--np-slate-700);
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s;
+  transition: background 0.12s ease;
 }
 
 .np-profile-menu-item:hover {
-  background: #f8fafc;
+  background: var(--np-slate-100);
+  color: var(--np-navy-900);
 }
 
 .np-profile-menu-item.danger {
-  color: #dc2626;
+  color: var(--np-red-800);
 }
 
 .np-profile-menu-item.danger:hover {
-  background: #fff5f5;
+  background: var(--np-red-50);
 }
 
 @media (max-width: 1240px) {
   .np-navbar { padding: 0 20px; }
   .np-brand { min-width: 150px; }
-  .np-account-actions { min-width: 160px; }
+  .np-account-actions { min-width: 150px; }
   .np-navlinks { gap: 2px; }
   .np-navlinks > a,
-  .np-directories-trigger { padding: 0 9px; font-size: 13px; }
+  .np-directories-trigger { padding: 0 8px; font-size: 12px; }
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
-  .np-brand { min-width: 52px; }
+  .np-brand { min-width: 48px; }
   .np-brand-text,
   .np-avatar-name { display: none; }
-  .np-account-actions { min-width: 104px; }
+  .np-account-actions { min-width: 96px; }
 }
 
 @media (max-width: 900px) {
   .np-navbar {
-    height: 60px;
+    height: 56px;
     padding: 0 16px;
   }
 
@@ -497,32 +505,32 @@
   .np-navlinks { display: none; }
 
   .np-mobile-toggle {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     margin-right: 8px;
     display: grid;
     place-items: center;
-    border: 1px solid rgba(255,255,255,.11);
-    border-radius: 8px;
-    background: rgba(255,255,255,.06);
-    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--np-radius);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--np-slate-200);
     cursor: pointer;
   }
 
   .np-account-actions {
     min-width: 0;
-    gap: 7px;
+    gap: 6px;
   }
 
   .np-avatar-name { display: none; }
 
   .np-mobile-nav {
     position: absolute;
-    top: 60px;
+    top: 56px;
     left: 0;
     right: 0;
     width: 100%;
-    max-height: calc(100vh - 60px);
+    max-height: calc(100vh - 56px);
     padding: 10px 14px 18px;
     display: grid;
     align-content: start;
@@ -530,27 +538,27 @@
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
-    border-top: 1px solid rgba(255,255,255,.09);
-    background: #0a1929;
-    box-shadow: 0 16px 28px rgba(2,12,24,.28);
+    border-top: 1px solid var(--np-navy-800);
+    background: var(--np-navy-900);
+    box-shadow: var(--np-shadow-modal);
   }
 
   .np-mobile-nav > a,
   .np-mobile-directories > button {
     width: 100%;
-    min-height: 46px;
+    min-height: 42px;
     padding: 0 12px;
     display: flex;
     align-items: center;
     gap: 10px;
     box-sizing: border-box;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--np-radius);
     background: transparent;
-    color: #b8c5d4;
+    color: var(--np-slate-300);
     font: inherit;
-    font-size: 14px;
-    font-weight: 650;
+    font-size: 13px;
+    font-weight: 600;
     text-align: left;
     text-decoration: none;
   }
@@ -561,8 +569,8 @@
   .np-mobile-directories > button:hover,
   .np-mobile-directories > button:focus-visible,
   .np-mobile-directories > button.active {
-    background: #172a3e;
-    color: #fff;
+    background: var(--np-navy-800);
+    color: #ffffff;
     outline: none;
   }
 
@@ -571,30 +579,30 @@
     cursor: pointer;
   }
 
-  .np-mobile-directories > button svg { transition: transform .16s ease; }
+  .np-mobile-directories > button svg { transition: transform 0.16s ease; }
   .np-mobile-directories > button svg.expanded { transform: rotate(180deg); }
 
   .np-mobile-directory-links {
-    margin: 2px 0 8px 18px;
-    padding: 7px;
-    border-left: 1px solid #31455a;
+    margin: 2px 0 8px 16px;
+    padding: 6px;
+    border-left: 1px solid var(--np-navy-700);
   }
 
-  .np-mobile-directory-links section + section { margin-top: 8px; }
+  .np-mobile-directory-links section + section { margin-top: 6px; }
 
   .np-mobile-directory-links section > span {
-    padding-left: 9px;
-    color: #8292a6;
+    padding-left: 8px;
+    color: var(--np-slate-400);
   }
 
   .np-mobile-directory-links a {
-    min-height: 44px;
-    padding: 0 9px;
+    min-height: 38px;
+    padding: 0 8px;
     display: flex;
     align-items: center;
-    gap: 9px;
-    border-radius: 6px;
-    color: #aebdcd;
+    gap: 8px;
+    border-radius: var(--np-radius);
+    color: var(--np-slate-300);
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
@@ -603,14 +611,14 @@
   .np-mobile-directory-links a:hover,
   .np-mobile-directory-links a:focus-visible,
   .np-mobile-directory-links a.active {
-    background: #172a3e;
-    color: #fff;
+    background: var(--np-navy-800);
+    color: #ffffff;
     outline: none;
   }
 }
 
 @media (max-width: 460px) {
   .np-brand-text { display: none; }
-  .np-notification-menu { position: fixed; top: 66px; right: 10px; left: 10px; width: auto; }
-  .np-profile-menu { position: fixed; top: 66px; right: 10px; width: min(240px, calc(100vw - 20px)); }
+  .np-notification-menu { position: fixed; top: 60px; right: 8px; left: 8px; width: auto; }
+  .np-profile-menu { position: fixed; top: 60px; right: 8px; width: min(240px, calc(100vw - 16px)); }
 }

@@ -53,8 +53,7 @@ function GuestOnly({ children }) {
 
 function CompanyBoundary({ children }) {
   const location = useLocation();
-  const allowedPaths = ["/dashboard", "/company-profile", "/profile"];
-  if (isMaritimeCompany() && !allowedPaths.some((p) => location.pathname.startsWith(p))) {
+  if (isMaritimeCompany() && location.pathname !== "/company-profile" && !["/dashboard", "/profile"].some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;

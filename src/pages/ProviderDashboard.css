@@ -8,20 +8,23 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  border: 1px solid #9aa9b5;
-  background: #fff;
-  color: var(--dash-ink, #102a43);
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--np-slate-300, #cbd5e1);
+  border-radius: var(--np-radius, 4px);
+  background: var(--np-surface, #ffffff);
+  color: var(--np-navy-900, #0f172a);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .pd-header-action:hover {
-  border-color: var(--dash-teal, #087f78);
-  color: var(--dash-teal, #087f78);
+  border-color: var(--np-slate-400, #94a3b8);
+  background: var(--np-slate-50, #f8fafc);
+  color: var(--np-navy-900, #0f172a);
 }
 
 /* Directory status bar */
@@ -29,25 +32,26 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 1540px;
+  max-width: var(--dash-content, 1440px);
   margin: 0 auto 16px;
   padding: 10px 16px;
-  background: var(--dash-surface, #fff);
-  border: 1px solid var(--dash-line, #d9e1e8);
-  border-left: 3px solid var(--dash-teal, #087f78);
+  background: var(--dash-surface, #ffffff);
+  border: 1px solid var(--dash-line, #cbd5e1);
+  border-left: 3px solid var(--np-teal-700, #0f766e);
+  border-radius: var(--np-radius, 4px);
   font-size: 12px;
 }
 
 .pd-status-label {
-  color: var(--dash-muted, #62758a);
+  color: var(--dash-muted, #64748b);
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.075em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .pd-rejection-reason {
-  color: var(--dash-red, #a43a3a);
+  color: var(--np-red-800, #991b1b);
   font-size: 12px;
   margin-left: 8px;
 }
@@ -63,11 +67,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  border-bottom: 1px solid var(--dash-line, #d9e1e8);
-  color: #324b60;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--dash-line, #cbd5e1);
+  color: var(--np-navy-900, #0f172a);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .pd-missing-list li:last-child {
@@ -75,13 +79,13 @@
 }
 
 .pd-missing-list li > svg {
-  color: var(--dash-amber, #b16a10);
+  color: var(--np-amber-700, #b45309);
   flex-shrink: 0;
 }
 
 /* Company Overview */
 .pd-overview {
-  padding: 18px;
+  padding: 16px 18px;
 }
 
 .pd-overview-grid {
@@ -93,7 +97,7 @@
 
 .pd-overview-grid > div {
   padding: 8px 0;
-  border-bottom: 1px solid #eef2f5;
+  border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
 }
 
 .pd-overview-grid > div:nth-last-child(-n+2) {
@@ -101,7 +105,7 @@
 }
 
 .pd-overview-grid dt {
-  color: var(--dash-muted, #62758a);
+  color: var(--dash-muted, #64748b);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -110,7 +114,7 @@
 }
 
 .pd-overview-grid dd {
-  color: var(--dash-ink, #102a43);
+  color: var(--dash-ink, #0f172a);
   font-size: 13px;
   margin: 0;
   overflow-wrap: anywhere;
@@ -120,7 +124,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--dash-teal, #087f78);
+  color: var(--np-blue-600, #0284c7);
   text-decoration: none;
   font-weight: 600;
 }
@@ -134,7 +138,7 @@
 @media (max-width: 720px) {
   .pd-header-action {
     font-size: 11px;
-    padding: 6px 10px;
+    padding: 0 10px;
   }
 
   .pd-status-bar {
@@ -148,7 +152,7 @@
   }
 
   .pd-overview-grid > div:nth-last-child(-n+2) {
-    border-bottom: 1px solid #eef2f5;
+    border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
   }
 
   .pd-overview-grid > div:last-child {
