@@ -22,6 +22,7 @@ import {
   rejectServiceRequest,
   updateServiceRequest,
 } from "../api/serviceRequestApi";
+import { approveProposal, rejectProposal } from "../api/commercialProposalApi";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
 import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
@@ -99,6 +100,12 @@ export default function ServiceRequestDetails() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
+  // Client proposal decision state
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [decidingProposal, setDecidingProposal] = useState(false);
+
   // Budget adjustment state
   const [budgetAdj, setBudgetAdj] = useState({
     mode: "none",
@@ -144,8 +151,7 @@ export default function ServiceRequestDetails() {
   }, [id]);
 
   useEffect(() => {
-    const loadId = window.setTimeout(loadPage, 0);
-    return () => window.clearTimeout(loadId);
+    loadPage();
   }, [loadPage]);
 
   const formatDate = (date) => {
@@ -174,13 +180,56 @@ export default function ServiceRequestDetails() {
   };
 
   const money = (value) => {
-    if (value == null) return "Not provided";
-    return Number(value || 0).toLocaleString();
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "0";
+    return num.toLocaleString();
   };
 
   const moneyOrNull = (value) => {
     if (value == null) return null;
     return `$${Number(value).toLocaleString()}`;
+  };
+
+  /* ────── Client Proposal decision handlers ────── */
+
+  const handleApproveProposal = async () => {
+    const proposalId = request?.proposal?.id || request?.activeProposalId;
+    if (!proposalId) return;
+    setDecidingProposal(true);
+    try {
+      await approveProposal(id, { proposalId });
+      setToast("Commercial proposal approved successfully! Consultant assignment confirmed.");
+      setShowApproveModal(false);
+      loadPage();
+      setTimeout(() => setToast(""), 4000);
+    } catch (error) {
+      console.error("Failed to approve proposal:", error);
+      setToast(error.response?.data?.message || "Failed to approve proposal.");
+      setTimeout(() => setToast(""), 4000);
+    } finally {
+      setDecidingProposal(false);
+    }
+  };
+
+  const handleDeclineProposal = async (e) => {
+    e?.preventDefault();
+    const proposalId = request?.proposal?.id || request?.activeProposalId;
+    if (!proposalId || !declineReason.trim()) return;
+    setDecidingProposal(true);
+    try {
+      await rejectProposal(id, { proposalId, rejectionReason: declineReason.trim() });
+      setToast("Proposal declined. Admin has been notified.");
+      setShowDeclineModal(false);
+      setDeclineReason("");
+      loadPage();
+      setTimeout(() => setToast(""), 4000);
+    } catch (error) {
+      console.error("Failed to decline proposal:", error);
+      setToast(error.response?.data?.message || "Failed to decline proposal.");
+      setTimeout(() => setToast(""), 4000);
+    } finally {
+      setDecidingProposal(false);
+    }
   };
 
   /* ────── Quote handlers ────── */
@@ -189,7 +238,6 @@ export default function ServiceRequestDetails() {
     e.preventDefault();
 
     try {
-
       await createQuotation({
         serviceRequestId: Number(id),
         totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
@@ -797,10 +845,73 @@ export default function ServiceRequestDetails() {
             )}
           </div>
 
-          {isClient() && !acceptedQuote && (
+          {isClient() && request?.proposal?.status === "sent" && (
+            <div className="details-card proposal-decision-card" style={{ border: "2px solid #149d94", borderRadius: 8, padding: 20, marginBottom: 20, background: "#f0fdfa" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#0d766e" }}>
+                    Commercial Proposal Available (Revision #{request.proposal.revisionNumber || 1})
+                  </span>
+                  <h3 style={{ margin: "4px 0 8px 0", color: "#111827", fontSize: 18 }}>
+                    Proposed Consultant: {request.proposal.expertName || "Certified Maritime Surveyor"}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: 14, color: "#4b5563" }}>
+                    {request.proposal.expertLocation && <span>Based in {request.proposal.expertLocation} · </span>}
+                    {request.proposal.expertRating ? <span>★ {request.proposal.expertRating} / 5 · </span> : null}
+                    <span>Estimated Attendance: {request.proposal.estimatedAttendanceDays || 1} day(s)</span>
+                  </p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>Total Authorized Fee</span>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: "#0f766e" }}>
+                    ${money(request.proposal.finalTotalUsd || request.proposal.clientTotalUsd)} USD
+                  </div>
+                </div>
+              </div>
+
+              {request.proposal.clientNotes && (
+                <div style={{ marginTop: 14, padding: "10px 14px", background: "white", borderRadius: 6, border: "1px solid #ccfbf1" }}>
+                  <strong style={{ fontSize: 13, color: "#374151" }}>Commercial Notes &amp; Scope:</strong>
+                  <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#4b5563" }}>{request.proposal.clientNotes}</p>
+                </div>
+              )}
+
+              <div style={{ marginTop: 18, display: "flex", gap: 12, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  style={{ borderColor: "#ef4444", color: "#dc2626" }}
+                  onClick={() => setShowDeclineModal(true)}
+                >
+                  <XCircle size={16} style={{ marginRight: 6 }} />
+                  Decline Proposal
+                </button>
+                <button
+                  type="button"
+                  className="primary-btn"
+                  style={{ background: "#0d9488" }}
+                  onClick={() => setShowApproveModal(true)}
+                >
+                  <CheckCircle2 size={16} style={{ marginRight: 6 }} />
+                  Approve Quotation &amp; Authorize Inspection
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isClient() && request?.proposal?.status === "rejected" && (
+            <div className="workflow-alert error" style={{ marginBottom: 20 }}>
+              <strong>You declined Commercial Proposal (Revision #{request.proposal.revisionNumber || 1})</strong>
+              <p style={{ margin: "4px 0 0 0", fontSize: 13 }}>
+                Feedback submitted: "{request.proposal.clientRejectionReason}". NexaPort Admin is preparing revised terms.
+              </p>
+            </div>
+          )}
+
+          {isClient() && !acceptedQuote && (!request?.proposal || !["sent", "rejected"].includes(request.proposal.status)) && (
             <div className="details-card">
               <p>
-                Quotations are under admin review. Accepted consultant details will be visible once a quote is approved.
+                Quotations are under admin review. Once commercial terms are finalized, your proposal will appear here for review and authorization.
               </p>
             </div>
           )}
@@ -1052,41 +1163,24 @@ export default function ServiceRequestDetails() {
                   </>
                 )}
 
-                {canAcceptQuote && quote.status !== "accepted" && (
-                  <div className="admin-accept-box">
-                    <label>
-                      Admin Markup / Platform Fee (USD)
-                      <input
-                        type="number"
-                        value={markupByQuote[quote.id] || ""}
-                        onChange={(e) =>
-                          setMarkupByQuote((prev) => ({
-                            ...prev,
-                            [quote.id]: e.target.value,
-                          }))
-                        }
-                        placeholder="500"
-                      />
-                    </label>
-
+                {isSuperAdmin() && quote.status !== "accepted" && (
+                  <div className="admin-accept-box" style={{ background: "#f8fafc", padding: 14, borderRadius: 6, border: "1px solid #e2e8f0", marginTop: 12 }}>
+                    <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
+                      Commercial proposals and surveyor assignments are managed in the Inspection Workflow.
+                    </p>
+                    {/* Preservation reference for quotation breakdown:
                     <div className="client-total-preview">
-                      Client Final Price: $
-                      {money(
-                        Number(getExpertQuote(quote)) +
-                        Number(quote.travelCost || 0) +
-                        Number(quote.accommodationCost || 0) +
-                        Number(quote.reportFee || 0) +
-                        Number(quote.urgencySurcharge || 0) +
-                        Number(markupByQuote[quote.id] || 0)
-                      )}
+                      getExpertQuote(quote) quote.travelCost quote.accommodationCost quote.reportFee quote.urgencySurcharge markupByQuote[quote.id]
                     </div>
-
                     <button
-                      className="accept-btn"
-                      onClick={() => handleAcceptQuotation(quote.id)}
+                      className="accept-btn" */}
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      style={{ marginTop: 8 }}
+                      onClick={() => navigate(`/admin/inspection-workflows/${id}`)}
                     >
-                      <CheckCircle2 size={16} />
-                      Accept Quote
+                      Manage in Inspection Workflow &rarr;
                     </button>
                   </div>
                 )}
@@ -1152,7 +1246,7 @@ export default function ServiceRequestDetails() {
         </aside>
       </section>
 
-      {/* ────── Reject Modal ────── */}
+      {/* ────── Reject Request Modal ────── */}
       {showRejectModal && (
         <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
           if (e.target === e.currentTarget && !rejecting) setShowRejectModal(false);
@@ -1176,6 +1270,92 @@ export default function ServiceRequestDetails() {
                 onClick={handleReject}
               >
                 {rejecting ? "Rejecting..." : "Reject Request"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ────── Client Approve Proposal Modal ────── */}
+      {showApproveModal && request?.proposal && (
+        <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
+          if (e.target === e.currentTarget && !decidingProposal) setShowApproveModal(false);
+        }}>
+          <section className="delete-request-dialog" role="dialog" aria-modal="true" style={{ maxWidth: 520 }}>
+            <h2>Authorize Inspection &amp; Confirm Terms</h2>
+            <p style={{ marginTop: 6, color: "#4b5563", fontSize: 14 }}>
+              You are authorizing the inspection for <strong>{request.vessel?.name || "the vessel"}</strong> with the proposed consultant.
+            </p>
+
+            <div style={{ background: "#f0fdfa", padding: 14, borderRadius: 6, border: "1px solid #ccfbf1", margin: "14px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: "#475569" }}>Designated Consultant:</span>
+                <strong style={{ fontSize: 13, color: "#0f766e" }}>{request.proposal.expertName || "Certified Surveyor"}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: "#475569" }}>Estimated Attendance:</span>
+                <strong style={{ fontSize: 13, color: "#334155" }}>{request.proposal.estimatedAttendanceDays || 1} day(s)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid #99f6e4" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#0f766e" }}>Total Commercial Fee:</span>
+                <strong style={{ fontSize: 16, color: "#0f766e" }}>${money(request.proposal.finalTotalUsd || request.proposal.clientTotalUsd)} USD</strong>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 12, color: "#6b7280", margin: "10px 0 18px 0" }}>
+              By confirming, you agree to the commercial fee and authorize NexaPort to lock consultant assignment and initiate inspection preparation.
+            </p>
+
+            <div className="delete-request-actions">
+              <button type="button" onClick={() => setShowApproveModal(false)} disabled={decidingProposal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-btn"
+                style={{ background: "#0d9488" }}
+                disabled={decidingProposal}
+                onClick={handleApproveProposal}
+              >
+                {decidingProposal ? "Authorizing..." : "Confirm Authorization & Acceptance"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ────── Client Decline Proposal Modal ────── */}
+      {showDeclineModal && request?.proposal && (
+        <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
+          if (e.target === e.currentTarget && !decidingProposal) setShowDeclineModal(false);
+        }}>
+          <section className="delete-request-dialog" role="dialog" aria-modal="true" style={{ maxWidth: 520 }}>
+            <h2>Decline Commercial Proposal</h2>
+            <p style={{ marginTop: 6, color: "#4b5563", fontSize: 14 }}>
+              Please provide feedback on why this proposal is declined (e.g. price adjustment, scheduling conflict, or scope modification). NexaPort will review your feedback and submit revised terms.
+            </p>
+
+            <textarea
+              className="reject-reason-input"
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              placeholder="e.g., Requested attendance dates overlap with vessel drydocking; please adjust schedule or rate."
+              maxLength={1000}
+              rows={4}
+              style={{ marginTop: 12 }}
+            />
+
+            <div className="delete-request-actions">
+              <button type="button" onClick={() => { setShowDeclineModal(false); setDeclineReason(""); }} disabled={decidingProposal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="confirm-delete-request"
+                disabled={decidingProposal || !declineReason.trim()}
+                onClick={handleDeclineProposal}
+              >
+                {decidingProposal ? "Submitting..." : "Decline Proposal"}
               </button>
             </div>
           </section>

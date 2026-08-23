@@ -42,6 +42,8 @@ export default function AdminDashboard() {
         <DashboardKpiCard label="New requests" value={kpis.pending_moderation_requests} priority={kpis.pending_moderation_requests > 0} />
         <DashboardKpiCard label="Awaiting quotations" value={kpis.requests_awaiting_quotes} />
         <DashboardKpiCard label="Quotes for review" value={kpis.quotes_awaiting_review} priority={kpis.quotes_awaiting_review > 0} />
+        <DashboardKpiCard label="Proposals awaiting client" value={kpis.proposals_awaiting_client} priority={kpis.proposals_awaiting_client > 0} />
+        <DashboardKpiCard label="Proposals declined" value={kpis.proposals_client_rejected} priority={kpis.proposals_client_rejected > 0} />
         <DashboardKpiCard label="Active jobs" value={kpis.active_jobs} />
         <DashboardKpiCard label="Completed jobs" value={kpis.completed_jobs} />
         <DashboardKpiCard label="Accepted commission value" value={formatMoney(kpis.commission_value_usd)} note="Accepted markup; not settlement" />
@@ -52,7 +54,7 @@ export default function AdminDashboard() {
           <div><span>Commercial</span><strong>{workflow.awaiting_quotation_review || 0}</strong><small>Awaiting quotation review</small></div>
           <div><span>Inspection</span><strong>{workflow.inspection_in_progress || 0}</strong><small>Preparation, checklist or report</small></div>
           <div><span>Reporting</span><strong>{(workflow.report_awaiting_review||0)+(workflow.report_awaiting_confirmation||0)+(workflow.inspection_awaiting_completion||0)}</strong><small>Review, confirmation or completion</small></div>
-          <div><span>Finance</span><strong>{(workflow.invoice_approval_required||0)+(workflow.payment_pending||0)}</strong><small>Approval or payment action</small></div>
+          <div><span>Finance</span><strong>{(workflow.invoice_approval_required||0)+(workflow.invoice_correction_required||0)+(workflow.payment_pending||0)}</strong><small>Correction, approval or payment action</small></div>
         </div>
         <DashboardTable columns={[
           { key: "request", label: "Request", render: requestTitle },

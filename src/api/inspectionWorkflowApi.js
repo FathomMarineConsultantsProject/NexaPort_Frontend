@@ -6,6 +6,9 @@ export const initializeInspectionWorkflow = async (requestId) => (await axiosCli
 export const updateInspectionWorkflowStage = async (requestId, payload) => (await axiosClient.patch(`/inspection-workflows/${requestId}/stage`, payload)).data;
 export const selectWorkflowQuotation = async (requestId, payload) => (await axiosClient.patch(`/inspection-workflows/${requestId}/quotation`, payload)).data;
 export const confirmWorkflowQuotation = async (requestId, payload) => (await axiosClient.post(`/inspection-workflows/${requestId}/confirm`, payload)).data;
+export const saveWorkflowProposalDraft = async (requestId, payload) => (await axiosClient.post(`/inspection-workflows/${requestId}/proposal/draft`, payload)).data;
+export const sendWorkflowProposal = async (requestId, payload) => (await axiosClient.post(`/inspection-workflows/${requestId}/proposal/send`, payload)).data;
+export const supersedeWorkflowProposal = async (requestId, payload) => (await axiosClient.post(`/inspection-workflows/${requestId}/proposal/supersede`, payload)).data;
 export const saveWorkflowPreparation = async (requestId, data) => (await axiosClient.put(`/inspection-workflows/${requestId}/preparation`, { data })).data;
 export const completeWorkflowPreparation = async (requestId, data) => (await axiosClient.post(`/inspection-workflows/${requestId}/preparation/complete`, { data })).data;
 export const getWorkflowTemplates = async (requestId) => (await axiosClient.get(`/inspection-workflows/${requestId}/templates`)).data;
@@ -47,4 +50,5 @@ export const submitWorkflowInvoice = async (requestId, { file, ...data }) => {
   return (await axiosClient.post(`/inspection-workflows/${requestId}/invoice`,{...data,objectKey})).data;
 };
 export const approveWorkflowInvoice = async (requestId) => (await axiosClient.post(`/inspection-workflows/${requestId}/invoice/approve`)).data;
+export const rejectWorkflowInvoice = async (requestId, data) => (await axiosClient.post(`/inspection-workflows/${requestId}/invoice/reject`,data)).data;
 export const payWorkflowInvoice = async (requestId, data) => (await axiosClient.post(`/inspection-workflows/${requestId}/invoice/pay`,data)).data;

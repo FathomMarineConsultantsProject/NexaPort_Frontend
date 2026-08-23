@@ -77,15 +77,16 @@ test("final workflow stages implement deliberate completion, invoice approval, a
   assert.match(completed,/Mark Inspection Completed/);
   assert.match(completed,/service request is completed/i);
   for(const action of ["Submit Invoice","Approve Invoice","Record Payment","Workflow Complete"])assert.match(invoice,new RegExp(action));
+  for(const state of ["Reject Invoice","Resubmit Invoice","correction required","Submitted by","Approved by","Paid by"])assert.match(invoice,new RegExp(state,"i"));
   for(const field of ["Accepted quotation","Invoice amount","Variance","Paid amount"])assert.match(invoice,new RegExp(field));
   for(const stage of ["inspection_completed","invoice_submitted","invoice_approved","invoice_paid"])assert.match(workspace,new RegExp(stage));
-  for(const route of ["/complete","/invoice/approve","/invoice/pay"])assert.match(api,new RegExp(route));
+  for(const route of ["/complete","/invoice/reject","/invoice/approve","/invoice/pay"])assert.match(api,new RegExp(route));
 });
 
 test("workflow queue exposes all thirteen stages and keeps completed history accessible",async()=>{
   const [queue,stages,rail]=await Promise.all([source("../src/pages/InspectionWorkflowQueue.jsx"),source("../src/components/workflow/workflowStages.js"),source("../src/components/workflow/WorkflowStageRail.jsx")]);
   assert.match(queue,/WORKFLOW_STAGES\.map/);
-  assert.match(queue,/invoice_paid[\s\S]*Complete/);
+  assert.match(queue,/invoice_paid[\s\S]*Paid/);
   assert.match(stages,/invoice_paid/);
   assert.match(rail,/terminal.*invoice_paid/);
 });
