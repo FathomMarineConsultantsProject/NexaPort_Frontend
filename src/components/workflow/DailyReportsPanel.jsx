@@ -6,11 +6,59 @@ import {
 } from "../../api/inspectionWorkflowApi";
 
 const empty = "Not provided";
-const dateLabel = (value) => value ? new Date(`${String(value).slice(0,10)}T00:00:00Z`).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}) : empty;
+const toIsoDate = (value) => {
+  if (!value) return "";
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const str = String(value).trim();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) {
+    const y = parsed.getUTCFullYear();
+    const m = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return "";
+};
+const dateLabel = (value) => {
+  const iso = toIsoDate(value);
+  if (!iso) return empty;
+  const [y, m, d] = iso.split("-").map(Number);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${String(d).padStart(2,"0")} ${months[m-1]} ${y}`;
+};
 const stamp = (value) => value ? new Date(value).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"}) : empty;
-const nextDate = (value) => { const date=new Date(`${String(value).slice(0,10)}T00:00:00Z`);date.setUTCDate(date.getUTCDate()+1);return date.toISOString().slice(0,10); };
-const today = () => { const date=new Date();date.setMinutes(date.getMinutes()-date.getTimezoneOffset());return date.toISOString().slice(0,10); };
-const formFrom = (report) => ({ reportDate:report.reportDate, locationDetail:report.data.locationDetail||"", inspectionScope:report.data.inspectionScope||"", boardingTime:report.data.boardingTime||"", boardingDate:report.data.boardingDate||report.reportDate, boardingLocation:report.data.boardingLocation||"", activities:Array.isArray(report.data.activities)?report.data.activities:[], closingStatement:report.data.closingStatement||"" });
+const nextDate = (value) => {
+  const iso = toIsoDate(value);
+  if (!iso) return today();
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + 1));
+  return date.toISOString().slice(0, 10);
+};
+const today = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+const formFrom = (report) => ({
+  reportDate: toIsoDate(report?.reportDate),
+  locationDetail: report?.data?.locationDetail || "",
+  inspectionScope: report?.data?.inspectionScope || "",
+  boardingTime: report?.data?.boardingTime || "",
+  boardingDate: toIsoDate(report?.data?.boardingDate || report?.reportDate),
+  boardingLocation: report?.data?.boardingLocation || "",
+  activities: Array.isArray(report?.data?.activities) ? report.data.activities : [],
+  closingStatement: report?.data?.closingStatement || "",
+});
 
 function DocumentPreview({report}){
   const p=report.prefills||{},d=report.data||{},activities=d.activities?.filter((item)=>item.description.trim())||[];
@@ -51,7 +99,7 @@ function DailyReportEditor({requestId,report,onClose,onChanged}){
 
 export default function DailyReportsPanel({requestId}){
   const [register,setRegister]=useState(null),[selected,setSelected]=useState(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[creating,setCreating]=useState(false),[reportDate,setReportDate]=useState(today());
-  const load=useCallback(async()=>{setLoading(true);setError("");try{const response=await getDailyReports(requestId);setRegister(response.data);const rows=response.data.reports;if(rows.length)setReportDate(nextDate(rows.at(-1).reportDate));else if(response.data.prefills?.request?.requiredBy)setReportDate(String(response.data.prefills.request.requiredBy).slice(0,10));}catch(e){setError(e.response?.data?.message||"Unable to load Daily Reports.");}finally{setLoading(false);}},[requestId]);
+  const load=useCallback(async()=>{setLoading(true);setError("");try{const response=await getDailyReports(requestId);setRegister(response.data);const rows=response.data.reports;if(rows.length)setReportDate(nextDate(rows.at(-1).reportDate));else if(response.data.prefills?.request?.requiredBy)setReportDate(toIsoDate(response.data.prefills.request.requiredBy)||today());}catch(e){setError(e.response?.data?.message||"Unable to load Daily Reports.");}finally{setLoading(false);}},[requestId]);
   useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer);},[load]);
   const open=async(id)=>{setBusy(true);setError("");try{const response=await getDailyReport(requestId,id);setSelected(response.data);}catch(e){setError(e.response?.data?.message||"Unable to open the Daily Report.");}finally{setBusy(false);}};
   const create=async()=>{setBusy(true);setError("");try{const response=await createDailyReport(requestId,{reportDate});setSelected(response.data);setCreating(false);await load();}catch(e){setError(e.response?.data?.message||"Unable to create the Daily Report.");}finally{setBusy(false);}};

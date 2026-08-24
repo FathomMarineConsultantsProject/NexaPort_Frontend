@@ -36,3 +36,14 @@ test("Daily Report UI has dense document styling and mobile no-overflow transfor
   assert.match(css, /@media \(max-width: 430px\)[\s\S]*\.daily-document-photos/);
   assert.doesNotMatch(css.slice(css.indexOf("Daily inspection records")), /linear-gradient|radial-gradient|border-radius:\s*999/i);
 });
+
+test("Daily Report date normalization guarantees YYYY-MM-DD input value and deterministic display", async () => {
+  const component = await source("../src/components/workflow/DailyReportsPanel.jsx");
+  assert.match(component, /toIsoDate/);
+  assert.match(component, /reportDate:\s*toIsoDate\(report\?\.reportDate\)/);
+  assert.match(component, /boardingDate:\s*toIsoDate\(report\?\.data\?\.boardingDate\s*\|\|\s*report\?\.reportDate\)/);
+  assert.match(component, /const dateLabel = \(value\) =>/);
+  assert.match(component, /months\[m-1\]/);
+  assert.doesNotMatch(component, /String\(value\)\.slice\(0,10\)}T00:00:00Z/);
+});
+
