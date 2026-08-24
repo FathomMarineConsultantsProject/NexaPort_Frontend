@@ -22,6 +22,7 @@ import FlagDirectory from "./pages/FlagDirectory";
 import FlagInspectorProfile from "./pages/FlagInspectorProfile";
 import AccreditedInspectorDirectory from "./pages/AccreditedInspectorDirectory";
 import AppointedSurveyorDirectory from "./pages/AppointedSurveyorDirectory";
+import InspectorSearch from "./pages/InspectorSearch";
 import MaritimeDirectoryPage from "./pages/MaritimeDirectoryPage";
 import MaritimeDirectoryDetails from "./pages/MaritimeDirectoryDetails";
 import MaritimeDirectoryForm from "./components/directories/MaritimeDirectoryForm";
@@ -108,6 +109,7 @@ const Shell = () => (
         <Route path="/accredited-inspectors" element={<AdminOnly><AccreditedInspectorDirectory /></AdminOnly>} />
         <Route path="/accredited-inspectors/:schemeSlug" element={<AdminOnly><AccreditedInspectorDirectory /></AdminOnly>} />
         <Route path="/appointed-surveyors" element={<AdminOnly><AppointedSurveyorDirectory /></AdminOnly>} />
+        <Route path="/inspector-search" element={<AdminOnly><InspectorSearch /></AdminOnly>} />
         {NEW_ADMIN_DIRECTORIES.map((directory) => (
           <Route key={directory.path} path={directory.path} element={<AdminOnly><MaritimeDirectoryPage directory={directory} /></AdminOnly>} />
         ))}

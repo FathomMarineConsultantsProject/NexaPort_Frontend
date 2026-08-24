@@ -103,7 +103,7 @@ export default function RegisterClient({
   const selectDocument = async (category, file) => {
     if (!file) return;
     setMessage("");
-    setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Preparing upload", progress: 0 } }));
+    setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Uploading...", progress: 0 } }));
     try {
       const metadata = { category, contentType: file.type, size: file.size, originalFilename: file.name };
       const presigned = adminMode
@@ -115,7 +115,7 @@ export default function RegisterClient({
           metadata,
           registrationDraftToken
         );
-      await uploadToPresignedUrl({ uploadUrl: presigned.uploadUrl, file, onProgress: (progress) => setDocuments((current) => ({ ...current, [category]: { ...current[category], status: "Uploading", progress } })) });
+      await uploadToPresignedUrl({ uploadUrl: presigned.uploadUrl, file, onProgress: (progress) => setDocuments((current) => ({ ...current, [category]: { ...current[category], status: "Uploading...", progress } })) });
       const confirmed = adminMode
         ? await confirmAdminRegistrationDocument(
           { ...metadata, key: presigned.key },
@@ -125,10 +125,10 @@ export default function RegisterClient({
           { ...metadata, key: presigned.key },
           registrationDraftToken
         );
-      setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Ready", progress: 100, token: confirmed.documentToken } }));
+      setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Uploaded", progress: 100, token: confirmed.documentToken } }));
     } catch (error) {
       setDocuments((current) => ({ ...current, [category]: { name: file.name, status: "Upload failed", progress: 0 } }));
-      setMessage(error.response?.data?.message || "Document upload failed.");
+      setMessage(error.response?.data?.message || error.message || "Unable to upload document.");
     }
   };
 
@@ -173,7 +173,7 @@ export default function RegisterClient({
       navigate("/client-verification-status", {
         replace: true,
       });
-    } catch (requestError) { setMessage(requestError.response?.data?.message || "Registration submission failed."); }
+    } catch (requestError) { setMessage(requestError.response?.data?.message || requestError.message || "Unable to create registration."); }
     finally { setBusy(false); }
   };
 
@@ -262,5 +262,5 @@ function ServicesStep({ selected, toggle }) {
 }
 
 function VerificationStep({ form, documents, selectDocument, removeDocument }) {
-  return <><div className="client-section-title"><h2>Verification</h2><p>Upload any optional private company documents and review the submission.</p></div><div className="document-upload-list">{DOCUMENTS.map(([category, label]) => { const document = documents[category]; return <div className="document-upload" key={category}><div><strong>{label}</strong><small>Optional. PDF, PNG, JPEG or WEBP. Maximum 5 MB.</small>{document && <p>{document.name} · {document.status}{document.progress ? ` (${document.progress}%)` : ""}</p>}</div><div>{document && <button type="button" className="remove-document" onClick={() => removeDocument(category)}>Remove</button>}<label className="upload-button"><Upload size={16} /> {document ? "Replace file" : "Select file"}<input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(e) => selectDocument(category, e.target.files?.[0])} /></label></div></div>; })}</div><div className="review-summary"><h3>Review summary</h3><dl><div><dt>User</dt><dd>{form.full_name}<br />{form.email}</dd></div><div><dt>Company</dt><dd>{form.company.legal_name}<br />{form.company.country}</dd></div><div><dt>Fleet</dt><dd>{form.declared_vessel_count} declared · {form.provideFleetLater ? "Details after approval" : `${form.vessels.filter((v) => v.vessel_name).length} key vessels entered`}</dd></div><div><dt>Services</dt><dd>{form.services.join(", ")}</dd></div><div><dt>Documents</dt><dd>{Object.values(documents).filter((document) => document.token).length} of 3 ready</dd></div></dl></div></>;
+  return <><div className="client-section-title"><h2>Verification</h2><p>Upload any optional private company documents and review the submission.</p></div><div className="document-upload-list">{DOCUMENTS.map(([category, label]) => { const document = documents[category]; const failed = document?.status === "Upload failed"; return <div className="document-upload" key={category}><div><strong>{label}</strong><small>Optional. PDF, PNG, JPEG or WEBP. Maximum 5 MB.</small>{document && <p>{document.name} · {document.status}{document.progress ? ` (${document.progress}%)` : ""}</p>}</div><div>{document && <button type="button" className="remove-document" onClick={() => removeDocument(category)}>Remove</button>}<label className="upload-button"><Upload size={16} /> {failed ? "Retry" : document ? "Replace file" : "Select file"}<input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={(e) => selectDocument(category, e.target.files?.[0])} /></label></div></div>; })}</div><div className="review-summary"><h3>Review summary</h3><dl><div><dt>User</dt><dd>{form.full_name}<br />{form.email}</dd></div><div><dt>Company</dt><dd>{form.company.legal_name}<br />{form.company.country}</dd></div><div><dt>Fleet</dt><dd>{form.declared_vessel_count} declared · {form.provideFleetLater ? "Details after approval" : `${form.vessels.filter((v) => v.vessel_name).length} key vessels entered`}</dd></div><div><dt>Services</dt><dd>{form.services.join(", ")}</dd></div><div><dt>Documents</dt><dd>{Object.values(documents).filter((document) => document.token).length} optional document(s) uploaded</dd></div></dl></div></>;
 }

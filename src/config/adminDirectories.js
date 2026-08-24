@@ -7,12 +7,14 @@ import {
   PackageOpen,
   Ship,
   Wrench,
+  Search,
 } from "lucide-react";
 
 export const ADMIN_DIRECTORY_GROUPS = [
   {
     label: "Compliance & Inspection",
     items: [
+      { label: "Inspector Search", path: "/inspector-search", icon: Search },
       { label: "Flag Inspectors", path: "/flag", icon: Flag },
       { label: "Accredited Inspectors", path: "/accredited-inspectors", icon: BadgeCheck },
       { label: "Appointed Surveyors", path: "/appointed-surveyors", icon: ClipboardCheck },

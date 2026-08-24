@@ -12,11 +12,21 @@ export const presignRegistrationDocument = async (payload, registrationDraftToke
 export const confirmRegistrationDocument = async (payload, registrationDraftToken) =>
   (await axiosClient.post("/auth/client-registration/documents/confirm", payload, { headers: registrationHeaders(registrationDraftToken) })).data;
 
-export const uploadToPresignedUrl = async ({ uploadUrl, file, onProgress }) =>
-  axios.put(uploadUrl, file, {
-    headers: { "Content-Type": file.type },
-    onUploadProgress: (event) => onProgress?.(event.total ? Math.round((event.loaded / event.total) * 100) : 0),
-  });
+export const uploadToPresignedUrl = async ({ uploadUrl, file, onProgress }) => {
+  try {
+    return await axios.put(uploadUrl, file, {
+      headers: { "Content-Type": file.type },
+      onUploadProgress: (event) => onProgress?.(event.total ? Math.round((event.loaded / event.total) * 100) : 0),
+    });
+  } catch (error) {
+    const status = Number(error.response?.status);
+    const uploadError = new Error(status
+      ? `Private document upload failed (HTTP ${status}). Please retry or remove the optional document.`
+      : "Private document storage could not be reached. Please retry or remove the optional document.");
+    uploadError.cause = error;
+    throw uploadError;
+  }
+};
 
 export const submitClientRegistration = async (payload, registrationDraftToken) =>
   (await axiosClient.post("/auth/register-client", payload, { headers: registrationHeaders(registrationDraftToken) })).data;
