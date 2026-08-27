@@ -82,7 +82,7 @@ export default function PortSearchMultiSelect({ value, onChange, placeholder }) 
 
     debounceRef.current = window.setTimeout(async () => {
       try {
-        const response = await getPorts({ search });
+        const response = await getPorts({ search, compact: true, limit: 50 });
         if (requestIdRef.current !== requestId) return;
 
         setResults(response.ports || []);

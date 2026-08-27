@@ -1,9 +1,13 @@
 import axiosClient from "./axiosClient";
 
-export const getPorts = async ({ search = "", region = "" } = {}) => {
-  const params = {};
+export const getPorts = async ({ search = "", country = "", region = "", harbourType = "", page, limit, compact = false } = {}) => {
+  const params = { compact };
   if (search) params.search = search;
+  if (country) params.country = country;
   if (region && region !== "All Regions") params.region = region;
+  if (harbourType) params.harbourType = harbourType;
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
 
   const res = await axiosClient.get("/ports", { params });
   return res.data;

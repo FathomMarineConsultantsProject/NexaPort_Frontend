@@ -18,6 +18,7 @@ import ExpertProfile from "./pages/ExpertProfile";
 import RegisterExpert from "./pages/RegisterExpert";
 import FleetManagement from "./pages/FleetManagement";
 import PortDirectory from "./pages/PortDirectory";
+import PortDetailPage from "./pages/PortDetailPage";
 import FlagDirectory from "./pages/FlagDirectory";
 import FlagInspectorProfile from "./pages/FlagInspectorProfile";
 import AccreditedInspectorDirectory from "./pages/AccreditedInspectorDirectory";
@@ -128,6 +129,7 @@ const Shell = () => (
         <Route path="/admin/client-registrations/:clientProfileId" element={<AdminOnly><AdminClientRegistrationDetails /></AdminOnly>} />
         <Route path="/admin/clients/:userId" element={<AdminOnly><AdminClientDetails /></AdminOnly>} />
         <Route path="/ports" element={<PortDirectory />} />
+        <Route path="/ports/:id" element={<PortDetailPage />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/company-profile" element={<CompanyProfile />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
