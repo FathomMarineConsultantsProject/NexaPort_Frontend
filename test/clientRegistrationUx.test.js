@@ -27,3 +27,9 @@ test("upload and registration surface safe specific errors instead of generic fa
   assert.match(api, /Private document upload failed \(HTTP/);
   assert.match(api, /storage could not be reached/);
 });
+
+test("registration draft identity does not replace an existing account login token", async () => {
+  const api = await source("../src/api/clientRegistrationApi.js");
+  assert.match(api, /"x-registration-draft-token": registrationDraftToken/);
+  assert.doesNotMatch(api, /Authorization: `Bearer \$\{registrationDraftToken\}`/);
+});

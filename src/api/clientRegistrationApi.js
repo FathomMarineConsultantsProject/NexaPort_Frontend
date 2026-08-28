@@ -1,7 +1,9 @@
 import axios from "axios";
 import axiosClient from "./axiosClient";
 
-const registrationHeaders = (registrationDraftToken) => ({ Authorization: `Bearer ${registrationDraftToken}` });
+// Keep Authorization available for the signed-in account token. The draft is a
+// separate capability and must not hide the identity of an existing user.
+const registrationHeaders = (registrationDraftToken) => ({ "x-registration-draft-token": registrationDraftToken });
 
 export const createClientRegistrationDraft = async (email) =>
   (await axiosClient.post("/auth/client-registration/draft", { email })).data;
