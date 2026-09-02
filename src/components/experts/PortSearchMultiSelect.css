@@ -103,6 +103,10 @@
   outline: none;
 }
 
+.port-select-custom {
+  background: var(--np-teal-50, #f0fdfa);
+}
+
 .port-select-name {
   color: var(--np-navy-900, #0f172a);
   font-size: 13px;

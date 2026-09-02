@@ -1,11 +1,24 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getPorts } from "../../api/portApi";
+import {
+  canAddCustomPort,
+  createCustomPort,
+  normalizePortName,
+  portIdentity,
+} from "../../utils/portSelection";
 import "./PortSearchMultiSelect.css";
 
 const DEBOUNCE_MS = 300;
+const MIN_SEARCH_LENGTH = 2;
 
-export default function PortSearchMultiSelect({ value, onChange, placeholder }) {
+export default function PortSearchMultiSelect({
+  value,
+  onChange,
+  placeholder,
+  searchPorts = getPorts,
+  allowCustom = false,
+}) {
   const [inputValue, setInputValue] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,33 +30,30 @@ export default function PortSearchMultiSelect({ value, onChange, placeholder }) 
 
   useEffect(() => {
     const handlePointerDown = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false);
     };
-
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        window.clearTimeout(debounceRef.current);
-      }
-    };
+  useEffect(() => () => {
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
   }, []);
 
-  const selectedIds = new Set(value.map((port) => String(port.id)));
-  const selectableResults = results.filter((port) => !selectedIds.has(String(port.id)));
+  const selectedNames = new Set(value.map(portIdentity));
+  const selectableResults = results.filter((port) => !selectedNames.has(portIdentity(port)));
+  const customName = normalizePortName(inputValue);
+  const hasExactDirectoryMatch = results.some(
+    (port) => portIdentity(port) === customName.toLowerCase()
+  );
+  const canAddCustom =
+    allowCustom && !hasExactDirectoryMatch && canAddCustomPort(customName, value);
 
   const selectPort = (port) => {
-    if (selectedIds.has(String(port.id))) return;
-
+    const identity = portIdentity(port);
+    if (!identity || selectedNames.has(identity)) return;
     requestIdRef.current += 1;
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
-    }
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
     onChange([...value, port]);
     setInputValue("");
     setResults([]);
@@ -52,22 +62,22 @@ export default function PortSearchMultiSelect({ value, onChange, placeholder }) 
     setIsOpen(false);
   };
 
-  const removePort = (portId) => {
-    onChange(value.filter((port) => String(port.id) !== String(portId)));
+  const removePort = (portToRemove) => {
+    onChange(value.filter((port) => portIdentity(port) !== portIdentity(portToRemove)));
+  };
+
+  const addCustomPort = () => {
+    if (canAddCustom) selectPort(createCustomPort(customName));
   };
 
   const handleInputChange = (event) => {
     const nextValue = event.target.value;
     const search = nextValue.trim();
-
     setInputValue(nextValue);
     setIsOpen(true);
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
 
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
-    }
-
-    if (!search) {
+    if (!search || search.length < MIN_SEARCH_LENGTH) {
       requestIdRef.current += 1;
       setResults([]);
       setLoading(false);
@@ -82,31 +92,25 @@ export default function PortSearchMultiSelect({ value, onChange, placeholder }) 
 
     debounceRef.current = window.setTimeout(async () => {
       try {
-        const response = await getPorts({ search, compact: true, limit: 50 });
+        const response = await searchPorts({ search, compact: true, limit: 50 });
         if (requestIdRef.current !== requestId) return;
-
         setResults(response.ports || []);
       } catch (err) {
         if (requestIdRef.current !== requestId) return;
-
         console.error("Failed to search ports:", err);
         setResults([]);
-        setError("Unable to search ports");
+        setError("Unable to search ports. You can try again or add the port manually.");
       } finally {
-        if (requestIdRef.current === requestId) {
-          setLoading(false);
-        }
+        if (requestIdRef.current === requestId) setLoading(false);
       }
     }, DEBOUNCE_MS);
   };
 
   const handleKeyDown = (event) => {
     if (event.key !== "Enter") return;
-
     event.preventDefault();
-    if (selectableResults.length > 0) {
-      selectPort(selectableResults[0]);
-    }
+    if (selectableResults.length > 0) selectPort(selectableResults[0]);
+    else if (canAddCustom) addCustomPort();
   };
 
   const showDropdown = isOpen && inputValue.trim().length > 0;
@@ -116,11 +120,11 @@ export default function PortSearchMultiSelect({ value, onChange, placeholder }) 
       {value.length > 0 && (
         <div className="port-select-tags">
           {value.map((port) => (
-            <span key={port.id} className="port-select-tag">
-              {port.port_name}
+            <span key={port.id ?? portIdentity(port)} className="port-select-tag">
+              {port.port_name}{port.unlocode ? ` — ${port.unlocode}` : ""}
               <button
                 type="button"
-                onClick={() => removePort(port.id)}
+                onClick={() => removePort(port)}
                 className="port-select-remove"
                 aria-label={`Remove ${port.port_name}`}
               >
@@ -145,26 +149,42 @@ export default function PortSearchMultiSelect({ value, onChange, placeholder }) 
 
         {showDropdown && (
           <div className="port-select-menu">
-            {loading ? (
+            {inputValue.trim().length < MIN_SEARCH_LENGTH ? (
+              <div className="port-select-state">Type at least 2 characters to search.</div>
+            ) : loading ? (
               <div className="port-select-state">Searching ports...</div>
-            ) : error ? (
-              <div className="port-select-state error">{error}</div>
-            ) : selectableResults.length === 0 ? (
-              <div className="port-select-state">No ports found</div>
             ) : (
-              selectableResults.map((port) => (
-                <button
-                  key={port.id}
-                  type="button"
-                  className="port-select-option"
-                  onClick={() => selectPort(port)}
-                >
-                  <span className="port-select-name">{port.port_name}</span>
-                  <span className="port-select-meta">
-                    {[port.country, port.region].filter(Boolean).join(" · ")}
-                  </span>
-                </button>
-              ))
+              <>
+                {error && <div className="port-select-state error">{error}</div>}
+                {!error && selectableResults.length === 0 && !canAddCustom && (
+                  <div className="port-select-state">No ports found</div>
+                )}
+                {selectableResults.map((port) => (
+                  <button
+                    key={port.id}
+                    type="button"
+                    className="port-select-option"
+                    onClick={() => selectPort(port)}
+                  >
+                    <span className="port-select-name">
+                      {port.port_name}{port.unlocode ? ` — ${port.unlocode}` : ""}
+                    </span>
+                    <span className="port-select-meta">
+                      {[port.country, port.region].filter(Boolean).join(" · ")}
+                    </span>
+                  </button>
+                ))}
+                {canAddCustom && (
+                  <button
+                    type="button"
+                    className="port-select-option port-select-custom"
+                    onClick={addCustomPort}
+                  >
+                    <span className="port-select-name">Add “{customName}”</span>
+                    <span className="port-select-meta">Add as custom port coverage</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}

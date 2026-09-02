@@ -20,6 +20,7 @@ import {
   registerConsultant,
 } from "../api/consultantRegistrationApi";
 import { getFlags } from "../api/flagApi";
+import { searchPublicPorts } from "../api/publicPortApi";
 import "./RegisterConsultant.css";
 
 const steps = [
@@ -1059,6 +1060,8 @@ export default function RegisterConsultant() {
                 value={formData.ports}
                 onChange={(ports) => setField("ports", ports)}
                 placeholder="Search existing ports..."
+                searchPorts={searchPublicPorts}
+                allowCustom
               />
               {errors.ports && <p className="consultant-error">{errors.ports}</p>}
             </div>
