@@ -2,7 +2,8 @@ import { Anchor, Award, Ship } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createExpert } from "../api/expertApi";
-import { getSpecialties, getVesselTypes, getCertifications } from "../api/masterApi";
+import { getSpecialties, getVesselTypes, getCertifications, getServiceRequestDropdowns } from "../api/masterApi";
+import InspectionCapabilityMultiSelect from "../components/requests/InspectionCapabilityMultiSelect";
 import MultiSelect from "../components/experts/MultiSelect";
 import PortSearchMultiSelect from "../components/experts/PortSearchMultiSelect";
 import TagInput from "../components/experts/TagInput";
@@ -27,11 +28,13 @@ export default function RegisterExpert() {
     const [selectedSpecialties, setSelectedSpecialties] = useState([]);
     const [selectedCertifications, setSelectedCertifications] = useState([]);
     const [selectedVesselTypes, setSelectedVesselTypes] = useState([]);
+    const [selectedInspectionMethodIds, setSelectedInspectionMethodIds] = useState([]);
 
     // Master data
     const [specialties, setSpecialties] = useState([]);
     const [certifications, setCertifications] = useState([]);
     const [vesselTypes, setVesselTypes] = useState([]);
+    const [inspectionVerticals, setInspectionVerticals] = useState([]);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -43,15 +46,17 @@ export default function RegisterExpert() {
 
     const loadMasterData = async () => {
         try {
-            const [specialtiesRes, certificationsRes, vesselTypesRes] = await Promise.all([
+            const [specialtiesRes, certificationsRes, vesselTypesRes, catalogueRes] = await Promise.all([
                 getSpecialties(),
                 getCertifications(),
                 getVesselTypes(),
+                getServiceRequestDropdowns(),
             ]);
 
             setSpecialties(specialtiesRes.data || []);
             setCertifications(certificationsRes.data || []);
             setVesselTypes(vesselTypesRes.data || []);
+            setInspectionVerticals(catalogueRes.data?.inspectionVerticals || []);
         } catch (err) {
             console.error("Failed to load master data:", err);
         }
@@ -105,6 +110,7 @@ export default function RegisterExpert() {
                 specialty_ids: selectedSpecialties.map((item) => item.id),
                 certification_ids: selectedCertifications.map((item) => item.id),
                 vessel_type_ids: selectedVesselTypes.map((item) => item.id),
+                inspectionMethodIds: selectedInspectionMethodIds,
 
                 ports: ports.map((port) => port.port_name),
                 languages,
@@ -278,6 +284,15 @@ export default function RegisterExpert() {
                                 placeholder="Select specialty..."
                                 multiSelect
                                 labelKey="name"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Inspection Capabilities</label>
+                            <InspectionCapabilityMultiSelect
+                                verticals={inspectionVerticals}
+                                selectedIds={selectedInspectionMethodIds}
+                                onChange={setSelectedInspectionMethodIds}
                             />
                         </div>
 

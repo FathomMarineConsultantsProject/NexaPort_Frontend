@@ -20,8 +20,10 @@ import {
   getExpertReviews,
   updateExpertReview,
 } from "../api/reviewApi";
+import { getServiceRequestDropdowns } from "../api/masterApi";
 import ConsultantAvatar from "../components/experts/ConsultantAvatar";
 import PortSearchMultiSelect from "../components/experts/PortSearchMultiSelect";
+import InspectionCapabilityMultiSelect from "../components/requests/InspectionCapabilityMultiSelect";
 import { updateConsultantPhotoCache } from "../utils/consultantPhotoCache";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 
@@ -55,6 +57,8 @@ const toPortObjects = (ports = []) =>
     id: port.id || port.port_name || port.name || index,
     port_name: port.port_name || port.name || port,
   }));
+const capabilityMethodIds = (verticals = []) =>
+  verticals.flatMap((vertical) => (vertical.methods || []).map((method) => Number(method.id))).filter(Boolean);
 const initialRegistrationEdit = {
   phone_number: "",
   mobile_number: "",
@@ -117,6 +121,7 @@ export default function ExpertProfile() {
   const [cvError, setCvError] = useState("");
   const [profileSaveMessage, setProfileSaveMessage] = useState("");
   const [profileSaveError, setProfileSaveError] = useState("");
+  const [inspectionVerticals, setInspectionVerticals] = useState([]);
   const photoInputRef = useRef(null);
   const cvInputRef = useRef(null);
 
@@ -143,6 +148,7 @@ export default function ExpertProfile() {
     user_phone: "",
     user_is_active: true,
     flag_services: [],
+    inspectionMethodIds: [],
   });
 
   const [reviewForm, setReviewForm] = useState({
@@ -182,6 +188,7 @@ export default function ExpertProfile() {
         user_phone: expertRes.data.user_phone || "",
         user_is_active: expertRes.data.user_is_active !== false,
         flag_services: expertRes.data.flag_services || [],
+        inspectionMethodIds: capabilityMethodIds(expertRes.data.inspection_capabilities || []),
       });
       setReviews(reviewRes.data || []);
     } catch (error) {
@@ -194,6 +201,12 @@ export default function ExpertProfile() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPage();
   }, [loadPage]);
+
+  useEffect(() => {
+    getServiceRequestDropdowns()
+      .then((response) => setInspectionVerticals(response.data?.inspectionVerticals || []))
+      .catch((error) => console.error("Failed to load inspection catalogue:", error));
+  }, []);
 
   useEffect(
     () => () => {
@@ -326,6 +339,7 @@ export default function ExpertProfile() {
         vessel_types: textToList(editForm.vessel_types),
         ports: editForm.ports.map((port) => port.port_name),
         languages: textToList(editForm.languages),
+        inspectionMethodIds: editForm.inspectionMethodIds,
         registration_details: editForm.registration_details,
       };
       if (photoS3Key) profilePayload.photo_s3_key = photoS3Key;
@@ -690,6 +704,8 @@ export default function ExpertProfile() {
 
   const registrationEdit = editForm.registration_details;
   const hasSpecialties = arrayValue(expert.specialties).length > 0;
+  const hasInspectionCapabilities = arrayValue(expert.inspection_capabilities)
+    .some((vertical) => arrayValue(vertical.methods).length > 0);
   const hasCertifications = arrayValue(expert.certifications).length > 0;
   const hasVesselExpertise = arrayValue(expert.vessel_types).length > 0;
   const hasPorts = arrayValue(expert.ports).length > 0;
@@ -974,6 +990,15 @@ export default function ExpertProfile() {
 
           {editTab === "expertise" && (
             <div className="profile-edit-grid">
+              <label className="profile-edit-wide">
+                Inspection Capabilities
+                <InspectionCapabilityMultiSelect
+                  verticals={inspectionVerticals}
+                  selectedIds={editForm.inspectionMethodIds}
+                  onChange={(ids) => setEditForm({ ...editForm, inspectionMethodIds: ids })}
+                />
+              </label>
+
               <label>
                 Specialties
                 <input
@@ -1215,6 +1240,28 @@ export default function ExpertProfile() {
               </div>
             </article>
           )}
+
+          <article className="profile-card">
+            <h3>Inspection Capabilities</h3>
+            {hasInspectionCapabilities ? (
+              <div className="inspection-capability-groups">
+                {expert.inspection_capabilities.map((vertical) => (
+                  <section key={vertical.id || vertical.slug}>
+                    <h4>{vertical.name}</h4>
+                    <div className="tag-list">
+                      {vertical.methods.map((method) => (
+                        <span key={method.id || method.slug} className="soft-tag">
+                          {method.name}
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <p className="profile-muted">Not provided</p>
+            )}
+          </article>
 
           {hasCertifications && (
             <article className="profile-card">

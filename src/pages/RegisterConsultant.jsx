@@ -20,7 +20,9 @@ import {
   registerConsultant,
 } from "../api/consultantRegistrationApi";
 import { getFlags } from "../api/flagApi";
+import { getServiceRequestDropdowns } from "../api/masterApi";
 import { searchPublicPorts } from "../api/publicPortApi";
+import InspectionCapabilityMultiSelect from "../components/requests/InspectionCapabilityMultiSelect";
 import "./RegisterConsultant.css";
 
 const steps = [
@@ -71,6 +73,7 @@ const steps = [
     title: "Maritime expertise",
     fields: [
       "ports",
+      "inspectionMethodIds",
       "providesFlagStateInspectionServices",
       "flagServices",
       "vesselTypes",
@@ -147,6 +150,7 @@ export default function RegisterConsultant() {
   const [flagSearch, setFlagSearch] = useState("");
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [flagsError, setFlagsError] = useState("");
+  const [inspectionVerticals, setInspectionVerticals] = useState([]);
 
   const showCompanyName = useMemo(
     () =>
@@ -181,6 +185,12 @@ export default function RegisterConsultant() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    getServiceRequestDropdowns()
+      .then((response) => setInspectionVerticals(response.data?.inspectionVerticals || []))
+      .catch((error) => console.error("Failed to load inspection catalogue:", error));
   }, []);
 
   const setField = (name, value) => {
@@ -601,6 +611,7 @@ export default function RegisterConsultant() {
       username: formData.username.trim(),
       email: formData.email.trim(),
       references: normalizeReferences(formData.references),
+      inspectionMethodIds: formData.inspectionMethodIds,
       ports: formData.ports.map((port) => port.port_name),
       providesFlagStateInspectionServices: Boolean(
         formData.providesFlagStateInspectionServices
@@ -1054,6 +1065,15 @@ export default function RegisterConsultant() {
       case "maritime":
         return (
           <>
+            <div className="consultant-field consultant-wide">
+              <label>Inspection Capabilities</label>
+              <InspectionCapabilityMultiSelect
+                verticals={inspectionVerticals}
+                selectedIds={formData.inspectionMethodIds}
+                onChange={(ids) => setField("inspectionMethodIds", ids)}
+                error={errors.inspectionMethodIds}
+              />
+            </div>
             <div className="consultant-field consultant-wide">
               <label>Ports Covered</label>
               <PortSearchMultiSelect

@@ -712,6 +712,10 @@
   gap: 14px;
 }
 
+.profile-edit-wide {
+  grid-column: 1 / -1;
+}
+
 .profile-edit-card label {
   display: flex;
   flex-direction: column;

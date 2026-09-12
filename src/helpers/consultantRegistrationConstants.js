@@ -154,6 +154,7 @@ export const initialConsultantRegistration = {
   qualifiedYYYY: "",
   experienceByQualification: {},
   vesselTypes: [],
+  inspectionMethodIds: [],
   ports: [],
   providesFlagStateInspectionServices: false,
   flagServices: [],
