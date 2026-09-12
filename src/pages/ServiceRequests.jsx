@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { approveServiceRequest, deleteServiceRequest, getServiceRequests, updateServiceRequest } from "../api/serviceRequestApi";
+import { getServiceRequestDropdowns } from "../api/masterApi";
+import InspectionCatalogueSelect from "../components/requests/InspectionCatalogueSelect";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
 
@@ -45,6 +47,7 @@ export default function ServiceRequests() {
   const [editSaving, setEditSaving] = useState(false);
   const [editFieldErrors, setEditFieldErrors] = useState({});
   const [deleteError, setDeleteError] = useState("");
+  const [inspectionVerticals, setInspectionVerticals] = useState([]);
   const deleteCancelRef = useRef(null);
   const deleteDialogRef = useRef(null);
   const deletionInFlightRef = useRef(false);
@@ -100,6 +103,12 @@ export default function ServiceRequests() {
   }, [loadRequests]);
 
   useEffect(() => {
+    getServiceRequestDropdowns()
+      .then((response) => setInspectionVerticals(response.data?.inspectionVerticals || []))
+      .catch((error) => console.error("Failed to load inspection catalogue:", error));
+  }, []);
+
+  useEffect(() => {
     if (!requestToDelete) return undefined;
     const previouslyFocused = document.activeElement;
     const focusId = window.setTimeout(() => deleteCancelRef.current?.focus(), 0);
@@ -133,7 +142,11 @@ export default function ServiceRequests() {
     };
   }, [requestToDelete]);
 
-  const serviceTypes = ["All Types", "Survey", "Inspection", "Audit", "Other"];
+  const serviceTypes = [
+    "All Types",
+    ...inspectionVerticals.flatMap((vertical) => (vertical.methods || []).map((method) => method.name)),
+    "Other",
+  ];
   const statuses = ["All Statuses", "open", "assigned", "in progress", "completed"];
   const urgencies = ["Any Urgency", "routine", "urgent", "emergency"];
 
@@ -226,6 +239,8 @@ export default function ServiceRequests() {
     id: request.id,
     moderationStatus: request.moderationStatus,
     serviceType: request.serviceType || "",
+    inspectionMethodId: request.inspectionMethodId || "",
+    inspectionVertical: request.inspectionVertical || request.serviceCategory || "",
     serviceCategory: request.serviceCategory || "",
     serviceTypeOther: request.serviceTypeOther || "",
     title: request.title || "",
@@ -252,8 +267,8 @@ export default function ServiceRequests() {
       if (!serviceTypeOther) nextErrors.serviceTypeOther = "Please describe the required service.";
       else if (serviceTypeOther.length < 3) nextErrors.serviceTypeOther = "Service details must be at least 3 characters.";
       else if (serviceTypeOther.length > 500) nextErrors.serviceTypeOther = "Service details must be 500 characters or fewer.";
-    } else if (!editingRequest.serviceCategory.trim()) {
-      nextErrors.serviceCategory = "Select a service category.";
+    } else if (!editingRequest.inspectionMethodId) {
+      nextErrors.inspectionMethodId = "Select an inspection type.";
     }
     if (Object.keys(nextErrors).length) {
       setEditFieldErrors(nextErrors);
@@ -263,6 +278,7 @@ export default function ServiceRequests() {
     try {
       const response = await updateServiceRequest(editingRequest.id, {
         ...editingRequest,
+        inspectionMethodId: editingRequest.serviceType === "Other" ? null : Number(editingRequest.inspectionMethodId),
         serviceCategory: editingRequest.serviceType === "Other" ? "Other" : editingRequest.serviceCategory,
         serviceTypeOther: editingRequest.serviceType === "Other" ? serviceTypeOther : null,
       });
@@ -385,7 +401,7 @@ export default function ServiceRequests() {
                 <div className="request-main">
                   <div className="request-type-badges">
                     <span className="request-type-badge">
-                      {request.serviceType || request.service_type || "-"}
+                      {request.inspectionType || request.serviceType || request.service_type || "-"}
                     </span>
                     <span className={`urgency-badge ${request.urgency || ""}`}>
                       {request.urgency || "-"}
@@ -501,12 +517,42 @@ export default function ServiceRequests() {
       )}
 
       {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>{isClient() && editingRequest.moderationStatus === "rejected" ? "Edit & Resubmit Request" : "Edit Request"}</h2><div className="request-edit-grid">
-        <label>Service type<select value={editingRequest.serviceType} onChange={(event) => {
-          const serviceType = event.target.value;
-          setEditFieldErrors({});
-          setEditingRequest({...editingRequest, serviceType, serviceCategory: serviceType === "Other" ? "Other" : "", serviceTypeOther: ""});
-        }}>{["Audit", "Inspection", "Survey", "Other"].map((type) => <option key={type}>{type}</option>)}</select></label>
-        {editingRequest.serviceType === "Other" ? <label className="wide">Specify Service Required<textarea maxLength={500} placeholder="Describe the survey, inspection, audit or specialist maritime service needed." value={editingRequest.serviceTypeOther} onChange={(event) => { setEditFieldErrors({...editFieldErrors, serviceTypeOther: undefined}); setEditingRequest({...editingRequest,serviceTypeOther:event.target.value}); }}/>{editFieldErrors.serviceTypeOther && <small className="request-edit-error">{editFieldErrors.serviceTypeOther}</small>}</label> : <label>Service category<input value={editingRequest.serviceCategory} onChange={(event) => { setEditFieldErrors({...editFieldErrors, serviceCategory: undefined}); setEditingRequest({...editingRequest,serviceCategory:event.target.value}); }}/>{editFieldErrors.serviceCategory && <small className="request-edit-error">{editFieldErrors.serviceCategory}</small>}</label>}
+        <label className="wide">Inspection type
+          <InspectionCatalogueSelect
+            verticals={inspectionVerticals}
+            selectedMethodId={editingRequest.inspectionMethodId}
+            isOther={editingRequest.serviceType === "Other"}
+            otherValue={editingRequest.serviceTypeOther}
+            error={editFieldErrors.inspectionMethodId}
+            otherError={editFieldErrors.serviceTypeOther}
+            onSelectMethod={(method, vertical) => {
+              setEditFieldErrors({});
+              setEditingRequest({
+                ...editingRequest,
+                inspectionMethodId: method.id,
+                inspectionVertical: vertical.name,
+                serviceType: method.name,
+                serviceCategory: vertical.name,
+                serviceTypeOther: "",
+              });
+            }}
+            onSelectOther={() => {
+              setEditFieldErrors({});
+              setEditingRequest({
+                ...editingRequest,
+                inspectionMethodId: "",
+                inspectionVertical: "Other",
+                serviceType: "Other",
+                serviceCategory: "Other",
+                serviceTypeOther: "",
+              });
+            }}
+            onOtherChange={(value) => {
+              setEditFieldErrors({ ...editFieldErrors, serviceTypeOther: undefined });
+              setEditingRequest({ ...editingRequest, serviceTypeOther: value });
+            }}
+          />
+        </label>
         {[
           ["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["portName","Port"],["country","Country"],["eta","ETA","date"],["locationSummary","Location summary"],["requiredCertification","Required certification"]
         ].map(([field,label,type="text"]) => <label key={field}>{label}<input type={type} value={editingRequest[field] ?? ""} onChange={(event) => setEditingRequest({...editingRequest,[field]:event.target.value})}/></label>)}

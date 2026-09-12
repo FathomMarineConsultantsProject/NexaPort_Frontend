@@ -10,6 +10,8 @@ import {
   uploadToPresignedUrl,
 } from "../api/clientRegistrationApi";
 import "./ClientVerificationStatus.css";
+import { getStoredUser } from "../utils/auth";
+import { hasMultipleRoles } from "../utils/workspaceRoles.js";
 
 const CATEGORY_LABELS = {
   company_registration_certificate: "Company registration certificate",
@@ -93,7 +95,9 @@ export default function ClientVerificationStatus() {
   const rejected = profile.verification_status === "rejected";
   return (
     <main className="verification-page">
-      <header className="verification-top"><div><Anchor size={21} /> NexaPort</div><button onClick={logout}><LogOut size={17} /> Sign Out</button></header>
+      <header className="verification-top"><div><Anchor size={21} /> NexaPort</div>
+        {hasMultipleRoles(getStoredUser()) && <button type="button" onClick={() => navigate("/choose-workspace")}>Switch role</button>}
+        <button onClick={logout}><LogOut size={17} /> Sign Out</button></header>
       <section className="verification-shell">
         <div className={`verification-status-icon ${rejected ? "rejected" : ""}`}>{rejected ? <RefreshCw size={28} /> : <Clock size={28} />}</div>
         <span className={`verification-badge ${rejected ? "rejected" : ""}`}>{rejected ? "Changes required" : "Awaiting verification"}</span>

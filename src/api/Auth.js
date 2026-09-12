@@ -14,3 +14,8 @@ export const getMe = async () => {
   const res = await axiosClient.get("/auth/me");
   return res.data;
 };
+
+export const switchUserRole = async (role_id) => {
+  const res = await axiosClient.post("/auth/switch-role", { role_id });
+  return res.data;
+};

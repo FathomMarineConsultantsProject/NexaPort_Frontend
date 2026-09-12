@@ -33,6 +33,7 @@ import {
 } from "../../utils/consultantPhotoCache";
 import "./Navbar.css";
 import ResetPasswordModal from "../auth/ResetPasswordModal";
+import { hasMultipleRoles, WORKSPACE_LABELS } from "../../utils/workspaceRoles.js";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -458,6 +459,11 @@ export default function Navbar() {
               </div>
 
               <div className="np-profile-menu-divider" />
+
+              {hasMultipleRoles(user) && <button type="button" className="np-profile-menu-item"
+                onClick={() => { setMenuOpen(false); navigate("/choose-workspace"); }}>
+                Switch role · {WORKSPACE_LABELS[roleId]} (current)
+              </button>}
 
               <button
                 className="np-profile-menu-item"

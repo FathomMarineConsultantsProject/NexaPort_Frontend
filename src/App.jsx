@@ -3,6 +3,7 @@ import Footer from "./components/layout/Footer";
 import Navbar from "./components/layout/Navbar";
 import ApprovedClientRoute from "./components/auth/ApprovedClientRoute";
 import Auth from "./pages/Auth";
+import ChooseWorkspace from "./pages/ChooseWorkspace";
 import Landing from "./pages/Landing";
 import RegisterConsultant from "./pages/RegisterConsultant";
 import RegisterClient from "./pages/RegisterClient";
@@ -147,6 +148,7 @@ export default function App() {
       <Route path="/register-client" element={<GuestOnly><RegisterClient /></GuestOnly>} />
       <Route path="/register-maritime-company" element={<GuestOnly><RegisterMaritimeCompany /></GuestOnly>} />
       <Route path="/login" element={<GuestOnly><Auth /></GuestOnly>} />
+      <Route path="/choose-workspace" element={<RequireAuth><ChooseWorkspace /></RequireAuth>} />
       <Route path="/client-verification-status" element={<RequireAuth><ClientVerificationStatus /></RequireAuth>} />
       <Route path="/*" element={<RequireAuth><ApprovedClientRoute><CompanyBoundary><Shell /></CompanyBoundary></ApprovedClientRoute></RequireAuth>} />
     </Routes>

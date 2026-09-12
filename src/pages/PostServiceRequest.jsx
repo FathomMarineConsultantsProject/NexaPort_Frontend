@@ -5,8 +5,7 @@ import { getServiceRequestDropdowns } from "../api/masterApi";
 import { createServiceRequest } from "../api/serviceRequestApi";
 import "./PostServiceRequest.css";
 import CustomSelect from "../components/experts/CustomSelect";
-
-const SERVICE_TYPES = ["Audit", "Inspection", "Survey", "Other"];
+import InspectionCatalogueSelect from "../components/requests/InspectionCatalogueSelect";
 
 export default function PostServiceRequest() {
   const navigate = useNavigate();
@@ -22,10 +21,13 @@ export default function PostServiceRequest() {
     urgencyOptions: [],
     vesselTypes: [],
     flagStates: [],
+    inspectionVerticals: [],
   });
 
   const [formData, setFormData] = useState({
-    serviceType: "Inspection",
+    inspectionMethodId: "",
+    inspectionVertical: "",
+    serviceType: "",
     serviceCategory: "",
     serviceTypeOther: "",
     title: "",
@@ -57,10 +59,6 @@ export default function PostServiceRequest() {
 
           setFormData((prev) => ({
             ...prev,
-            serviceType: SERVICE_TYPES.includes(data.serviceTypes?.[0]?.name)
-              ? data.serviceTypes[0].name
-              : "Inspection",
-            serviceCategory: "",
             urgency: data.urgencyOptions?.[0]?.value || "routine",
           }));
         }
@@ -74,17 +72,6 @@ export default function PostServiceRequest() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "serviceType") {
-      setFormData((prev) => ({
-        ...prev,
-        serviceType: value,
-        serviceCategory: value === "Other" ? "Other" : "",
-        serviceTypeOther: "",
-      }));
-      setFieldErrors((current) => ({ ...current, serviceType: undefined, serviceCategory: undefined, serviceTypeOther: undefined }));
-      return;
-    }
 
     setFormData((prev) => ({
       ...prev,
@@ -105,12 +92,11 @@ export default function PostServiceRequest() {
       if (!otherDetails) nextFieldErrors.serviceTypeOther = "Please describe the required service.";
       else if (otherDetails.length < 3) nextFieldErrors.serviceTypeOther = "Service details must be at least 3 characters.";
       else if (otherDetails.length > 500) nextFieldErrors.serviceTypeOther = "Service details must be 500 characters or fewer.";
-    } else if (!formData.serviceCategory) {
-      nextFieldErrors.serviceCategory = "Select a service category.";
+    } else if (!formData.inspectionMethodId) {
+      nextFieldErrors.inspectionMethodId = "Select an inspection type.";
     }
 
     if (
-      !formData.serviceType ||
       !formData.title ||
       !formData.scopeOfWork ||
       Object.keys(nextFieldErrors).length
@@ -124,6 +110,7 @@ export default function PostServiceRequest() {
 
     try {
       const payload = {
+        inspectionMethodId: formData.serviceType === "Other" ? null : Number(formData.inspectionMethodId),
         serviceType: formData.serviceType,
         serviceCategory: formData.serviceType === "Other" ? "Other" : formData.serviceCategory,
         serviceTypeOther: formData.serviceType === "Other" ? otherDetails : null,
@@ -167,9 +154,6 @@ export default function PostServiceRequest() {
     }
   };
 
-  const categoryOptions =
-    dropdownData.serviceCategories?.[formData.serviceType] || [];
-
   return (
     <main className="psr-page">
       <section className="psr-wrap">
@@ -194,63 +178,44 @@ export default function PostServiceRequest() {
             </div>
 
             <div className="psr-row">
-              <div className="psr-group">
-                <label>Service Type</label>
-                <CustomSelect
-                  width="100%"
-                  value={formData.serviceType}
-                  options={SERVICE_TYPES}
-                  onChange={(value) => {
-                    setFieldErrors((current) => ({ ...current, serviceType: undefined, serviceCategory: undefined, serviceTypeOther: undefined }));
+              <div className="psr-group psr-group-wide">
+                <label>Inspection Type</label>
+                <InspectionCatalogueSelect
+                  verticals={dropdownData.inspectionVerticals || []}
+                  selectedMethodId={formData.inspectionMethodId}
+                  isOther={formData.serviceType === "Other"}
+                  otherValue={formData.serviceTypeOther}
+                  error={fieldErrors.inspectionMethodId}
+                  otherError={fieldErrors.serviceTypeOther}
+                  onSelectMethod={(method, vertical) => {
+                    setFieldErrors((current) => ({ ...current, inspectionMethodId: undefined, serviceTypeOther: undefined }));
                     setFormData((prev) => ({
                       ...prev,
-                      serviceType: value,
-                      serviceCategory: value === "Other" ? "Other" : "",
+                      inspectionMethodId: method.id,
+                      inspectionVertical: vertical.name,
+                      serviceType: method.name,
+                      serviceCategory: vertical.name,
                       serviceTypeOther: "",
                     }));
                   }}
-                />
-                {fieldErrors.serviceType && <small className="psr-field-error">{fieldErrors.serviceType}</small>}
-              </div>
-
-              {formData.serviceType !== "Other" && <div className="psr-group">
-                <label>Service Category</label>
-                <CustomSelect
-                  width="100%"
-                  value={formData.serviceCategory || "Select category..."}
-                  options={[
-                    "Select category...",
-                    ...categoryOptions.map((cat) => cat.name),
-                  ]}
-                  onChange={(value) =>
+                  onSelectOther={() => {
+                    setFieldErrors((current) => ({ ...current, inspectionMethodId: undefined, serviceTypeOther: undefined }));
                     setFormData((prev) => ({
                       ...prev,
-                      serviceCategory:
-                        value === "Select category..." ? "" : value,
-                    }))
-                  }
+                      inspectionMethodId: "",
+                      inspectionVertical: "Other",
+                      serviceType: "Other",
+                      serviceCategory: "Other",
+                      serviceTypeOther: "",
+                    }));
+                  }}
+                  onOtherChange={(value) => {
+                    setFieldErrors((current) => ({ ...current, serviceTypeOther: undefined }));
+                    setFormData((prev) => ({ ...prev, serviceTypeOther: value }));
+                  }}
                 />
-                {fieldErrors.serviceCategory && <small className="psr-field-error">{fieldErrors.serviceCategory}</small>}
-              </div>}
-            </div>
-
-            {formData.serviceType === "Other" && <div className="psr-row full">
-              <div className="psr-group">
-                <label htmlFor="serviceTypeOther">Specify Service Required</label>
-                <textarea
-                  id="serviceTypeOther"
-                  name="serviceTypeOther"
-                  value={formData.serviceTypeOther}
-                  onChange={handleInputChange}
-                  placeholder="Describe the survey, inspection, audit or specialist maritime service needed."
-                  className="psr-textarea"
-                  maxLength={500}
-                  required
-                  aria-invalid={Boolean(fieldErrors.serviceTypeOther)}
-                />
-                {fieldErrors.serviceTypeOther && <small className="psr-field-error">{fieldErrors.serviceTypeOther}</small>}
               </div>
-            </div>}
+            </div>
 
             <div className="psr-row full">
               <div className="psr-group">

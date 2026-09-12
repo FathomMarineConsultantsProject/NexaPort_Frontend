@@ -98,6 +98,10 @@
   min-width: 0;
 }
 
+.psr-group-wide {
+  grid-column: 1 / -1;
+}
+
 .psr-group label {
   font-size: 11px;
   font-weight: 700;

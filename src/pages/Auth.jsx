@@ -2,6 +2,7 @@ import { Anchor, Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-rea
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/Auth";
+import { loginDestination } from "../utils/workspaceRoles.js";
 import "./Auth.css";
 import ResetPasswordModal from "../components/auth/ResetPasswordModal";
 
@@ -44,14 +45,8 @@ export default function Auth() {
         localStorage.removeItem(REMEMBERED_KEY);
       }
 
-      const isRestrictedClient =
-        Number(response.user?.role_id) === 3 &&
-        response.user?.verification_status !== "approved";
-
       navigate(
-        isRestrictedClient
-          ? "/client-verification-status"
-          : "/dashboard",
+        loginDestination(response.user),
         { replace: true },
       );
     } catch (requestError) {

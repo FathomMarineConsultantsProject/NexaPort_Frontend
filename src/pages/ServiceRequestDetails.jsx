@@ -23,6 +23,8 @@ import {
   updateServiceRequest,
 } from "../api/serviceRequestApi";
 import { approveProposal, rejectProposal } from "../api/commercialProposalApi";
+import { getServiceRequestDropdowns } from "../api/masterApi";
+import InspectionCatalogueSelect from "../components/requests/InspectionCatalogueSelect";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
 import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
@@ -89,6 +91,7 @@ export default function ServiceRequestDetails() {
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
   const [markupByQuote, setMarkupByQuote] = useState({});
+  const [inspectionVerticals, setInspectionVerticals] = useState([]);
 
   // Admin review state
   const [editing, setEditing] = useState(false);
@@ -153,6 +156,12 @@ export default function ServiceRequestDetails() {
   useEffect(() => {
     loadPage();
   }, [loadPage]);
+
+  useEffect(() => {
+    getServiceRequestDropdowns()
+      .then((response) => setInspectionVerticals(response.data?.inspectionVerticals || []))
+      .catch((error) => console.error("Failed to load inspection catalogue:", error));
+  }, []);
 
   const formatDate = (date) => {
     if (!date) return "Not provided";
@@ -283,6 +292,8 @@ export default function ServiceRequestDetails() {
     if (!request) return;
     setEditForm({
       serviceType: request.serviceType || "",
+      inspectionMethodId: request.inspectionMethodId || "",
+      inspectionVertical: request.inspectionVertical || request.serviceCategory || "",
       serviceCategory: request.serviceCategory || "",
       serviceTypeOther: request.serviceTypeOther || "",
       title: request.title || "",
@@ -317,9 +328,27 @@ export default function ServiceRequestDetails() {
   };
 
   const saveEdit = async () => {
+    const serviceTypeOther = String(editForm.serviceTypeOther || "").trim();
+    if (editForm.serviceType === "Other") {
+      if (!serviceTypeOther || serviceTypeOther.length < 3 || serviceTypeOther.length > 500) {
+        setToast("Please describe the required service.");
+        setTimeout(() => setToast(""), 4000);
+        return;
+      }
+    } else if (!editForm.inspectionMethodId) {
+      setToast("Select an inspection type.");
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
+
     setEditSaving(true);
     try {
-      const payload = { ...editForm };
+      const payload = {
+        ...editForm,
+        inspectionMethodId: editForm.serviceType === "Other" ? null : Number(editForm.inspectionMethodId),
+        serviceCategory: editForm.serviceType === "Other" ? "Other" : editForm.serviceCategory,
+        serviceTypeOther: editForm.serviceType === "Other" ? serviceTypeOther : null,
+      };
 
       if (isSuperAdmin()) {
         if (budgetAdj.mode !== "none" && budgetAdj.type !== "none") {
@@ -462,10 +491,10 @@ export default function ServiceRequestDetails() {
     const ownQuotes = request._ownQuotations || [];
     return <main className="request-details-page consultant-request-detail">
       <section className="details-card consultant-safe-detail-grid">
-        <div><span>Service Type</span><strong>{request.serviceType || "Not provided"}</strong></div>
+        <div><span>Inspection Type</span><strong>{request.inspectionType || request.serviceType || "Not provided"}</strong></div>
         {request.serviceType === "Other"
           ? <div><span>Service Details</span><strong>{request.serviceTypeOther || "Not provided"}</strong></div>
-          : <div><span>Inspection Type</span><strong>{request.inspectionType || "Not provided"}</strong></div>}
+          : <div><span>Vertical</span><strong>{request.inspectionVertical || "Not provided"}</strong></div>}
         <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
         <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
         <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
@@ -615,8 +644,8 @@ export default function ServiceRequestDetails() {
       <section className="request-details-head">
         <div style={{ minWidth: 0 }}>
           <div className="request-tags">
-            <span className="outline-tag">{request.serviceType || "Service"}</span>
-            {request.serviceType !== "Other" && <span className="outline-tag">{request.serviceCategory || "General"}</span>}
+            <span className="outline-tag">{request.inspectionType || request.serviceType || "Service"}</span>
+            {request.serviceType !== "Other" && <span className="outline-tag">{request.inspectionVertical || request.serviceCategory || "General"}</span>}
             <span className={`urgency-tag ${request.urgency || ""}`}>
               {request.urgency || "routine"}
             </span>
@@ -694,18 +723,35 @@ export default function ServiceRequestDetails() {
             <div className="admin-edit-card">
               <h2><Edit3 size={18} /> Edit Request Details</h2>
               <div className="admin-edit-grid">
-                <label>Service Type
-                  <select value={editForm.serviceType} onChange={(e) => {
-                    const v = e.target.value;
-                    setEditForm({ ...editForm, serviceType: v, serviceCategory: v === "Other" ? "Other" : "", serviceTypeOther: "" });
-                  }}>
-                    {["Audit", "Inspection", "Survey", "Other"].map((t) => <option key={t}>{t}</option>)}
-                  </select>
+                <label className="wide">Inspection Type
+                  <InspectionCatalogueSelect
+                    verticals={inspectionVerticals}
+                    selectedMethodId={editForm.inspectionMethodId}
+                    isOther={editForm.serviceType === "Other"}
+                    otherValue={editForm.serviceTypeOther}
+                    onSelectMethod={(method, vertical) => {
+                      setEditForm({
+                        ...editForm,
+                        inspectionMethodId: method.id,
+                        inspectionVertical: vertical.name,
+                        serviceType: method.name,
+                        serviceCategory: vertical.name,
+                        serviceTypeOther: "",
+                      });
+                    }}
+                    onSelectOther={() => {
+                      setEditForm({
+                        ...editForm,
+                        inspectionMethodId: "",
+                        inspectionVertical: "Other",
+                        serviceType: "Other",
+                        serviceCategory: "Other",
+                        serviceTypeOther: "",
+                      });
+                    }}
+                    onOtherChange={(value) => setEditForm({ ...editForm, serviceTypeOther: value })}
+                  />
                 </label>
-                {editForm.serviceType === "Other"
-                  ? <label className="wide">Specify Service<textarea maxLength={500} value={editForm.serviceTypeOther} onChange={(e) => setEditForm({ ...editForm, serviceTypeOther: e.target.value })} /></label>
-                  : <label>Service Category<input value={editForm.serviceCategory} onChange={(e) => setEditForm({ ...editForm, serviceCategory: e.target.value })} /></label>
-                }
                 <label>Title<input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></label>
                 {isClient() && <label>Budget (USD)<input type="number" min="0" value={editForm.budgetUsd} onChange={(e) => setEditForm({ ...editForm, budgetUsd: e.target.value })} /></label>}
                 <label>Urgency
