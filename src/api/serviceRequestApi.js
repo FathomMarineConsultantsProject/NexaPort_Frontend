@@ -34,3 +34,5 @@ export const rejectServiceRequest = async (id, payload) => {
   const res = await axiosClient.post(`/service-requests/${id}/reject`, payload);
   return res.data;
 };
+
+export const generateRequestScope = async (payload) => (await axiosClient.post("/service-requests/generate-scope", payload)).data;

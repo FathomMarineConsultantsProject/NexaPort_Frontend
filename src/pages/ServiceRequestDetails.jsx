@@ -1,3 +1,8 @@
+import ScopeEditor from "../components/requests/ScopeEditor";
+import ScopeText from "../components/requests/ScopeText";
+import PortSelect from "../components/requests/PortSelect";
+import ScopeAssistant from "../components/requests/ScopeAssistant";
+import AgentDetails, { AgentDetailsFields } from "../components/requests/AgentDetails";
 import {
   AlertTriangle,
   Award,
@@ -40,8 +45,8 @@ function Narrative({ title, text }) {
   if (!blocks.length) return null;
   return <section className="request-narrative"><h2>{title}</h2><div>{blocks.map((block, index) => {
     const lines = block.split(/\n/).map((line) => line.trim()).filter(Boolean);
-    const listed = lines.length > 1 && lines.every((line) => /^[-*•\d]+[.)]?\s*/.test(line));
-    return listed ? <ul key={index}>{lines.map((line) => <li key={line}>{line.replace(/^[-*•\d]+[.)]?\s*/, "")}</li>)}</ul> : <p key={index}>{lines.join("\n")}</p>;
+    const listed = lines.length > 1 && lines.every((line) => /^(?:[-*•]|\d+[.)])\s+/.test(line));
+    return listed ? <ul key={index}>{lines.map((line) => <li key={line}><ScopeText value={line.replace(/^(?:[-*•]|\d+[.)])\s+/, "")} /></li>)}</ul> : <p key={index}><ScopeText value={lines.join("\n")} /></p>;
   })}</div></section>;
 }
 
@@ -97,6 +102,7 @@ export default function ServiceRequestDetails() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [editSaving, setEditSaving] = useState(false);
+  const [editFieldErrors, setEditFieldErrors] = useState({});
   const [approving, setApproving] = useState(false);
   const [approvalErrors, setApprovalErrors] = useState([]);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -289,6 +295,7 @@ export default function ServiceRequestDetails() {
   /* ────── Admin moderation handlers ────── */
 
   const beginEdit = () => {
+    setEditFieldErrors({});
     if (!request) return;
     setEditForm({
       serviceType: request.serviceType || "",
@@ -306,10 +313,15 @@ export default function ServiceRequestDetails() {
       vesselType: request.vessel?.type || "",
       flagState: request.vessel?.flagState || "",
       portName: request.port?.name || "",
-      country: request.port?.country || "",
+      portId: request.port?.id || null,
+      terminalName: request.terminalName || "",
+      agentCompanyName: request.agentDetails?.companyName || "",
+      agentContactName: request.agentDetails?.contactName || "",
+      agentEmail: request.agentDetails?.email || "",
+      agentPhone: request.agentDetails?.phone || "",
+
       eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
-      locationSummary: request.port?.locationSummary || "",
-      requiredCertification: request.requiredCertification || "",
+
     });
     setBudgetAdj({
       mode: request.adminBudgetAdjustmentMode || "none",
@@ -336,7 +348,7 @@ export default function ServiceRequestDetails() {
         return;
       }
     } else if (!editForm.inspectionMethodId) {
-      setToast("Select an inspection type.");
+      setToast("Select a service.");
       setTimeout(() => setToast(""), 4000);
       return;
     }
@@ -372,6 +384,7 @@ export default function ServiceRequestDetails() {
       setApprovalErrors([]);
       setTimeout(() => setToast(""), 3000);
     } catch (error) {
+      setEditFieldErrors(error.response?.data?.field_errors || {});
       setToast(error.response?.data?.message || "Failed to update request.");
       setTimeout(() => setToast(""), 4000);
     } finally {
@@ -491,13 +504,14 @@ export default function ServiceRequestDetails() {
     const ownQuotes = request._ownQuotations || [];
     return <main className="request-details-page consultant-request-detail">
       <section className="details-card consultant-safe-detail-grid">
-        <div><span>Inspection Type</span><strong>{request.inspectionType || request.serviceType || "Not provided"}</strong></div>
+        <div><span>Services Required</span><strong>{request.inspectionType || request.serviceType || "Not provided"}</strong></div>
         {request.serviceType === "Other"
           ? <div><span>Service Details</span><strong>{request.serviceTypeOther || "Not provided"}</strong></div>
           : <div><span>Vertical</span><strong>{request.inspectionVertical || "Not provided"}</strong></div>}
         <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
         <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
         <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
+        {request.terminalName && <div><span>Terminal</span><strong>{request.terminalName}</strong></div>}
         {request.approvedBudgetUsd != null && <div><span>Budget</span><strong>${money(request.approvedBudgetUsd)}</strong></div>}
       </section>
       <section className="consultant-quote-section">
@@ -600,7 +614,7 @@ export default function ServiceRequestDetails() {
               {isRejected && request.rejectionReason && (
                 <p className="rejection-reason-text">{request.rejectionReason}</p>
               )}
-              {request.requesterName && <span className="moderation-client-name">Client: {request.requesterName}</span>}
+              {(request.companyName || request.requesterName) && <span className="moderation-client-name">{request.companyVerified ? "Company" : "Legacy requester"}: {request.companyName || request.requesterName}</span>}
             </div>
             {isPendingReview && !editing && (
               <div className="moderation-banner-actions">
@@ -723,7 +737,8 @@ export default function ServiceRequestDetails() {
             <div className="admin-edit-card">
               <h2><Edit3 size={18} /> Edit Request Details</h2>
               <div className="admin-edit-grid">
-                <label className="wide">Inspection Type
+                <div className="wide"><strong>{request.companyVerified ? "Company" : "Legacy requester"}</strong><p>{request.companyName || request.requesterName || "Not provided"}</p></div>
+                <label className="wide">Services Required
                   <InspectionCatalogueSelect
                     verticals={inspectionVerticals}
                     selectedMethodId={editForm.inspectionMethodId}
@@ -764,12 +779,12 @@ export default function ServiceRequestDetails() {
                 <label>IMO Number<input value={editForm.imoNumber} onChange={(e) => setEditForm({ ...editForm, imoNumber: e.target.value })} /></label>
                 <label>Vessel Type<input value={editForm.vesselType} onChange={(e) => setEditForm({ ...editForm, vesselType: e.target.value })} /></label>
                 <label>Flag<input value={editForm.flagState} onChange={(e) => setEditForm({ ...editForm, flagState: e.target.value })} /></label>
-                <label>Port<input value={editForm.portName} onChange={(e) => setEditForm({ ...editForm, portName: e.target.value })} /></label>
-                <label>Country<input value={editForm.country} onChange={(e) => setEditForm({ ...editForm, country: e.target.value })} /></label>
+                <div><span>Port</span><PortSelect portId={editForm.portId} portName={editForm.portName} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} /></div>
+                <label>Terminal<input maxLength={240} value={editForm.terminalName} onChange={(e) => setEditForm({ ...editForm, terminalName: e.target.value })} /></label>
                 <label>ETA<input type="date" value={editForm.eta} onChange={(e) => setEditForm({ ...editForm, eta: e.target.value })} /></label>
-                <label>Location Summary<input value={editForm.locationSummary} onChange={(e) => setEditForm({ ...editForm, locationSummary: e.target.value })} /></label>
-                <label>Required Certification<input value={editForm.requiredCertification} onChange={(e) => setEditForm({ ...editForm, requiredCertification: e.target.value })} /></label>
-                <label className="wide">Scope of Work<textarea value={editForm.scopeOfWork} onChange={(e) => setEditForm({ ...editForm, scopeOfWork: e.target.value })} /></label>
+                <label className="wide">Scope of Work<ScopeEditor value={editForm.scopeOfWork} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} /></label>
+                <ScopeAssistant value={editForm} legacyCertification={request.requiredCertification} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} />
+                <AgentDetailsFields value={editForm} errors={editFieldErrors} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} />
               </div>
               <div className="request-edit-form-actions">
                 <button type="button" className="secondary-btn" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
@@ -1259,23 +1274,25 @@ export default function ServiceRequestDetails() {
             </h3>
 
             <Info label="Port" value={port.name || port.port_name} required isPendingReview={isPendingReview} />
-            <Info label="Country" value={port.country} isPendingReview={isPendingReview} />
+            {port.country && <Info label="Country (historical / port record)" value={port.country} isPendingReview={isPendingReview} />}
+            <Info label="Terminal" value={request.terminalName} isPendingReview={isPendingReview} />
             <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} isPendingReview={isPendingReview} />
             <Info label="Deadline" value={request.requiredBy ? formatDate(request.requiredBy) : null} required isPendingReview={isPendingReview} />
           </div>
 
-          <div className="side-info-card">
+          <AgentDetails value={request.agentDetails} />
+          {request.requiredCertification && (          <div className="side-info-card">
             <h3>
               <Award size={18} />
-              Required Qualifications
+              Legacy Certification Requirements
             </h3>
             <p>{request.requiredCertification ? displayCase(request.requiredCertification) : "Not provided"}</p>
-          </div>
+          </div>)}
 
           {!isExpert() && (
             <div className="side-info-card">
-              <h3>Requested By</h3>
-              <p>{request.requesterName || "Not provided"}</p>
+              <h3>{request.companyVerified ? "Company" : "Legacy requester"}</h3>
+              <p>{request.companyName || request.requesterName || "Not provided"}</p>
             </div>
           )}
 

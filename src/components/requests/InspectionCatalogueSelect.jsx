@@ -45,11 +45,11 @@ export default function InspectionCatalogueSelect({
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search inspection catalogue"
+          placeholder="Search services, inspections or surveys"
         />
       </div>
 
-      <div className="inspection-catalogue-list" role="listbox" aria-label="Inspection type">
+      <div className="inspection-catalogue-list" role="listbox" aria-label="Services Required">
         {visibleVerticals.map((vertical) => (
           <section className="inspection-catalogue-group" key={vertical.id || vertical.slug}>
             <h3>{vertical.name}</h3>
@@ -72,9 +72,9 @@ export default function InspectionCatalogueSelect({
         ))}
 
         <section className="inspection-catalogue-group">
-          <h3>Other</h3>
+          <h3>Others</h3>
           <button type="button" className={isOther ? "active" : ""} onClick={onSelectOther}>
-            Other / specialist service
+            Others
           </button>
         </section>
       </div>

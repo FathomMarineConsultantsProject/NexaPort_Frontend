@@ -8,6 +8,7 @@ import {
   Ship,
   Wrench,
   Search,
+  Users,
 } from "lucide-react";
 
 export const ADMIN_DIRECTORY_GROUPS = [
@@ -69,3 +70,17 @@ export const ADMIN_DIRECTORY_GROUPS = [
 
 export const ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS.flatMap((group) => group.items);
 export const NEW_ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS[1].items;
+
+// Existing directories stay Admin-only; Consultants keeps its former non-Client visibility.
+export function getVisibleDirectoryGroups(roleId) {
+  const role = Number(roleId);
+  const consultant = { label: "Consultants", path: "/experts", icon: Users, excludedRoles: [3] };
+  const groups = ADMIN_DIRECTORY_GROUPS.map((group) => ({
+    ...group,
+    items: [
+      ...(group.label === "Compliance & Inspection" ? [consultant] : []),
+      ...group.items.map((item) => ({ ...item, roles: [1] })),
+    ],
+  }));
+  return groups.map((group) => ({ ...group, items: group.items.filter((item) => (!item.roles || item.roles.includes(role)) && !item.excludedRoles?.includes(role)) })).filter((group) => group.items.length);
+}

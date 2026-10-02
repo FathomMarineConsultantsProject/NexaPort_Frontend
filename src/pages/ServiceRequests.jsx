@@ -1,3 +1,7 @@
+import ScopeEditor from "../components/requests/ScopeEditor";
+import PortSelect from "../components/requests/PortSelect";
+import ScopeAssistant from "../components/requests/ScopeAssistant";
+import { AgentDetailsFields } from "../components/requests/AgentDetails";
 import { Calendar, CheckCircle2, ChevronDown, Edit3, MapPin, Plus, Search, Ship, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -253,10 +257,15 @@ export default function ServiceRequests() {
     vesselType: request.vessel?.type || "",
     flagState: request.vessel?.flagState || "",
     portName: request.port?.name || "",
-    country: request.port?.country || "",
+      portId: request.port?.id || null,
+      terminalName: request.terminalName || "",
+      agentCompanyName: request.agentDetails?.companyName || "",
+      agentContactName: request.agentDetails?.contactName || "",
+      agentEmail: request.agentDetails?.email || "",
+      agentPhone: request.agentDetails?.phone || "",
+
     eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
-    locationSummary: request.port?.locationSummary || "",
-    requiredCertification: request.requiredCertification || "",
+
     });
   };
 
@@ -268,7 +277,7 @@ export default function ServiceRequests() {
       else if (serviceTypeOther.length < 3) nextErrors.serviceTypeOther = "Service details must be at least 3 characters.";
       else if (serviceTypeOther.length > 500) nextErrors.serviceTypeOther = "Service details must be 500 characters or fewer.";
     } else if (!editingRequest.inspectionMethodId) {
-      nextErrors.inspectionMethodId = "Select an inspection type.";
+      nextErrors.inspectionMethodId = "Select a service.";
     }
     if (Object.keys(nextErrors).length) {
       setEditFieldErrors(nextErrors);
@@ -383,7 +392,7 @@ export default function ServiceRequests() {
             if (isExpert()) return (
               <div key={request.id} className="request-card consultant-safe-card">
                 <div className="request-main consultant-safe-grid">
-                  <div><span>Inspection Type</span><strong>{request.inspectionType || "Not provided"}</strong></div>
+                  <div><span>Services Required</span><strong>{request.inspectionType || "Not provided"}</strong></div>
                   <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
                   <div><span>Date of Inspection</span><strong>{request.inspectionDate ? new Date(request.inspectionDate).toLocaleDateString() : "Not provided"}</strong></div>
                   <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
@@ -517,7 +526,7 @@ export default function ServiceRequests() {
       )}
 
       {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>{isClient() && editingRequest.moderationStatus === "rejected" ? "Edit & Resubmit Request" : "Edit Request"}</h2><div className="request-edit-grid">
-        <label className="wide">Inspection type
+        <label className="wide">Services Required
           <InspectionCatalogueSelect
             verticals={inspectionVerticals}
             selectedMethodId={editingRequest.inspectionMethodId}
@@ -554,9 +563,13 @@ export default function ServiceRequests() {
           />
         </label>
         {[
-          ["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["portName","Port"],["country","Country"],["eta","ETA","date"],["locationSummary","Location summary"],["requiredCertification","Required certification"]
+          ["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["eta","ETA","date"]
         ].map(([field,label,type="text"]) => <label key={field}>{label}<input type={type} value={editingRequest[field] ?? ""} onChange={(event) => setEditingRequest({...editingRequest,[field]:event.target.value})}/></label>)}
-        <label className="wide">Scope of work<textarea value={editingRequest.scopeOfWork} onChange={(event) => setEditingRequest({...editingRequest,scopeOfWork:event.target.value})}/></label>
+        <div className="wide"><span>Port</span><PortSelect portId={editingRequest.portId} portName={editingRequest.portName} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} /></div>
+        <label>Terminal<input maxLength={240} value={editingRequest.terminalName} onChange={(event) => setEditingRequest({ ...editingRequest, terminalName: event.target.value })} /></label>
+        <AgentDetailsFields value={editingRequest} errors={editFieldErrors} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} />
+        <ScopeAssistant value={editingRequest} legacyCertification={requests.find((item) => item.id === editingRequest.id)?.requiredCertification} disabled={editSaving} onChange={(scopeOfWork) => setEditingRequest((current) => ({ ...current, scopeOfWork }))} />
+        <label className="wide">Scope of work<ScopeEditor value={editingRequest.scopeOfWork} disabled={editSaving} onChange={(scopeOfWork) => setEditingRequest((current) => ({ ...current, scopeOfWork }))} /></label>
       </div><div className="request-edit-actions"><button type="button" disabled={editSaving} onClick={() => setEditingRequest(null)}>Cancel</button><button type="button" className="save" disabled={editSaving} onClick={saveEdit}>{editSaving ? "Saving..." : "Save Changes"}</button></div></section></div>}
     </div>
   );

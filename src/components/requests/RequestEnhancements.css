@@ -1,0 +1,15 @@
+.scope-assistant { display: grid; gap: 8px; margin: 12px 0; }
+.scope-editor { min-height: 150px; max-height: 450px; overflow-y: auto; width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ccd5df; border-radius: 6px; background: white; color: #172b4d; font: inherit; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.scope-editor:focus { outline: 2px solid #0d9488; outline-offset: 1px; }
+.scope-editor:empty::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; }
+.scope-editor[aria-disabled=true] { background: #f1f5f9; }
+.scope-assistant button, .request-port-select button { justify-self: start; padding: 8px 14px; cursor: pointer; }
+.scope-assistant button:disabled { cursor: wait; opacity: .6; }
+.scope-assistant input, .request-port-select input, .request-port-select select, .request-agent-grid input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #ccd5df; border-radius: 6px; background: white; color: #172b4d; font: inherit; }
+.request-port-select { display: grid; gap: 8px; }
+.request-agent-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.request-agent-grid label { display: grid; gap: 6px; }
+.request-agent-details dl > div { margin: 10px 0; }
+.request-agent-details dd { margin: 4px 0; overflow-wrap: anywhere; }
+.scope-assistant [role=alert], .request-agent-grid [role=alert] { color: #b42318; }
+@media (max-width: 640px) { .request-agent-grid { grid-template-columns: 1fr; } }

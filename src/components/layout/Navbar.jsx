@@ -24,7 +24,7 @@ import {
   markAllAdminNotificationsRead,
 } from "../../api/adminNotificationApi";
 import { getRoleId, isMaritimeCompany } from "../../utils/auth";
-import { ADMIN_DIRECTORIES, ADMIN_DIRECTORY_GROUPS } from "../../config/adminDirectories";
+import { getVisibleDirectoryGroups } from "../../config/adminDirectories";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
   CONSULTANT_PHOTO_UPDATED_EVENT,
@@ -66,7 +66,8 @@ export default function Navbar() {
   const isCompany = isMaritimeCompany();
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
-  const directoryActive = location.pathname.startsWith("/directories/") || ADMIN_DIRECTORIES.some(({ path }) =>
+  const visibleDirectoryGroups = getVisibleDirectoryGroups(roleId);
+  const directoryActive = location.pathname.startsWith("/directories/") || visibleDirectoryGroups.flatMap((group) => group.items).some(({ path }) =>
     matchPath({ path: `${path}/*` }, location.pathname)
   );
 
@@ -272,12 +273,6 @@ export default function Navbar() {
         </NavLink>
 
         {!isClient && (
-          <NavLink to="/experts">
-            <Users size={17} /> Consultants
-          </NavLink>
-        )}
-
-        {!isClient && (
           <NavLink to="/templates">
             <ClipboardList size={17} /> Templates
           </NavLink>
@@ -292,6 +287,9 @@ export default function Navbar() {
               <Users size={17} /> Owners &amp; Managers
             </NavLink>
 
+            </>
+          )}
+          {visibleDirectoryGroups.length > 0 && (
             <div className="np-directories" ref={directoriesRef}>
               <button
                 ref={directoriesTriggerRef}
@@ -310,7 +308,7 @@ export default function Navbar() {
 
               {directoriesOpen && (
                 <div id="directories-popover" className="np-directories-popover" aria-label="Directories">
-                  {ADMIN_DIRECTORY_GROUPS.map((group) => (
+                  {visibleDirectoryGroups.map((group) => (
                     <section key={group.label}>
                       <span>{group.label}</span>
                       {group.items.map(({ label, path, icon: Icon }) => (
@@ -323,8 +321,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-          </>
-        )}
+          )}
 
         <NavLink to="/fleet">
           <Ship size={17} /> Fleet
@@ -512,12 +509,6 @@ export default function Navbar() {
           </NavLink>
 
           {!isClient && (
-            <NavLink to="/experts" onClick={closeMobileNavigation}>
-              <Users size={18} /> Consultants
-            </NavLink>
-          )}
-
-          {!isClient && (
             <NavLink to="/templates" onClick={closeMobileNavigation}>
               <ClipboardList size={18} /> Templates
             </NavLink>
@@ -532,6 +523,9 @@ export default function Navbar() {
                 <Users size={18} /> Owners &amp; Managers
               </NavLink>
 
+            </>
+          )}
+          {visibleDirectoryGroups.length > 0 && (
               <div className="np-mobile-directories">
                 <button
                   type="button"
@@ -546,7 +540,7 @@ export default function Navbar() {
 
                 {mobileDirectoriesOpen && (
                   <div id="mobile-directory-links" className="np-mobile-directory-links">
-                    {ADMIN_DIRECTORY_GROUPS.map((group) => (
+                    {visibleDirectoryGroups.map((group) => (
                       <section key={group.label}>
                         <span>{group.label}</span>
                         {group.items.map(({ label, path, icon: Icon }) => (
@@ -559,7 +553,6 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
-            </>
           )}
 
           <NavLink to="/fleet" onClick={closeMobileNavigation}>

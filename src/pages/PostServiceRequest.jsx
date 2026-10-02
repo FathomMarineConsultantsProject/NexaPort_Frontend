@@ -1,3 +1,9 @@
+import ScopeEditor from "../components/requests/ScopeEditor";
+import PortSelect from "../components/requests/PortSelect";
+import ScopeAssistant from "../components/requests/ScopeAssistant";
+import { AgentDetailsFields } from "../components/requests/AgentDetails";
+import { getMyClientOnboarding } from "../api/clientRegistrationApi";
+import { isClient } from "../utils/auth";
 import { Anchor, Ship } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,11 +47,21 @@ export default function PostServiceRequest() {
     vesselType: "",
     flagState: "",
     portName: "",
-    country: "",
+    portId: null,
+    terminalName: "",
+    agentCompanyName: "",
+    agentContactName: "",
+    agentEmail: "",
+    agentPhone: "",
     eta: "",
-    locationSummary: "",
-    requiredCertification: "",
+
   });
+
+  useEffect(() => {
+    if (isClient()) getMyClientOnboarding().then((response) => {
+      setFormData((current) => ({ ...current, requesterName: response.data?.company?.legal_name || "" }));
+    }).catch(() => setError("Unable to load your registered Company. Please retry before posting."));
+  }, []);
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -93,7 +109,7 @@ export default function PostServiceRequest() {
       else if (otherDetails.length < 3) nextFieldErrors.serviceTypeOther = "Service details must be at least 3 characters.";
       else if (otherDetails.length > 500) nextFieldErrors.serviceTypeOther = "Service details must be 500 characters or fewer.";
     } else if (!formData.inspectionMethodId) {
-      nextFieldErrors.inspectionMethodId = "Select an inspection type.";
+      nextFieldErrors.inspectionMethodId = "Select a service.";
     }
 
     if (
@@ -127,17 +143,20 @@ export default function PostServiceRequest() {
         flagState: formData.flagState || null,
 
         portName: formData.portName || null,
-        country: formData.country || null,
+        portId: formData.portId || null,
+        terminalName: formData.terminalName || null,
+        agentCompanyName: formData.agentCompanyName || null,
+        agentContactName: formData.agentContactName || null,
+        agentEmail: formData.agentEmail || null,
+        agentPhone: formData.agentPhone || null,
         eta: formData.eta || null,
-        locationSummary: formData.locationSummary || null,
 
-        requiredCertification: formData.requiredCertification || null,
       };
 
       const response = await createServiceRequest(payload);
 
       if (response.success) {
-        setSuccess("Service request posted successfully. Redirecting...");
+        setSuccess("Submitted for Admin review.");
         setTimeout(() => {
           navigate(`/requests/${response.data.id}`);
         }, 1000);
@@ -158,7 +177,7 @@ export default function PostServiceRequest() {
     <main className="psr-page">
       <section className="psr-wrap">
         <div className="psr-head">
-          <h1>Post Service Request</h1>
+          <h1>Service Request</h1>
           <p>
             Describe your maritime survey, inspection, audit, or specialist service requirement. Verified experts will
             respond with quotations.
@@ -179,7 +198,7 @@ export default function PostServiceRequest() {
 
             <div className="psr-row">
               <div className="psr-group psr-group-wide">
-                <label>Inspection Type</label>
+                <label>Services Required</label>
                 <InspectionCatalogueSelect
                   verticals={dropdownData.inspectionVerticals || []}
                   selectedMethodId={formData.inspectionMethodId}
@@ -235,14 +254,8 @@ export default function PostServiceRequest() {
             <div className="psr-row full">
               <div className="psr-group">
                 <label>Scope of Work</label>
-                <textarea
-                  name="scopeOfWork"
-                  value={formData.scopeOfWork}
-                  onChange={handleInputChange}
-                  placeholder="Describe the full scope: vessel particulars, specific areas of focus, report format required, access restrictions, any outstanding deficiencies..."
-                  className="psr-textarea"
-                  required
-                />
+                <ScopeEditor value={formData.scopeOfWork} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} disabled={loading} required placeholder="Describe the full scope: vessel particulars, specific areas of focus, report format required, access restrictions, any outstanding deficiencies..." />
+                <ScopeAssistant value={formData} disabled={loading} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} />
               </div>
             </div>
 
@@ -298,14 +311,15 @@ export default function PostServiceRequest() {
             <div className="psr-row full">
               <div className="psr-group">
                 <label>
-                  Company / Requester Name <span className="opt">(optional)</span>
+                  Company <span className="opt">(optional)</span>
                 </label>
                 <input
                   type="text"
                   name="requesterName"
                   value={formData.requesterName}
                   onChange={handleInputChange}
-                  placeholder="Shipowner, Manager or Charterer name"
+                  placeholder="Registered company"
+                  readOnly={isClient()}
                   className="psr-control"
                 />
               </div>
@@ -316,7 +330,7 @@ export default function PostServiceRequest() {
             <div className="psr-card-header">
               <Ship size={24} />
               <div className="psr-card-header-content">
-                <h2>Vessel & Port Particulars</h2>
+                <h2>Vessel and Port Particulars</h2>
                 <p>Provide vessel details to help experts prepare their quotation accurately.</p>
               </div>
             </div>
@@ -375,7 +389,7 @@ export default function PostServiceRequest() {
 
               <div className="psr-group">
                 <label>
-                  Flag State <span className="opt">(opt.)</span>
+                  Flag <span className="opt">(opt.)</span>
                 </label>
                 <CustomSelect
                   width="100%"
@@ -396,81 +410,19 @@ export default function PostServiceRequest() {
             </div>
 
             <div className="psr-row three-col">
-              <div className="psr-group">
-                <label>
-                  Port / Terminal <span className="opt">(opt.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="portName"
-                  value={formData.portName}
-                  onChange={handleInputChange}
-                  placeholder="Port of Rotterdam"
-                  className="psr-control"
-                />
+              <div className="psr-group"><label>Port <span className="opt">(opt.)</span></label>
+                <PortSelect portId={formData.portId} portName={formData.portName} disabled={loading} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} />
+                {fieldErrors.portId && <small role="alert">{fieldErrors.portId}</small>}
               </div>
-
-              <div className="psr-group">
-                <label>
-                  Country <span className="opt">(opt.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  placeholder="Netherlands"
-                  className="psr-control"
-                />
-              </div>
-
-              <div className="psr-group">
-                <label>
-                  ETA <span className="opt">(opt.)</span>
-                </label>
-                <input
-                  type="date"
-                  name="eta"
-                  value={formData.eta}
-                  onChange={handleInputChange}
-                  className="psr-control"
-                />
-              </div>
-            </div>
-
-            <div className="psr-row full">
-              <div className="psr-group">
-                <label>Location Summary</label>
-                <input
-                  type="text"
-                  name="locationSummary"
-                  value={formData.locationSummary}
-                  onChange={handleInputChange}
-                  placeholder="Rotterdam, Netherlands"
-                  className="psr-control"
-                />
-              </div>
-            </div>
-
-            <div className="psr-row full">
-              <div className="psr-group">
-                <label>
-                  Required Certification <span className="opt">(opt.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="requiredCertification"
-                  value={formData.requiredCertification}
-                  onChange={handleInputChange}
-                  placeholder="OCIMF SIRE Inspector, ISM Lead Auditor, etc."
-                  className="psr-control"
-                />
-              </div>
+              <div className="psr-group"><label>Terminal <span className="opt">(opt.)</span></label><input name="terminalName" maxLength={240} value={formData.terminalName} onChange={handleInputChange} className="psr-control" /></div>
+              <div className="psr-group"><label>ETA <span className="opt">(opt.)</span></label><input type="date" name="eta" value={formData.eta} onChange={handleInputChange} className="psr-control" /></div>
             </div>
           </section>
 
+          <section className="psr-card"><AgentDetailsFields value={formData} errors={fieldErrors} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} /></section>
+
           <button type="submit" className="psr-submit-btn" disabled={loading}>
-            {loading ? "Posting Request..." : "Post Service Request"}
+            {loading ? "Posting Request..." : "Post"}
           </button>
         </form>
       </section>

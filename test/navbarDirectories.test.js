@@ -8,6 +8,7 @@ import {
 } from "../src/config/adminDirectories.js";
 
 const expectedDirectories = [
+  ["Inspector Search", "/inspector-search"],
   ["Flag Inspectors", "/flag"],
   ["Accredited Inspectors", "/accredited-inspectors"],
   ["Appointed Surveyors", "/appointed-surveyors"],

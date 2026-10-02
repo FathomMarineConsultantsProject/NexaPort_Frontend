@@ -30,8 +30,8 @@ test("old generic request selector is not used in create or edit forms", async (
 test("catalogue component keeps searchable methods and Other fallback", async () => {
   const component = await source("../src/components/requests/InspectionCatalogueSelect.jsx");
 
-  assert.match(component, /placeholder="Search inspection catalogue"/);
-  assert.match(component, /Other \/ specialist service/);
+  assert.match(component, /placeholder="Search services, inspections or surveys"/);
+  assert.match(component, /Others/);
   assert.match(component, /onSelectMethod\(method, vertical\)/);
   assert.match(component, /onSelectOther/);
 });

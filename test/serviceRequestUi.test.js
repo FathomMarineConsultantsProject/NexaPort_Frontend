@@ -155,9 +155,9 @@ test("20. Vessel rows align consistently", async () => {
   assert.match(jsx, /label="Flag"/);
 });
 
-test("21. Required Qualifications uses the full heading", async () => {
+test("21. Historical certification uses an explicit legacy heading", async () => {
   const jsx = await source("../src/pages/ServiceRequestDetails.jsx");
-  assert.match(jsx, /Required Qualifications/);
+  assert.match(jsx, /Legacy Certification Requirements/);
   assert.doesNotMatch(jsx, /Required Cert\./);
 });
 
