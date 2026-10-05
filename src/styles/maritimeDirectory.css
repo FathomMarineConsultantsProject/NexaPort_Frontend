@@ -814,6 +814,17 @@ button.md-back-link {
   text-transform: capitalize;
 }
 
+.md-fleet-facts { padding-left: 0; border-left: 0; }
+.md-fleet-detail { margin-top: 18px; }
+.md-fleet-detail h3 { margin: 0 0 7px; color: #41566f; font-size: 12px; }
+.md-fleet-detail dl,
+.md-fleet-detail ul { margin: 0; padding: 0; list-style: none; }
+.md-fleet-detail dl > div,
+.md-fleet-detail li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid #edf1f4; font-size: 12px; }
+.md-fleet-detail dt { color: var(--md-muted); }
+.md-fleet-detail dd { margin: 0; color: #263b57; font-weight: 750; }
+.md-fleet-detail small { color: var(--md-muted); font-size: 11px; }
+
 .md-service-groups {
   display: grid;
   gap: 16px;

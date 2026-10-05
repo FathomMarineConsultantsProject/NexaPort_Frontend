@@ -11,12 +11,41 @@ import {
   listServiceNames,
   normalizePorts,
   normalizeProducts,
+  normalizeFleetSummary,
   normalizeServices,
   positiveCount,
   safeWebsite,
   validEmail,
   validLogoUrl,
 } from "../src/utils/directoryData.js";
+
+test("MagicPort detail displays normalized contact and fleet values with safe fallbacks", () => {
+  const view = directoryView({
+    entity: { company_name: "Fleet Co", public_email: "ops@example.com", website: "https://fleet.example", public_address: "Pier 1", public_phone: null,
+      extra_data: { magicport_company: { fleet_summary: { vesselCount: 8, totalDwt: 51248, activePortCount: 129,
+        topVisitedPorts: [{ name: "Ajman", unlocode: "AEAJM" }], vesselTypeMix: [{ name: "Tanker", percent: 100 }], ageBands: [{ band: "0-5 years", percent: 12.5 }] } } } },
+  }, "owners_managers");
+  assert.equal(view.email, "ops@example.com");
+  assert.equal(safeWebsite(view.website), "https://fleet.example/");
+  assert.equal(view.address, "Pier 1");
+  assert.equal(view.phone, null);
+  assert.equal(view.fleetSummary.vesselCount, 8);
+  assert.equal(view.fleetSummary.totalDwt, 51248);
+  assert.equal(view.fleetSummary.activePortCount, 129);
+  assert.equal(view.fleetSummary.topVisitedPorts[0].name, "Ajman");
+  assert.equal(view.fleetSummary.ageBands[0].percent, 12.5);
+  assert.deepEqual(normalizeFleetSummary(null).topVisitedPorts, []);
+  assert.equal(normalizeFleetSummary(null).vesselCount, null);
+});
+
+test("owners and managers fleet section renders normalized operational fields", () => {
+  const source = readFileSync(join(projectRoot, "src/pages/MaritimeDirectoryDetails.jsx"), "utf8");
+  for (const key of ["vesselCount", "totalDwt", "activePortCount", "vesselTypeMix", "ageBands", "topVisitedPorts"]) {
+    assert.match(source, new RegExp(`fleet\\.${key}`));
+  }
+  assert.match(source, /fleetValue\(fleet\.vesselCount\)/);
+  assert.match(source, /Not listed/);
+});
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 

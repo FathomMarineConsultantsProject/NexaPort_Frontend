@@ -40,6 +40,23 @@ const object = (value) => {
 const field = (record, snake, camel) => record?.[snake] ?? record?.[camel];
 const rowValue = (row, ...keys) => keys.map((key) => cleanText(row?.[key])).find(Boolean) || null;
 
+const fleetNumber = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+};
+export const normalizeFleetSummary = (value) => {
+  const source = object(value);
+  return {
+    vesselCount: fleetNumber(source.vesselCount ?? source.vessel_count),
+    totalDwt: fleetNumber(source.totalDwt ?? source.total_dwt),
+    activePortCount: fleetNumber(source.activePortCount ?? source.active_port_count),
+    topVisitedPorts: list(source.topVisitedPorts ?? source.top_visited_ports),
+    vesselTypeMix: list(source.vesselTypeMix ?? source.vessel_type_mix),
+    ageBands: list(source.ageBands ?? source.age_bands),
+  };
+};
+
 export const normalizeTextKey = (value) =>
   (cleanText(value) || "").toLowerCase().replace(/\s+/g, " ");
 
@@ -209,6 +226,7 @@ export const directoryView = (record = {}, directoryType = "") => {
   const shipyard = object(extra.shipyard);
   const shipyardLocation = object(shipyard.location);
   const contacts = object(extra.authenticated_contacts || extra.authenticatedContacts);
+  const normalizedContact = object(record.contact);
   const tug = object(extra.tug_boat || extra.tugBoat);
   const branchesAndOffices = normalizeBranches(normalizeRowList(record, "branches", "branches", [
     "branch_name", "branchName", "public_address", "publicAddress", "city", "country",
@@ -228,10 +246,10 @@ export const directoryView = (record = {}, directoryType = "") => {
     city: first(entity.city, shipyardLocation.city, contacts.city),
     country: first(entity.country, shipyardLocation.country),
     coordinates: coordinates(shipyardLocation),
-    address: first(entity.public_address, entity.publicAddress, shipyardLocation.public_address, shipyardLocation.publicAddress, contacts.public_address, contacts.publicAddress),
-    phone: first(entity.public_phone, entity.publicPhone, shipyardLocation.public_phone, shipyardLocation.publicPhone, contacts.public_business_phone, contacts.publicBusinessPhone),
-    email: first(entity.public_email, entity.publicEmail, contacts.public_email, contacts.publicEmail),
-    website: first(entity.website, entity.website_url, entity.websiteUrl),
+    address: first(normalizedContact.address, entity.public_address, entity.publicAddress, shipyardLocation.public_address, shipyardLocation.publicAddress, contacts.public_address, contacts.publicAddress),
+    phone: first(normalizedContact.phone, entity.public_phone, entity.publicPhone, shipyardLocation.public_phone, shipyardLocation.publicPhone, contacts.public_business_phone, contacts.publicBusinessPhone),
+    email: first(normalizedContact.email, entity.public_email, entity.publicEmail, contacts.public_email, contacts.publicEmail),
+    website: first(normalizedContact.website, entity.website, entity.website_url, entity.websiteUrl),
     yearsExperience: positiveCount(field(entity, "years_experience", "yearsExperience")),
     vesselsHandled: positiveCount(field(entity, "vessels_handled", "vesselsHandled")),
     claimedStatus: first(entity.claimed_status, entity.claimedStatus),
@@ -254,7 +272,7 @@ export const directoryView = (record = {}, directoryType = "") => {
     products: normalizeProducts(normalizeRowList(record, "products", "products", ["product_name", "productName", "name"])),
     faqs: deduplicateByFields(normalizeRowList(record, "faqs", "faqs", ["question"]).filter((row) => isMeaningful(row.answer)), ["question"]),
     fleet: list(tug.fleet || tug.tugs || tug.vessels || extra.fleet),
-    fleetSummary: object(extra.magicport_company?.fleet_summary),
+    fleetSummary: normalizeFleetSummary(record.fleetSummary ?? extra.magicport_company?.fleet_summary),
   };
 };
 
@@ -262,6 +280,5 @@ export const listServiceNames = (row) =>
   normalizeServices(list(row?.services)).map(({ name }) => name);
 
 export const directoryFleetCount = (row) => {
-  const count = object(row?.extra_data).magicport_company?.fleet_summary?.vessel_count;
-  return count !== null && count !== undefined && Number.isInteger(Number(count)) ? Number(count) : null;
+  return normalizeFleetSummary(object(row?.extra_data).magicport_company?.fleet_summary).vesselCount;
 };

@@ -44,12 +44,15 @@ const SECTION_LABELS = {
   fleet_summary: "Fleet summary",
 };
 const DOSSIER_TYPES = new Set(["service_provider", "ship_agent", "supplier"]);
+const fleetValue = (value) => value === null || value === undefined ? "Not listed" : value.toLocaleString();
 
 const sectionExists = (section, view, directoryType) => {
   if (section === "contact") return true;
   if (section === "overview") return DOSSIER_TYPES.has(directoryType) || Boolean(view.description || view.aboutSections.length || view.yearsExperience);
   if (section === "dimensions") return view.dimensions.length > 0;
-  if (section === "fleet_summary") return Object.keys(view.fleetSummary).length > 0;
+  if (section === "fleet_summary") return [view.fleetSummary.vesselCount, view.fleetSummary.totalDwt,
+    view.fleetSummary.activePortCount].some((value) => value !== null) ||
+    [view.fleetSummary.vesselTypeMix, view.fleetSummary.ageBands, view.fleetSummary.topVisitedPorts].some((rows) => rows.length > 0);
   if (section === "class_approvals") return view.classApprovals.length > 0;
   return Array.isArray(view[section]) && view[section].length > 0;
 };
@@ -114,7 +117,19 @@ export default function MaritimeDirectoryDetails() {
     if (section === "overview") return isDossier ? <CompanyOverview key={section} view={view} /> : <Overview key={section} view={view} />;
     if (section === "contact") return <ContactDetails key={section} view={view} />;
     if (section === "dimensions") return <ShipyardDimensions key={section} dimensions={view.dimensions} />;
-    if (section === "fleet_summary") { const fleet = view.fleetSummary; return <DirectorySection key={section} id="fleet_summary" title="Fleet summary"><dl className="md-company-facts"><div><dt>Vessels</dt><dd>{fleet.vessel_count?.toLocaleString?.() ?? "Not listed"}</dd></div><div><dt>Total DWT</dt><dd>{fleet.total_dwt?.toLocaleString?.() ?? "Not listed"}</dd></div><div><dt>Active ports</dt><dd>{fleet.active_port_count?.toLocaleString?.() ?? "Not listed"}</dd></div></dl>{Array.isArray(fleet.vessel_type_mix) && fleet.vessel_type_mix.length > 0 && <div className="md-prose"><h3>Vessel types</h3><p>{fleet.vessel_type_mix.map((part) => `${part.name}: ${part.percent}%`).join(" · ")}</p></div>}{Array.isArray(fleet.top_visited_ports) && fleet.top_visited_ports.length > 0 && <div className="md-prose"><h3>Top visited ports</h3><p>{fleet.top_visited_ports.slice(0, 20).map((port) => port.name || port).join(" · ")}</p></div>}</DirectorySection>; }
+    if (section === "fleet_summary") {
+      const fleet = view.fleetSummary;
+      return <DirectorySection key={section} id="fleet_summary" title="Fleet summary">
+        <dl className="md-company-facts md-fleet-facts">
+          <div><dt>Vessels</dt><dd>{fleetValue(fleet.vesselCount)}</dd></div>
+          <div><dt>Total DWT</dt><dd>{fleetValue(fleet.totalDwt)}</dd></div>
+          <div><dt>Active ports</dt><dd>{fleetValue(fleet.activePortCount)}</dd></div>
+        </dl>
+        {fleet.vesselTypeMix.length > 0 && <div className="md-fleet-detail"><h3>Vessel type mix</h3><dl>{fleet.vesselTypeMix.map((part, index) => <div key={`${part.name}-${index}`}><dt>{part.name}</dt><dd>{part.percent}%</dd></div>)}</dl></div>}
+        {fleet.ageBands.length > 0 && <div className="md-fleet-detail"><h3>Fleet age distribution</h3><dl>{fleet.ageBands.map((part, index) => <div key={`${part.band}-${index}`}><dt>{part.band}</dt><dd>{part.percent}%</dd></div>)}</dl></div>}
+        {fleet.topVisitedPorts.length > 0 && <div className="md-fleet-detail"><h3>Top visited ports</h3><ul>{fleet.topVisitedPorts.slice(0, 20).map((port, index) => <li key={`${port.unlocode || port.name}-${index}`}><span>{port.name || port}</span>{port.unlocode && <small>{port.unlocode}</small>}</li>)}</ul></div>}
+      </DirectorySection>;
+    }
     if (section === "services") return <DirectorySection key={section} id={section} title={directory.serviceLabel} count={view.services.length} countLabel={view.services.length === 1 ? "capability listed" : "capabilities listed"}><ServiceGroups rows={view.services} /></DirectorySection>;
     if (section === "ports") {
       const title = directory.type === "tug_boat" ? "Operating Ports and Regions" : "Ports Covered";
