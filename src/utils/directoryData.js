@@ -254,8 +254,14 @@ export const directoryView = (record = {}, directoryType = "") => {
     products: normalizeProducts(normalizeRowList(record, "products", "products", ["product_name", "productName", "name"])),
     faqs: deduplicateByFields(normalizeRowList(record, "faqs", "faqs", ["question"]).filter((row) => isMeaningful(row.answer)), ["question"]),
     fleet: list(tug.fleet || tug.tugs || tug.vessels || extra.fleet),
+    fleetSummary: object(extra.magicport_company?.fleet_summary),
   };
 };
 
 export const listServiceNames = (row) =>
   normalizeServices(list(row?.services)).map(({ name }) => name);
+
+export const directoryFleetCount = (row) => {
+  const count = object(row?.extra_data).magicport_company?.fleet_summary?.vessel_count;
+  return count !== null && count !== undefined && Number.isInteger(Number(count)) ? Number(count) : null;
+};

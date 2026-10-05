@@ -1,4 +1,4 @@
-import { Anchor, Factory, PackageOpen, Ship, Wrench } from "lucide-react";
+import { Anchor, Factory, PackageOpen, Ship, Wrench, Building2 } from "lucide-react";
 
 export const MARITIME_DIRECTORIES = [
   {
@@ -51,6 +51,7 @@ export const MARITIME_DIRECTORIES = [
     serviceLabel: "Towage Capabilities",
     sections: ["overview", "contact", "services", "ports", "fleet", "branches", "offices", "certifications", "memberships", "faqs"],
   },
+  { type: "owners_managers", label: "Owners & Managers", singular: "Company", path: "/owners-managers", icon: Building2, description: "Ship owners and managers in the maritime company directory.", sections: ["overview", "contact", "fleet_summary", "services", "ports", "branches", "certifications", "products"] },
 ];
 
 export const DIRECTORY_BY_TYPE = Object.fromEntries(
@@ -60,3 +61,5 @@ export const DIRECTORY_BY_TYPE = Object.fromEntries(
 export const DIRECTORY_TYPE_LABELS = Object.fromEntries(
   MARITIME_DIRECTORIES.map(({ type, singular }) => [type, singular]),
 );
+DIRECTORY_TYPE_LABELS.owner = "Owner";
+DIRECTORY_TYPE_LABELS.manager = "Manager";

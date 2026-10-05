@@ -165,7 +165,7 @@ export function DirectoryResultCard({ row, directory }) {
   const location = [cleanText(row.city), cleanText(row.country)].filter(Boolean).join(", ");
   const parsedTypes = parseJson(row.directory_types ?? row.directoryTypes, []);
   const directoryTypes = [...new Set([
-    directory.type,
+    ...(directory.type === "owners_managers" ? [] : [directory.type]),
     ...(Array.isArray(parsedTypes) ? parsedTypes : []),
   ])].filter((type) => DIRECTORY_TYPE_LABELS[type]);
   const counts = [

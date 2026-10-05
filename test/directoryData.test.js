@@ -228,9 +228,9 @@ test("company logo URLs reject malformed and banner-like assets", () => {
   ]) assert.equal(validLogoUrl(value), null);
 });
 
-test("all five directories share one configuration", () => {
+test("all company directories share one configuration", () => {
   assert.deepEqual(MARITIME_DIRECTORIES.map(({ type }) => type), [
-    "service_provider", "ship_agent", "supplier", "shipyard", "tug_boat",
+    "service_provider", "ship_agent", "supplier", "shipyard", "tug_boat", "owners_managers",
   ]);
 });
 

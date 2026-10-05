@@ -41,6 +41,7 @@ const SECTION_LABELS = {
   faqs: "FAQ",
   dimensions: "Dimensions",
   fleet: "Fleet",
+  fleet_summary: "Fleet summary",
 };
 const DOSSIER_TYPES = new Set(["service_provider", "ship_agent", "supplier"]);
 
@@ -48,6 +49,7 @@ const sectionExists = (section, view, directoryType) => {
   if (section === "contact") return true;
   if (section === "overview") return DOSSIER_TYPES.has(directoryType) || Boolean(view.description || view.aboutSections.length || view.yearsExperience);
   if (section === "dimensions") return view.dimensions.length > 0;
+  if (section === "fleet_summary") return Object.keys(view.fleetSummary).length > 0;
   if (section === "class_approvals") return view.classApprovals.length > 0;
   return Array.isArray(view[section]) && view[section].length > 0;
 };
@@ -112,6 +114,7 @@ export default function MaritimeDirectoryDetails() {
     if (section === "overview") return isDossier ? <CompanyOverview key={section} view={view} /> : <Overview key={section} view={view} />;
     if (section === "contact") return <ContactDetails key={section} view={view} />;
     if (section === "dimensions") return <ShipyardDimensions key={section} dimensions={view.dimensions} />;
+    if (section === "fleet_summary") { const fleet = view.fleetSummary; return <DirectorySection key={section} id="fleet_summary" title="Fleet summary"><dl className="md-company-facts"><div><dt>Vessels</dt><dd>{fleet.vessel_count?.toLocaleString?.() ?? "Not listed"}</dd></div><div><dt>Total DWT</dt><dd>{fleet.total_dwt?.toLocaleString?.() ?? "Not listed"}</dd></div><div><dt>Active ports</dt><dd>{fleet.active_port_count?.toLocaleString?.() ?? "Not listed"}</dd></div></dl>{Array.isArray(fleet.vessel_type_mix) && fleet.vessel_type_mix.length > 0 && <div className="md-prose"><h3>Vessel types</h3><p>{fleet.vessel_type_mix.map((part) => `${part.name}: ${part.percent}%`).join(" · ")}</p></div>}{Array.isArray(fleet.top_visited_ports) && fleet.top_visited_ports.length > 0 && <div className="md-prose"><h3>Top visited ports</h3><p>{fleet.top_visited_ports.slice(0, 20).map((port) => port.name || port).join(" · ")}</p></div>}</DirectorySection>; }
     if (section === "services") return <DirectorySection key={section} id={section} title={directory.serviceLabel} count={view.services.length} countLabel={view.services.length === 1 ? "capability listed" : "capabilities listed"}><ServiceGroups rows={view.services} /></DirectorySection>;
     if (section === "ports") {
       const title = directory.type === "tug_boat" ? "Operating Ports and Regions" : "Ports Covered";
@@ -140,7 +143,7 @@ export default function MaritimeDirectoryDetails() {
   return (
     <main className={`md-detail-page md-detail-page--${directory.type}`}>
       <Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link>
-      <DirectoryDetailHeader view={view} directory={directory} onEdit={() => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
+      <DirectoryDetailHeader view={view} directory={directory} onEdit={directoryType === "owners_managers" ? null : () => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
       {error && <div className="md-alert" role="alert">{error}</div>}
 
       {isShipyard ? (

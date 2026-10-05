@@ -10,8 +10,10 @@ import {
 import ViewToggle from "../components/common/ViewToggle";
 import { isSuperAdmin } from "../utils/auth";
 import "../styles/maritimeDirectory.css";
+import { DIRECTORY_TYPE_LABELS } from "../config/maritimeDirectories";
+import { directoryFleetCount } from "../utils/directoryData";
 
-const initialFilters = { search: "", country: "", reviewStatus: "", isActive: "", sort: "name-asc" };
+const initialFilters = { search: "", country: "", companyType: "all", reviewStatus: "", isActive: "", sort: "name-asc" };
 
 export default function MaritimeDirectoryPage({ directory }) {
   const [rows, setRows] = useState([]);
@@ -29,10 +31,12 @@ export default function MaritimeDirectoryPage({ directory }) {
       type: directory.type,
       search: applied.search,
       country: applied.country,
+      companyType: applied.companyType,
       reviewStatus: applied.reviewStatus,
       isActive: applied.isActive,
       page,
       limit: 20,
+      sort: applied.sort,
     })
       .then((response) => {
         if (!active) return;
@@ -48,11 +52,7 @@ export default function MaritimeDirectoryPage({ directory }) {
     return () => { active = false; };
   }, [applied, directory.type, page]);
 
-  const sortedRows = useMemo(() => [...rows].sort((left, right) => {
-    const a = String(left.company_name || left.companyName || "");
-    const b = String(right.company_name || right.companyName || "");
-    return applied.sort === "name-desc" ? b.localeCompare(a) : a.localeCompare(b);
-  }), [applied.sort, rows]);
+  const sortedRows = useMemo(() => rows, [rows]);
 
   const applyFilters = (event) => {
     event.preventDefault();
@@ -64,7 +64,7 @@ export default function MaritimeDirectoryPage({ directory }) {
 
   return (
     <main className={`md-page md-page--${directory.type}`}>
-      <DirectoryPageHeader directory={directory} total={pagination.total} canAdd={isSuperAdmin()} />
+      <DirectoryPageHeader directory={directory} total={pagination.total} canAdd={isSuperAdmin() && directory.type !== "owners_managers"} />
 
       <form className="md-filters" onSubmit={applyFilters}>
         <div className="md-filters__label">
@@ -77,6 +77,7 @@ export default function MaritimeDirectoryPage({ directory }) {
           <div><Search size={16} aria-hidden="true" /><input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Company, service, port or product" /></div>
         </label>
         <label><span>Country</span><input value={filters.country} onChange={(event) => setFilters({ ...filters, country: event.target.value })} placeholder="All countries" /></label>
+        {directory.type === "owners_managers" && <label><span>Company type</span><select value={filters.companyType} onChange={(event) => setFilters({ ...filters, companyType: event.target.value })}><option value="all">All</option><option value="owner">Owners</option><option value="manager">Managers</option><option value="both">Owner & Manager</option></select></label>}
         <label><span>Review status</span><select value={filters.reviewStatus} onChange={(event) => setFilters({ ...filters, reviewStatus: event.target.value })}><option value="">All statuses</option><option value="pending">Pending review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></label>
         <label><span>Activity</span><select value={filters.isActive} onChange={(event) => setFilters({ ...filters, isActive: event.target.value })}><option value="">Active and inactive</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
         <label><span>Sort</span><select value={filters.sort} onChange={(event) => setFilters({ ...filters, sort: event.target.value })}><option value="name-asc">Company name A–Z</option><option value="name-desc">Company name Z–A</option></select></label>
@@ -97,6 +98,7 @@ export default function MaritimeDirectoryPage({ directory }) {
               <thead>
                 <tr>
                   <th>Company Name</th>
+                  {directory.type === "owners_managers" && <><th>Type</th><th>Fleet</th><th>Contact</th></>}
                   <th>Location</th>
                   <th>Review Status</th>
                   <th>Activity</th>
@@ -113,6 +115,7 @@ export default function MaritimeDirectoryPage({ directory }) {
                           <strong>{row.company_name || row.companyName}</strong>
                         </Link>
                       </td>
+                      {directory.type === "owners_managers" && <><td>{(row.directory_types || []).map((type) => DIRECTORY_TYPE_LABELS[type] || type).join(", ")}</td><td>{directoryFleetCount(row) ?? "—"}</td><td>{row.public_email || row.website || "—"}</td></>}
                       <td>{location}</td>
                       <td><StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} /></td>
                       <td>{(row.is_active ?? row.isActive) !== false ? "Active" : "Inactive"}</td>

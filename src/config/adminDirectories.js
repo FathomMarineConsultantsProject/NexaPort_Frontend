@@ -9,6 +9,7 @@ import {
   Wrench,
   Search,
   Users,
+  Building2,
 } from "lucide-react";
 
 export const ADMIN_DIRECTORY_GROUPS = [
@@ -24,6 +25,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
   {
     label: "Industry Network",
     items: [
+      { label: "Owners & Managers", singular: "Company", type: "owners_managers", path: "/owners-managers", icon: Building2, description: "Ship owners and managers in the maritime company directory." },
       {
         label: "Service Providers",
         singular: "Service Provider",

@@ -12,6 +12,7 @@ const expectedDirectories = [
   ["Flag Inspectors", "/flag"],
   ["Accredited Inspectors", "/accredited-inspectors"],
   ["Appointed Surveyors", "/appointed-surveyors"],
+  ["Owners & Managers", "/owners-managers"],
   ["Service Providers", "/service-providers"],
   ["Ship Agents", "/ship-agents"],
   ["Suppliers", "/suppliers"],
