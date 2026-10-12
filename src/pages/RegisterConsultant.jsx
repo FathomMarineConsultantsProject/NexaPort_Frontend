@@ -144,6 +144,7 @@ export default function RegisterConsultant() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [issuedNexaportId, setIssuedNexaportId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [flagOptions, setFlagOptions] = useState([]);
@@ -670,7 +671,8 @@ export default function RegisterConsultant() {
     try {
       const photoS3Key = await uploadFile("photo", formData.photoFile);
       const cvS3Key = await uploadFile("cv", formData.cvFile);
-      await registerConsultant(buildPayload(photoS3Key, cvS3Key));
+      const registration = await registerConsultant(buildPayload(photoS3Key, cvS3Key));
+      setIssuedNexaportId(registration?.expert?.nexaport_id || registration?.nexaport_id || "");
       setSuccess(true);
       setFormData(initialConsultantRegistration);
       setErrors({});
@@ -1175,6 +1177,7 @@ export default function RegisterConsultant() {
         <section className="consultant-success">
           <h1>Registration completed successfully.</h1>
           <p>Your NexaPort consultant account has been created.</p>
+          {issuedNexaportId && <p>Your Nexaport ID: <strong>{issuedNexaportId}</strong></p>}
           <Link to="/login" className="consultant-submit">
             Sign in to NexaPort
           </Link>

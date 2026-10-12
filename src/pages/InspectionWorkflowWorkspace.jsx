@@ -2,7 +2,7 @@ import { ArrowLeft, ExternalLink, MapPin, Ship } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  completeWorkflowChecklist, completeWorkflowPreparation, confirmWorkflowQuotation,
+  completeWorkflowChecklist, completeWorkflowPreparation,
   confirmWorkflowReport, generateWorkflowDraft, getInspectionWorkflow, completeInspectionWorkflow,
   initializeInspectionWorkflow, removeWorkflowEvidence, reviewWorkflowReport,
   saveWorkflowChecklist, saveWorkflowPreparation, selectChecklistTemplate,
@@ -25,11 +25,12 @@ import StageReportConfirmation from "../components/workflow/stages/StageReportCo
 import StageCompleted from "../components/workflow/stages/StageCompleted";
 import StageInvoice from "../components/workflow/stages/StageInvoice";
 import { date } from "../components/workflow/stages/formatters";
+import { decideQuotation } from "../api/quotationApi";
 import "./InspectionWorkflow.css";
 
 export default function InspectionWorkflowWorkspace(){
   const {requestId}=useParams();
-  const [data,setData]=useState(null),[viewedStage,setViewedStage]=useState("overview"),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[markup,setMarkup]=useState("0");
+  const [data,setData]=useState(null),[viewedStage,setViewedStage]=useState("overview"),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const load=useCallback(async()=>{setLoading(true);setError("");try{let response=await getInspectionWorkflow(requestId);if(!response.data.workflow)response=await initializeInspectionWorkflow(requestId);setData(response.data);setViewedStage(response.data.workflow.currentStage);}catch(e){setError(e.response?.data?.message||"Unable to load this inspection workflow.");}finally{setLoading(false);}},[requestId]);
   useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer);},[load]);
   const perform=async(action,{stay}={})=>{setBusy(true);setError("");try{const response=await action();setData(response.data);setViewedStage(stay||response.data.workflow.currentStage);}catch(e){const details=e.response?.data?.fieldErrors?.map((item)=>item.message||item.label).filter(Boolean).join(" ");setError([e.response?.data?.message||e.message||"Unable to update this workflow.",details].filter(Boolean).join(" "));}finally{setBusy(false);}};
@@ -39,24 +40,24 @@ export default function InspectionWorkflowWorkspace(){
   const canViewNext=(data.workflow.currentStage==="report_confirmation"&&data.report?.confirmedAt)||(data.workflow.currentStage==="inspection_completed"&&data.inspectionCompletion?.completed)||["invoice_submitted","invoice_approved"].includes(data.workflow.currentStage);
   const lifecycleLabel=data.workflow.currentStage==="invoice_paid"?"Paid":data.invoice?.status==="rejected"?"Invoice Correction Required":data.workflow.currentStage==="invoice_approved"?"Invoice Approved — Payment Pending":data.workflow.currentStage==="invoice_submitted"?"Invoice Submitted — Approval Pending":data.workflow.currentStage==="review"?"Report Review":data.workflow.currentStage.replaceAll("_"," ");
   const executionStarted=WORKFLOW_STAGES.findIndex(([stage])=>stage===data.workflow.currentStage)>=WORKFLOW_STAGES.findIndex(([stage])=>stage==="preparation");
-  return <main className="workflow-page workspace-page"><Link className="back-link" to="/admin/inspection-workflows"><ArrowLeft size={15}/> Inspection Workflow</Link><header className="workspace-head"><div><span className="workspace-reference">Request #{data.request.id}</span><h1>{data.request.reference}</h1><div className="workspace-meta"><span><Ship size={15}/>{data.request.vessel.name||"Vessel not provided"}</span><span><MapPin size={15}/>{data.request.port.name||"Port not provided"}</span><span>Required {date(data.request.requiredBy)}</span></div></div><div><span className="workflow-stage-chip">{lifecycleLabel}</span><Link to={`/requests/${data.request.id}`}>View Request <ExternalLink size={14}/></Link></div></header>{error&&<div className="workflow-alert error" role="alert">{error}</div>}{executionStarted&&<DailyReportsPanel requestId={requestId}/>}<div className="workspace-layout"><WorkflowStageRail currentStage={data.workflow.currentStage} viewedStage={viewedStage} onView={setViewedStage} canViewNext={canViewNext}/><div className="workspace-stage">
-    {viewedStage==="overview"&&<StageOverview {...stageProps} onAdvance={()=>perform(()=>updateInspectionWorkflowStage(requestId,{stage:"quote"}))}/>} 
-    {viewedStage==="quote"&&<StageQuote {...stageProps} onSelect={(quotationId)=>perform(()=>selectWorkflowQuotation(requestId,{quotationId}))}/>} 
-    {viewedStage==="confirm"&&<StageConfirm
+  return <main className="workflow-page workspace-page"><Link className="back-link" to="/admin/inspection-workflows"><ArrowLeft size={15}/> Inspection Workflow</Link><header className="workspace-head"><div className="workspace-title"><span className="workspace-reference">Request #{data.request.id}</span><h1>{data.request.reference}</h1><div className="workspace-meta"><span><Ship size={15}/>{data.request.vessel.name||"Vessel not provided"}</span><span><MapPin size={15}/>{data.request.port.name||"Port not provided"}</span><span>Required {date(data.request.requiredBy)}</span></div></div><div className="workspace-head-actions"><span className="workflow-stage-chip">{lifecycleLabel}</span><Link className="workspace-request-link" to={`/requests/${data.request.id}`}>View Request <ExternalLink size={14}/></Link></div></header>{error&&<div className="workflow-alert error" role="alert">{error}</div>}{executionStarted&&<DailyReportsPanel requestId={requestId}/>}<div className="workspace-layout"><WorkflowStageRail currentStage={data.workflow.currentStage} viewedStage={viewedStage} onView={setViewedStage} canViewNext={canViewNext}/><div className="workspace-stage">
+    {viewedStage==="overview"&&<StageOverview {...stageProps} onAdvance={()=>perform(()=>updateInspectionWorkflowStage(requestId,{stage:"quote"}))}/>}
+    {viewedStage==="quote"&&<StageQuote {...stageProps} onSelect={(quotationId)=>perform(()=>selectWorkflowQuotation(requestId,{quotationId}))} onDecision={(quotationId,payload)=>perform(async()=>{await decideQuotation(quotationId,payload);return getInspectionWorkflow(requestId);},{stay:"quote"})}/>}
+    {viewedStage==="confirm"&&<StageConfirm key={`${data.selectedQuotation?.id || "none"}-${data.proposal?.id || "new"}-${data.proposal?.updatedAt || ""}-${data.proposals?.find((item)=>item.status==="draft")?.updatedAt || ""}`}
       {...stageProps}
-      onSendProposal={(form)=>perform(()=>sendWorkflowProposal(requestId,form),{stay:"confirm"})}
-      onSaveDraft={(form)=>perform(()=>saveWorkflowProposalDraft(requestId,form),{stay:"confirm"})}
-      onSupersedeProposal={(proposalId)=>perform(()=>supersedeWorkflowProposal(requestId,{proposalId}),{stay:"confirm"})}
+      onSendProposal={(form)=>perform(async()=>{const draft=await saveWorkflowProposalDraft(requestId,form);await sendWorkflowProposal(requestId,{proposalId:draft.data.id});return getInspectionWorkflow(requestId);},{stay:"confirm"})}
+      onSaveDraft={(form)=>perform(async()=>{await saveWorkflowProposalDraft(requestId,form);return getInspectionWorkflow(requestId);},{stay:"confirm"})}
+      onSupersedeProposal={(proposalId)=>perform(async()=>{await supersedeWorkflowProposal(requestId,{proposalId});return getInspectionWorkflow(requestId);},{stay:"confirm"})}
       onSelectOtherQuote={()=>setViewedStage("quote")}
       onAdvanceToSurveyor={()=>setViewedStage("surveyor")}
     />}
-    {viewedStage==="surveyor"&&<StageSurveyor {...stageProps} onAdvance={()=>perform(()=>updateInspectionWorkflowStage(requestId,{stage:"preparation"}))}/>} 
-    {viewedStage==="preparation"&&<StagePreparation {...stageProps} onSave={(form)=>perform(()=>saveWorkflowPreparation(requestId,form),{stay:"preparation"})} onComplete={(form)=>perform(()=>completeWorkflowPreparation(requestId,form))}/>} 
-    {viewedStage==="checklist"&&<StageChecklist {...stageProps} onSelectTemplate={(templateId)=>perform(()=>selectChecklistTemplate(requestId,templateId),{stay:"checklist"})} onSave={(values)=>perform(()=>saveWorkflowChecklist(requestId,values),{stay:"checklist"})} onComplete={(values)=>perform(async()=>{await saveWorkflowChecklist(requestId,values);return completeWorkflowChecklist(requestId);})} onUploadEvidence={(fieldKey,file,caption)=>perform(()=>uploadWorkflowEvidence(requestId,{fieldKey,file,caption}),{stay:"checklist"})} onRemoveEvidence={(evidenceId)=>perform(()=>removeWorkflowEvidence(requestId,evidenceId),{stay:"checklist"})}/>} 
-    {viewedStage==="report"&&<StageReport {...stageProps} onGenerate={()=>perform(()=>generateWorkflowDraft(requestId),{stay:"report"})} onReview={()=>perform(()=>reviewWorkflowReport(requestId,"open"))}/>} 
-    {viewedStage==="review"&&<StageReview {...stageProps} onAction={(action)=>perform(()=>reviewWorkflowReport(requestId,action))}/>} 
-    {viewedStage==="report_confirmation"&&<StageReportConfirmation {...stageProps} onConfirm={()=>perform(()=>confirmWorkflowReport(requestId),{stay:"report_confirmation"})} onContinue={()=>setViewedStage("inspection_completed")}/>} 
-    {viewedStage==="inspection_completed"&&<StageCompleted {...stageProps} onComplete={()=>perform(()=>completeInspectionWorkflow(requestId))} onContinue={()=>setViewedStage("invoice_submitted")}/>} 
+    {viewedStage==="surveyor"&&<StageSurveyor {...stageProps} onAdvance={()=>perform(()=>updateInspectionWorkflowStage(requestId,{stage:"preparation"}))}/>}
+    {viewedStage==="preparation"&&<StagePreparation {...stageProps} onSave={(form)=>perform(()=>saveWorkflowPreparation(requestId,form),{stay:"preparation"})} onComplete={(form)=>perform(()=>completeWorkflowPreparation(requestId,form))}/>}
+    {viewedStage==="checklist"&&<StageChecklist {...stageProps} onSelectTemplate={(templateId)=>perform(()=>selectChecklistTemplate(requestId,templateId),{stay:"checklist"})} onSave={(values)=>perform(()=>saveWorkflowChecklist(requestId,values),{stay:"checklist"})} onComplete={(values)=>perform(async()=>{await saveWorkflowChecklist(requestId,values);return completeWorkflowChecklist(requestId);})} onUploadEvidence={(fieldKey,file,caption)=>perform(()=>uploadWorkflowEvidence(requestId,{fieldKey,file,caption}),{stay:"checklist"})} onRemoveEvidence={(evidenceId)=>perform(()=>removeWorkflowEvidence(requestId,evidenceId),{stay:"checklist"})}/>}
+    {viewedStage==="report"&&<StageReport {...stageProps} onGenerate={()=>perform(()=>generateWorkflowDraft(requestId),{stay:"report"})} onReview={()=>perform(()=>reviewWorkflowReport(requestId,"open"))}/>}
+    {viewedStage==="review"&&<StageReview {...stageProps} onAction={(action)=>perform(()=>reviewWorkflowReport(requestId,action))}/>}
+    {viewedStage==="report_confirmation"&&<StageReportConfirmation {...stageProps} onConfirm={()=>perform(()=>confirmWorkflowReport(requestId),{stay:"report_confirmation"})} onContinue={()=>setViewedStage("inspection_completed")}/>}
+    {viewedStage==="inspection_completed"&&<StageCompleted {...stageProps} onComplete={()=>perform(()=>completeInspectionWorkflow(requestId))} onContinue={()=>setViewedStage("invoice_submitted")}/>}
     {["invoice_submitted","invoice_approved","invoice_paid"].includes(viewedStage)&&<StageInvoice key={`${viewedStage}-${data.workflow.currentStage}-${data.invoice?.status||"none"}`} {...stageProps} mode={viewedStage} onSubmit={(form)=>perform(()=>submitWorkflowInvoice(requestId,form))} onApprove={()=>perform(()=>approveWorkflowInvoice(requestId))} onReject={(form)=>perform(()=>rejectWorkflowInvoice(requestId,form),{stay:"invoice_approved"})} onPay={(payment)=>perform(()=>payWorkflowInvoice(requestId,payment))} onViewStage={setViewedStage}/>}
   </div></div></main>;
 }

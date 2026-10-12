@@ -17,7 +17,7 @@ test("scope errors distinguish blocked configuration from traffic limits without
 test("Consultants stays available to previous non-Client roles under Directories; other entries stay Admin-only", async () => {
   for (const role of [1, 2, 4]) {
     const groups = getVisibleDirectoryGroups(role);
-    assert.equal(groups[0].label, "Compliance & Inspection");
+    assert.equal(groups[0].label, "Surveyors");
     assert.ok(!groups.some((group) => group.label === "Consultants"));
     const entries = groups.flatMap((group) => group.items);
     assert.ok(entries.some((item) => item.path === "/experts"));
@@ -105,7 +105,7 @@ test("workflow surfaces show operational context and retain legacy Company label
 test("Inspector Search includes Consultants by default and links their profiles", async () => {
   const jsx = await source("pages/InspectorSearch.jsx");
   assert.match(jsx, /type: ""/);
-  assert.match(jsx, /All inspector types/);
+  assert.match(jsx, /All sources/);
   assert.match(jsx, /nexaport_consultant: "Nexaport Consultant"/);
   assert.match(jsx, /return `\/experts\/\$\{item.source_id\}`/);
 });

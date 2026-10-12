@@ -9,6 +9,9 @@ export const getQuotationById = async (id) => {
   const res = await axiosClient.get(`/quotations/${id}`);
   return res.data;
 };
+export const getQuotationNegotiation = async (id) => (await axiosClient.get(`/quotations/${id}/negotiation`)).data;
+export const submitQuotationRevision = async (id, payload) => (await axiosClient.post(`/quotations/${id}/revisions`,payload)).data;
+export const decideQuotation = async (id, payload) => (await axiosClient.post(`/quotations/${id}/decisions`,payload)).data;
 
 export const createQuotation = async (payload) => {
   const res = await axiosClient.post("/quotations", payload);

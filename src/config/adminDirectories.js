@@ -14,12 +14,15 @@ import {
 
 export const ADMIN_DIRECTORY_GROUPS = [
   {
-    label: "Compliance & Inspection",
+    label: "Surveyors",
     items: [
-      { label: "Inspector Search", path: "/inspector-search", icon: Search },
-      { label: "Flag Inspectors", path: "/flag", icon: Flag },
-      { label: "Accredited Inspectors", path: "/accredited-inspectors", icon: BadgeCheck },
-      { label: "Appointed Surveyors", path: "/appointed-surveyors", icon: ClipboardCheck },
+      { label: "All Surveyors", path: "/surveyors", icon: Search },
+      { label: "Marine Surveyors", path: "/surveyors?category=Marine%20Surveyors", icon: Ship },
+      { label: "Maritime Consultants", path: "/surveyors?category=Maritime%20Consultants", icon: Users },
+      { label: "Flag State Inspectors", path: "/surveyors?category=Flag%20State%20Inspectors", icon: Flag },
+      { label: "Vessel Inspectors", path: "/surveyors?category=Vessel%20Inspectors", icon: ClipboardCheck },
+      { label: "Accredited Inspectors", path: "/surveyors?category=Accredited%20Inspectors", icon: BadgeCheck },
+      { label: "Appointed Surveyors", path: "/surveyors?category=Appointed%20Surveyors", icon: ClipboardCheck },
     ],
   },
   {
@@ -80,7 +83,7 @@ export function getVisibleDirectoryGroups(roleId) {
   const groups = ADMIN_DIRECTORY_GROUPS.map((group) => ({
     ...group,
     items: [
-      ...(group.label === "Compliance & Inspection" ? [consultant] : []),
+      ...(group.label === "Surveyors" ? [consultant] : []),
       ...group.items.map((item) => ({ ...item, roles: [1] })),
     ],
   }));

@@ -8,10 +8,13 @@ import {
 } from "../src/config/adminDirectories.js";
 
 const expectedDirectories = [
-  ["Inspector Search", "/inspector-search"],
-  ["Flag Inspectors", "/flag"],
-  ["Accredited Inspectors", "/accredited-inspectors"],
-  ["Appointed Surveyors", "/appointed-surveyors"],
+  ["All Surveyors", "/surveyors"],
+  ["Marine Surveyors", "/surveyors?category=Marine%20Surveyors"],
+  ["Maritime Consultants", "/surveyors?category=Maritime%20Consultants"],
+  ["Flag State Inspectors", "/surveyors?category=Flag%20State%20Inspectors"],
+  ["Vessel Inspectors", "/surveyors?category=Vessel%20Inspectors"],
+  ["Accredited Inspectors", "/surveyors?category=Accredited%20Inspectors"],
+  ["Appointed Surveyors", "/surveyors?category=Appointed%20Surveyors"],
   ["Owners & Managers", "/owners-managers"],
   ["Service Providers", "/service-providers"],
   ["Ship Agents", "/ship-agents"],
@@ -20,10 +23,10 @@ const expectedDirectories = [
   ["Tug Boats", "/tug-boats"],
 ];
 
-test("restores the historical directory groups, labels, routes, and order", () => {
+test("groups human directory discovery under Surveyors and leaves company directories separate", () => {
   assert.deepEqual(
     ADMIN_DIRECTORY_GROUPS.map(({ label }) => label),
-    ["Compliance & Inspection", "Industry Network"]
+    ["Surveyors", "Industry Network"]
   );
   assert.deepEqual(
     ADMIN_DIRECTORIES.map(({ label, path }) => [label, path]),

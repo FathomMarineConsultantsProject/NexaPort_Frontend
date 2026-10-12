@@ -43,6 +43,9 @@ export default function AdminDashboard() {
         <DashboardKpiCard label="Awaiting quotations" value={kpis.requests_awaiting_quotes} />
         <DashboardKpiCard label="Quotes for review" value={kpis.quotes_awaiting_review} priority={kpis.quotes_awaiting_review > 0} />
         <DashboardKpiCard label="Proposals awaiting client" value={kpis.proposals_awaiting_client} priority={kpis.proposals_awaiting_client > 0} />
+        <DashboardKpiCard label="Waiting on Consultant revision" value={kpis.quotes_waiting_consultant_revision} priority={kpis.quotes_waiting_consultant_revision > 0} />
+        <DashboardKpiCard label="Revised quotes for review" value={kpis.revised_quotes_awaiting_review} priority={kpis.revised_quotes_awaiting_review > 0} />
+        <DashboardKpiCard label="Approved quotes ready for proposal" value={kpis.quotes_ready_for_proposal} />
         <DashboardKpiCard label="Proposals declined" value={kpis.proposals_client_rejected} priority={kpis.proposals_client_rejected > 0} />
         <DashboardKpiCard label="Active jobs" value={kpis.active_jobs} />
         <DashboardKpiCard label="Completed jobs" value={kpis.completed_jobs} />
@@ -83,7 +86,7 @@ export default function AdminDashboard() {
           { key: "consultant", label: "Consultant", render: (row) => row.consultant_name || "—" },
           { key: "submitted", label: "Submitted", render: (row) => formatDate(row.created_at) },
           { key: "value", label: "Consultant quote", render: (row) => formatMoney(quotationValue(row)) },
-          { key: "status", label: "Status", render: (row) => <DashboardStatus value={row.status} /> },
+          { key: "status", label: "Status", render: (row) => <DashboardStatus value={row.internal_review_status || row.status} /> },
         ]} rows={data.quotes_for_review} getRowHref={requestLink} emptyMessage="No quotations are awaiting review." />
       </DashboardSection>
 

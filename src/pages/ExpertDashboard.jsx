@@ -44,6 +44,9 @@ export default function ExpertDashboard() {
         <DashboardKpiCard label="Matching requests" value={kpis.matching_requests} priority={kpis.matching_requests > 0} />
         <DashboardKpiCard label="Quotations submitted" value={kpis.quotes_submitted} />
         <DashboardKpiCard label="Pending quotations" value={kpis.quotes_pending} priority={kpis.quotes_pending > 0} />
+        <DashboardKpiCard label="Awaiting Admin review" value={kpis.quotes_awaiting_admin} />
+        <DashboardKpiCard label="Revision requested" value={kpis.quotes_revision_requested} priority={kpis.quotes_revision_requested > 0} />
+        <DashboardKpiCard label="Commercially approved" value={kpis.quotes_internally_approved} />
         <DashboardKpiCard label="Accepted quotations" value={kpis.quotes_accepted} />
         <DashboardKpiCard label="Rejected quotations" value={kpis.quotes_rejected} />
         <DashboardKpiCard label="Active assignments" value={kpis.active_assignments} />
@@ -89,7 +92,7 @@ export default function ExpertDashboard() {
             { key: "request", label: "Request", primary: true, render: requestTitle },
             { key: "submitted", label: "Submitted", render: (row) => formatDate(row.created_at) },
             { key: "value", label: "Quoted value", render: (row) => formatMoney(quotationValue(row)) },
-            { key: "status", label: "Status", render: (row) => <DashboardStatus value={row.status} /> },
+            { key: "status", label: "Status", render: (row) => <DashboardStatus value={row.status === "accepted" ? "accepted / assigned" : row.internal_review_status || row.status} /> },
           ]} rows={data.recent_quotations} getRowHref={requestLink} emptyMessage="No quotations have been submitted." />
         </DashboardSection>
         <DashboardSection title="Upcoming work" description="Nearest genuine assignment dates.">

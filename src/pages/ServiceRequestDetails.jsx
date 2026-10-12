@@ -19,7 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { acceptQuotation, createQuotation, getQuotations } from "../api/quotationApi";
+import { createQuotation, getQuotations, getQuotationNegotiation, submitQuotationRevision } from "../api/quotationApi";
 import { createExpertReview } from "../api/reviewApi";
 import {
   approveServiceRequest,
@@ -93,9 +93,10 @@ export default function ServiceRequestDetails() {
 
   const [request, setRequest] = useState(null);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [ownNegotiations, setOwnNegotiations] = useState({});
+  const [revisingQuoteId, setRevisingQuoteId] = useState(null);
   const [toast, setToast] = useState("");
   const [loading, setLoading] = useState(true);
-  const [markupByQuote, setMarkupByQuote] = useState({});
   const [inspectionVerticals, setInspectionVerticals] = useState([]);
 
   // Admin review state
@@ -147,7 +148,10 @@ export default function ServiceRequestDetails() {
       const requestRes = await getServiceRequestById(id);
       if (isExpert()) {
         const quotationRes = await getQuotations({ serviceRequestId: id });
-        setRequest({ ...requestRes.data, _ownQuotations: quotationRes.data || [] });
+        const own = quotationRes.data || [];
+        const details = await Promise.all(own.map(q => getQuotationNegotiation(q.id)));
+        setOwnNegotiations(Object.fromEntries(details.map((item,index)=>[own[index].id,item.data])));
+        setRequest({ ...requestRes.data, _ownQuotations: own });
       } else {
         setRequest(requestRes.data);
       }
@@ -160,7 +164,8 @@ export default function ServiceRequestDetails() {
   }, [id]);
 
   useEffect(() => {
-    loadPage();
+    const timer=window.setTimeout(loadPage,0);
+    return ()=>window.clearTimeout(timer);
   }, [loadPage]);
 
   useEffect(() => {
@@ -256,7 +261,7 @@ export default function ServiceRequestDetails() {
       await createQuotation({
         serviceRequestId: Number(id),
         totalQuoteUsd: Number(quoteForm.totalQuoteUsd),
-        attendanceDays: Number(quoteForm.attendanceDays || 0),
+        attendanceDays: quoteForm.attendanceDays ? Number(quoteForm.attendanceDays) : null,
         travelCost: Number(quoteForm.travelCost || 0),
         accommodationCost: Number(quoteForm.accommodationCost || 0),
         reportFee: Number(quoteForm.reportFee || 0),
@@ -274,22 +279,16 @@ export default function ServiceRequestDetails() {
     }
   };
 
-  const handleAcceptQuotation = async (quotationId) => {
+  const startRevision = (quote, latest) => {
+    setQuoteForm({totalQuoteUsd:String(latest.baseFee),attendanceDays:latest.attendanceDays==null?"":String(latest.attendanceDays),travelCost:String(latest.travelCost),accommodationCost:String(latest.accommodationCost),reportFee:String(latest.reportFee),urgencySurcharge:String(latest.urgencySurcharge),coverLetter:latest.coverLetter||""});
+    setRevisingQuoteId(quote.id);
+  };
+  const submitRevision = async (event, negotiation) => {
+    event.preventDefault();
     try {
-      const adminMarkupUsd = Number(markupByQuote[quotationId] || 0);
-
-      const res = await acceptQuotation(quotationId, {
-        adminMarkupUsd,
-      });
-
-      setToast(res.message || "Quotation accepted and client price finalized.");
-      loadPage();
-      setTimeout(() => setToast(""), 3000);
-    } catch (error) {
-      console.error("Failed to accept quotation:", error);
-      setToast(error.response?.data?.message || "Failed to accept quotation.");
-      setTimeout(() => setToast(""), 3000);
-    }
+      await submitQuotationRevision(negotiation.id,{expectedRevisionId:negotiation.latestRevisionId,totalQuoteUsd:quoteForm.totalQuoteUsd,attendanceDays:quoteForm.attendanceDays||null,travelCost:quoteForm.travelCost||0,accommodationCost:quoteForm.accommodationCost||0,reportFee:quoteForm.reportFee||0,urgencySurcharge:quoteForm.urgencySurcharge||0,coverLetter:quoteForm.coverLetter});
+      setRevisingQuoteId(null);setToast("Revised quotation submitted for Admin review.");await loadPage();
+    } catch(error) { setToast(error.response?.data?.message||"Unable to submit revision."); }
   };
 
   /* ────── Admin moderation handlers ────── */
@@ -516,7 +515,11 @@ export default function ServiceRequestDetails() {
       </section>
       <section className="consultant-quote-section">
         <div className="quotation-head"><h2>Your Quotation</h2>{!ownQuotes.length && <button className="submit-quote-toggle" onClick={() => setShowQuoteForm(!showQuoteForm)}><Briefcase size={17}/> Submit Quotation</button>}</div>
-        {ownQuotes.map((quote) => <article className="quotation-card" key={quote.id}><div className="quotation-top"><div><h3>Your submitted quotation</h3><p>{formatDateTime(quote.createdAt)}</p></div><div className="quotation-price"><strong>${money(quote.totalQuoteUsd)}</strong><span className={`quote-status ${quote.status}`}>{quote.status}</span></div></div></article>)}
+        {ownQuotes.map((quote) => {const negotiation=ownNegotiations[quote.id],latest=negotiation?.revisions.at(-1);return <article className="quotation-card" key={quote.id}><div className="quotation-top"><div><h3>Your quotation · Revision {latest?.revisionNumber||1}</h3><p>{formatDateTime(latest?.submittedAt||quote.createdAt)}</p></div><div className="quotation-price"><strong>${money(latest?.consultantTotal??quote.totalQuoteUsd)}</strong><span className={`quote-status ${quote.status}`}>{quote.status==="accepted"?"Client accepted / assigned":negotiation?.internalStatus==="approved"?"Commercially approved":negotiation?.internalStatus?.replaceAll("_"," ")||quote.status}</span></div></div>
+          {negotiation?.revisions.map(r=><div key={r.id} className="workflow-panel"><strong>Revision {r.revisionNumber} · {formatDateTime(r.submittedAt)}</strong><p>Base ${money(r.baseFee)} · Travel ${money(r.travelCost)} · Accommodation ${money(r.accommodationCost)} · Report ${money(r.reportFee)} · Urgency ${money(r.urgencySurcharge)} · Total ${money(r.consultantTotal)}</p>{r.coverLetter&&<p>{r.coverLetter}</p>}{r.decision&&<p>Admin {r.decision.type.replaceAll("_"," ")} · {formatDateTime(r.decision.decidedAt)}{r.decision.consultantMessage&&<><br/>{r.decision.consultantMessage}</>}{r.decision.reason&&<><br/>Reason: {r.decision.reason}</>}{r.decision.suggestedMaxAmount!=null&&<><br/>Suggested maximum: {r.decision.suggestedMaxCurrency} {r.decision.suggestedMaxAmount} (advisory)</>}</p>}</div>)}
+          {negotiation?.internalStatus==="revision_requested"&&latest&&<button type="button" className="primary-btn" onClick={()=>startRevision(quote,latest)}>Revise Quotation</button>}
+          {revisingQuoteId===quote.id&&<form className="quote-form-card" onSubmit={e=>submitRevision(e,negotiation)}><h3>Submit revision {latest.revisionNumber+1}</h3><div className="quote-two-grid">{[["totalQuoteUsd","Professional / base fee (USD)"],["attendanceDays","Attendance days"],["travelCost","Travel"],["accommodationCost","Accommodation"],["reportFee","Report fee"],["urgencySurcharge","Urgency surcharge"]].map(([field,label])=><label key={field}>{label}<input type="number" step={field==="attendanceDays"?"1":"0.01"} min={field==="totalQuoteUsd"?"0.01":"0"} required={field==="totalQuoteUsd"} value={quoteForm[field]} onChange={e=>setQuoteForm({...quoteForm,[field]:e.target.value})}/></label>)}</div><label>Cover letter<textarea value={quoteForm.coverLetter} onChange={e=>setQuoteForm({...quoteForm,coverLetter:e.target.value})}/></label><button className="primary-btn">Submit new revision</button><button type="button" className="secondary-btn" onClick={()=>setRevisingQuoteId(null)}>Cancel</button></form>}
+        </article>})}
         {showQuoteForm && !ownQuotes.length && <form className="quote-form-card" onSubmit={submitQuotation}><h3>Submit Quotation</h3><div className="quote-two-grid">
           {[["totalQuoteUsd","Total Quotation (USD)"],["attendanceDays","Attendance Days"],["travelCost","Travel Cost"],["accommodationCost","Accommodation"],["reportFee","Report Fee"],["urgencySurcharge","Urgency Surcharge"]].map(([field,label]) => <label key={field}>{label}<input type="number" min="0" required={field === "totalQuoteUsd"} value={quoteForm[field]} onChange={(event) => setQuoteForm({...quoteForm,[field]:event.target.value})}/></label>)}
         </div><label>Cover Letter / Notes<textarea value={quoteForm.coverLetter} onChange={(event) => setQuoteForm({...quoteForm,coverLetter:event.target.value})}/></label><div className="quote-actions"><button type="submit" className="primary-btn">Submit Quotation</button><button type="button" className="secondary-btn" onClick={() => setShowQuoteForm(false)}>Cancel</button></div></form>}
@@ -531,7 +534,6 @@ export default function ServiceRequestDetails() {
   const vessel = request?.vessel || {};
   const port = request?.port || {};
   const canSubmitQuote = isExpert();
-  const canAcceptQuote = isSuperAdmin();
   const acceptedQuote = quotations.find((q) => q.status === "accepted");
   const currentUser = getStoredUser();
   const editPermission = getRequestEditPermission(request, currentUser);

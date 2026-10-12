@@ -30,7 +30,7 @@ test("workflow stages use approved budget and shared backend confirmation endpoi
   const [overview, quote, confirm, api] = await Promise.all([source("../src/components/workflow/stages/StageOverview.jsx"),source("../src/components/workflow/stages/StageQuote.jsx"),source("../src/components/workflow/stages/StageConfirm.jsx"),source("../src/api/inspectionWorkflowApi.js")]);
   assert.match(overview, /approvedBudgetUsd/);
   assert.match(quote, /Approved Request Budget/);
-  assert.match(confirm, /Confirm Quotation & Assign Surveyor/);
+  assert.match(confirm, /Client approval is required before assignment/);
   assert.match(api, /\/confirm/);
 });
 

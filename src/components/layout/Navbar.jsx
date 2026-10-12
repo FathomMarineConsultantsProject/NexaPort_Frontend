@@ -227,6 +227,9 @@ export default function Navbar() {
 
     const payload = notification.payload || {};
     const destination =
+      (notification.type?.startsWith("quotation_") || notification.type?.startsWith("commercial_proposal_"))
+        ? (roleId === 1 ? `/admin/inspection-workflow/${payload.request_id}` : `/requests/${payload.request_id}`)
+        :
       notification.type === "service_request_approved"
         ? `/requests/${payload.request_id || notification.entity_id}`
         : notification.type === "client_registration"
@@ -405,9 +408,9 @@ export default function Navbar() {
                           className={`np-notification-item ${notification.read_at ? "read" : "unread"}`}
                           onClick={() => openNotification(notification)}
                         >
-                          <span className="np-notification-type">{notification.type === "service_request_approved" ? "Inspection request" : notification.type === "client_registration" ? "Client registration" : "Consultant registration"}</span>
-                          <strong>{notification.type === "service_request_approved" ? notification.title : payload.name || notification.title}</strong>
-                          {notification.type === "service_request_approved" ? <span>{notification.message}</span> : <>{payload.company && <span>{payload.company}</span>}{payload.email && <small>{payload.email}</small>}</>}
+                          <span className="np-notification-type">{notification.type?.startsWith("quotation_") ? "Quotation" : notification.type?.startsWith("commercial_proposal_") ? "Commercial proposal" : notification.type === "service_request_approved" ? "Inspection request" : notification.type === "client_registration" ? "Client registration" : "Consultant registration"}</span>
+                          <strong>{notification.type === "service_request_approved" || notification.type?.startsWith("quotation_") || notification.type?.startsWith("commercial_proposal_") ? notification.title : payload.name || notification.title}</strong>
+                          {notification.type === "service_request_approved" || notification.type?.startsWith("quotation_") || notification.type?.startsWith("commercial_proposal_") ? <span>{notification.message}</span> : <>{payload.company && <span>{payload.company}</span>}{payload.email && <small>{payload.email}</small>}</>}
                           <time>{new Date(notification.created_at).toLocaleString()}</time>
                         </button>
                       );
