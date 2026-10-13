@@ -11,5 +11,3 @@
 .shared-request-modal p { margin: 0 0 24px; }
 .shared-request-signin { display: inline-block; background: #0f766e; color: white; padding: 11px 20px; border-radius: 4px; text-decoration: none; font-weight: 600; }
 .shared-request-state { max-width: 600px; margin: 100px auto; padding: 24px; color: #102a43; }
-.request-copy-link { display: inline-flex; align-items: center; gap: 8px; }
-.request-copy-link small { color: #0f766e; }

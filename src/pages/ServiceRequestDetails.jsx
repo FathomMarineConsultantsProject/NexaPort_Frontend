@@ -656,10 +656,9 @@ export default function ServiceRequestDetails({ requestId }) {
       )}
 
       <section className="request-details-head">
-        <div style={{ minWidth: 0 }}>
+        <div className="request-head-info">
           <div className="request-tags">
-            <span className="outline-tag">{request.inspectionType || request.serviceType || "Service"}</span>
-            {request.serviceType !== "Other" && <span className="outline-tag">{request.inspectionVertical || request.serviceCategory || "General"}</span>}
+            <span className="request-identifier">Request #{request.id || id}</span>
             <span className={`urgency-tag ${request.urgency || ""}`}>
               {request.urgency || "routine"}
             </span>
@@ -686,18 +685,21 @@ export default function ServiceRequestDetails({ requestId }) {
               <CalendarDays size={17} />
               Due {formatDate(request.requiredBy)}
             </span>
+            {(vessel.name || vessel.vessel_name) && <span><Ship size={17} /> {vessel.name || vessel.vessel_name}</span>}
           </div>
         </div>
 
         <div className="request-head-actions">
+        <div className="request-head-action-row">
         {(isSuperAdmin() || (isClient() && Number(request.requesterUserId) === Number(currentUser.id))) && <CopyRequestLink requestId={id} />}
         {(isSuperAdmin() || isClient()) && !editing && <>
           <button type="button" className="secondary-btn request-edit-action" onClick={beginEdit} disabled={!editPermission.allowed} title={editPermission.reason || undefined}>
             <Edit3 size={14} /> {isClient() && isRejected ? "Edit & Resubmit" : "Edit Request"}
           </button>
-          {!editPermission.allowed && <small className="request-edit-lock-reason">{editPermission.reason}</small>}
         </>}
         {isSuperAdmin() && isApproved && <button type="button" className="open-workflow-btn" onClick={() => navigate(`/admin/inspection-workflow/${id}`)}><RouteIcon size={16}/> Open Inspection Workflow</button>}
+        </div>
+        {(isSuperAdmin() || isClient()) && !editing && !editPermission.allowed && <small className="request-edit-lock-reason">{editPermission.reason}</small>}
         <div className="budget-block">
           {isSuperAdmin() ? (
             <>

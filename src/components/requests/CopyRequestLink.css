@@ -1,0 +1,7 @@
+.request-share { position: relative; display: inline-flex; align-items: center; }
+.request-share > button { white-space: nowrap; }
+.request-share > button:disabled { cursor: wait; opacity: .7; }
+.request-share-message { position: absolute; z-index: 21; right: 0; top: calc(100% + 6px); width: max-content; max-width: 240px; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; box-shadow: 0 6px 16px #0f172a1a; color: #0f766e; font-size: 12px; }
+.request-share-fallback { position: absolute; z-index: 22; right: 0; top: calc(100% + 35px); display: flex; gap: 5px; width: min(320px, 85vw); padding: 6px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; box-shadow: 0 6px 16px #0f172a1a; }
+.request-share-fallback input { flex: 1; min-width: 0; padding: 6px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 12px; }
+.request-share-fallback button { border: 1px solid #9fc9c5; border-radius: 3px; background: #edf8f6; color: #08756e; cursor: pointer; }
