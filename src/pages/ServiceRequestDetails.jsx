@@ -32,6 +32,7 @@ import {
 import { approveProposal, rejectProposal } from "../api/commercialProposalApi";
 import { getServiceRequestDropdowns } from "../api/masterApi";
 import InspectionCatalogueSelect from "../components/requests/InspectionCatalogueSelect";
+import CopyRequestLink from "../components/requests/CopyRequestLink";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
 import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
@@ -89,8 +90,9 @@ function calcApprovedPreview(clientBudget, adjType, adjMode, adjValue) {
    MAIN COMPONENT
 ──────────────────────────────────────────── */
 
-export default function ServiceRequestDetails() {
-  const { id } = useParams();
+export default function ServiceRequestDetails({ requestId }) {
+  const params = useParams();
+  const id = requestId || params.id;
   const navigate = useNavigate();
 
   const [request, setRequest] = useState(null);
@@ -688,6 +690,7 @@ export default function ServiceRequestDetails() {
         </div>
 
         <div className="request-head-actions">
+        {(isSuperAdmin() || (isClient() && Number(request.requesterUserId) === Number(currentUser.id))) && <CopyRequestLink requestId={id} />}
         {(isSuperAdmin() || isClient()) && !editing && <>
           <button type="button" className="secondary-btn request-edit-action" onClick={beginEdit} disabled={!editPermission.allowed} title={editPermission.reason || undefined}>
             <Edit3 size={14} /> {isClient() && isRejected ? "Edit & Resubmit" : "Edit Request"}

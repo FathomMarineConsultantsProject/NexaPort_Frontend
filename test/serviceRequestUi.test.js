@@ -179,7 +179,7 @@ test("24. Quotations remain functional", async () => {
   const jsx = await source("../src/pages/ServiceRequestDetails.jsx");
   assert.match(jsx, /quotation-card/);
   assert.match(jsx, /createQuotation/);
-  assert.match(jsx, /acceptQuotation/);
+  assert.match(jsx, /approveProposal/);
   assert.match(jsx, /visibleQuotations/);
 });
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { loginPathFor } from "../utils/safeReturnPath.js";
 
 const axiosClient = axios.create({
   baseURL:
@@ -34,7 +35,7 @@ axiosClient.interceptors.response.use(
     ) {
       localStorage.removeItem("np_token");
       localStorage.removeItem("np_user");
-      window.location.href = "/login";
+      window.location.href = loginPathFor(window.location.pathname);
     }
 
     return Promise.reject(err);

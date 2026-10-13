@@ -1,0 +1,15 @@
+.shared-request-page { min-height: 100vh; background: #f5f7f9; color: #102a43; position: relative; display: grid; place-items: center; }
+.shared-request-brand { position: absolute; top: 24px; left: 32px; z-index: 2; color: #0f766e; font-weight: 800; letter-spacing: .08em; }
+.shared-request-backdrop { position: absolute; inset: 0; overflow: hidden; filter: blur(5px); opacity: .35; pointer-events: none; }
+.shared-request-placeholder { margin: 100px auto 0; width: min(1000px, 90%); padding: 35px; background: white; border: 1px solid #d5dee6; }
+.shared-request-nav { width: 26%; height: 19px; background: #cbd5dd; margin-bottom: 40px; }
+.shared-request-row { width: 70%; height: 14px; background: #dce3e9; margin-bottom: 20px; }
+.shared-request-row.short { width: 42%; }
+.shared-request-box { height: 220px; margin-top: 40px; border: 1px solid #cbd5dd; background: #f2f5f7; }
+.shared-request-modal { z-index: 1; width: min(440px, calc(100% - 32px)); padding: 32px; border: 1px solid #cbd5dd; border-radius: 6px; background: white; box-shadow: 0 8px 30px #152b3b1f; }
+.shared-request-modal h1 { font-size: 24px; line-height: 1.3; margin: 0 0 12px; }
+.shared-request-modal p { margin: 0 0 24px; }
+.shared-request-signin { display: inline-block; background: #0f766e; color: white; padding: 11px 20px; border-radius: 4px; text-decoration: none; font-weight: 600; }
+.shared-request-state { max-width: 600px; margin: 100px auto; padding: 24px; color: #102a43; }
+.request-copy-link { display: inline-flex; align-items: center; gap: 8px; }
+.request-copy-link small { color: #0f766e; }

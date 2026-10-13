@@ -29,6 +29,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
     label: "Industry Network",
     items: [
       { label: "Owners & Managers", singular: "Company", type: "owners_managers", path: "/owners-managers", icon: Building2, description: "Ship owners and managers in the maritime company directory." },
+      { label: "Vessels", path: "/vessel-directory", icon: Ship },
       {
         label: "Service Providers",
         singular: "Service Provider",
@@ -74,7 +75,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
 ];
 
 export const ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS.flatMap((group) => group.items);
-export const NEW_ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS[1].items;
+export const NEW_ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS[1].items.filter((item) => item.type);
 
 // Existing directories stay Admin-only; Consultants keeps its former non-Client visibility.
 export function getVisibleDirectoryGroups(roleId) {

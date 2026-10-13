@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getMe, switchUserRole } from "../api/Auth";
 import { getStoredUser } from "../utils/auth";
 import { hasMultipleRoles, selectWorkspace, workspaceDestination } from "../utils/workspaceRoles.js";
+import { safeReturnPath } from "../utils/safeReturnPath.js";
 import WorkspaceChoices from "../components/auth/WorkspaceChoices.js";
 import "./ChooseWorkspace.css";
 
 export default function ChooseWorkspace() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = safeReturnPath(new URLSearchParams(location.search).get("returnTo"));
   const [user, setUser] = useState(getStoredUser);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -19,10 +22,10 @@ export default function ChooseWorkspace() {
       setUser(data);
       localStorage.setItem("np_user", JSON.stringify(data));
       setReady(true);
-      if (!hasMultipleRoles(data)) navigate(workspaceDestination(data), { replace: true });
+      if (!hasMultipleRoles(data)) navigate(workspaceDestination(data) === "/client-verification-status" ? workspaceDestination(data) : returnTo || workspaceDestination(data), { replace: true });
     }).catch(() => active && setError("Unable to load workspaces. Please reload to try again."));
     return () => { active = false; };
-  }, [navigate]);
+  }, [navigate, returnTo]);
 
   const select = async (role) => {
     if (busy || !ready) return;
@@ -30,7 +33,7 @@ export default function ChooseWorkspace() {
     setError("");
     try {
       const destination = await selectWorkspace(user, role, switchUserRole, localStorage);
-      navigate(destination, { replace: true });
+      navigate(destination === "/client-verification-status" ? destination : returnTo || destination, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Unable to switch workspace.");
     } finally { setBusy(false); }

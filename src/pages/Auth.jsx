@@ -1,8 +1,9 @@
 import { Anchor, Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/Auth";
 import { loginDestination } from "../utils/workspaceRoles.js";
+import { safeReturnPath } from "../utils/safeReturnPath.js";
 import "./Auth.css";
 import ResetPasswordModal from "../components/auth/ResetPasswordModal";
 
@@ -10,6 +11,8 @@ const REMEMBERED_KEY = "np_remembered_identifier";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = safeReturnPath(new URLSearchParams(location.search).get("returnTo"));
   const [tab, setTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,7 +49,10 @@ export default function Auth() {
       }
 
       navigate(
-        loginDestination(response.user),
+        returnTo && loginDestination(response.user) === "/choose-workspace"
+          ? `/choose-workspace?returnTo=${encodeURIComponent(returnTo)}`
+          : returnTo && loginDestination(response.user) !== "/client-verification-status"
+            ? returnTo : loginDestination(response.user),
         { replace: true },
       );
     } catch (requestError) {

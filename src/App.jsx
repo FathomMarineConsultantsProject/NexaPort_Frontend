@@ -18,6 +18,8 @@ import ExpertDirectory from "./pages/ExpertDirectory";
 import ExpertProfile from "./pages/ExpertProfile";
 import RegisterExpert from "./pages/RegisterExpert";
 import FleetManagement from "./pages/FleetManagement";
+import VesselDirectory from "./pages/VesselDirectory";
+import VesselDirectoryDetail from "./pages/VesselDirectoryDetail";
 import PortDirectory from "./pages/PortDirectory";
 import PortDetailPage from "./pages/PortDetailPage";
 import FlagDirectory from "./pages/FlagDirectory";
@@ -31,6 +33,8 @@ import MaritimeDirectoryForm from "./components/directories/MaritimeDirectoryFor
 import { NEW_ADMIN_DIRECTORIES } from "./config/adminDirectories";
 import PostServiceRequest from "./pages/PostServiceRequest";
 import ServiceRequestDetails from "./pages/ServiceRequestDetails";
+import SharedRequest from "./pages/SharedRequest";
+import { loginPathFor, safeReturnPath } from "./utils/safeReturnPath";
 import ServiceRequests from "./pages/ServiceRequests";
 import Dashboard from "./pages/Dashboard";
 import TemplatesPage from "./pages/TemplatesPage";
@@ -43,14 +47,15 @@ import { getRoleId, getStoredUser, isMaritimeCompany } from "./utils/auth";
 import "./App.css";
 
 function RequireAuth({ children }) {
-  if (!localStorage.getItem("np_token")) return <Navigate to="/login" replace />;
+  if (!localStorage.getItem("np_token")) return <Navigate to={loginPathFor(window.location.pathname)} replace />;
   return children;
 }
 
 function GuestOnly({ children }) {
   if (!localStorage.getItem("np_token")) return children;
   const user = getStoredUser();
-  const destination = Number(user.role_id) === 3 && user.verification_status !== "approved" ? "/client-verification-status" : "/dashboard";
+  const requested = safeReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
+  const destination = Number(user.role_id) === 3 && user.verification_status !== "approved" ? "/client-verification-status" : requested || "/dashboard";
   return <Navigate to={destination} replace />;
 }
 
@@ -105,6 +110,8 @@ const Shell = () => (
         <Route path="/experts/register" element={<AdminOnly><RegisterExpert /></AdminOnly>} />
         <Route path="/experts/:id" element={<HideFromClient><ExpertProfile /></HideFromClient>} />
         <Route path="/fleet" element={<FleetManagement />} />
+        <Route path="/vessel-directory" element={<AdminOnly><VesselDirectory /></AdminOnly>} />
+        <Route path="/vessel-directory/:id" element={<AdminOnly><VesselDirectoryDetail /></AdminOnly>} />
         <Route path="/flag" element={<AdminOnly><FlagDirectory /></AdminOnly>} />
         <Route path="/flag/:flagSlug" element={<AdminOnly><FlagDirectory /></AdminOnly>} />
         <Route path="/flag/:flagSlug/inspectors/:inspectorId" element={<AdminOnly><FlagInspectorProfile /></AdminOnly>} />
@@ -149,6 +156,7 @@ export default function App() {
       <Route path="/register-client" element={<GuestOnly><RegisterClient /></GuestOnly>} />
       <Route path="/register-maritime-company" element={<GuestOnly><RegisterMaritimeCompany /></GuestOnly>} />
       <Route path="/login" element={<GuestOnly><Auth /></GuestOnly>} />
+      <Route path="/s/:opaqueIdentifier" element={<SharedRequest />} />
       <Route path="/choose-workspace" element={<RequireAuth><ChooseWorkspace /></RequireAuth>} />
       <Route path="/client-verification-status" element={<RequireAuth><ClientVerificationStatus /></RequireAuth>} />
       <Route path="/*" element={<RequireAuth><ApprovedClientRoute><CompanyBoundary><Shell /></CompanyBoundary></ApprovedClientRoute></RequireAuth>} />
