@@ -1,3 +1,4 @@
+import { requestPortPayload } from "../components/requests/requestPortState.js";
 import ScopeEditor from "../components/requests/ScopeEditor";
 import PortSelect from "../components/requests/PortSelect";
 import ScopeAssistant from "../components/requests/ScopeAssistant";
@@ -126,6 +127,7 @@ export default function PostServiceRequest() {
 
     try {
       const payload = {
+        ...requestPortPayload(formData),
         inspectionMethodId: formData.serviceType === "Other" ? null : Number(formData.inspectionMethodId),
         serviceType: formData.serviceType,
         serviceCategory: formData.serviceType === "Other" ? "Other" : formData.serviceCategory,
@@ -254,14 +256,14 @@ export default function PostServiceRequest() {
             <div className="psr-row full">
               <div className="psr-group">
                 <label>Scope of Work</label>
-                <ScopeEditor value={formData.scopeOfWork} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} disabled={loading} required placeholder="Describe the full scope: vessel particulars, specific areas of focus, report format required, access restrictions, any outstanding deficiencies..." />
                 <ScopeAssistant value={formData} disabled={loading} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} />
+                <ScopeEditor value={formData.scopeOfWork} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} disabled={loading} required placeholder="Describe the full scope: vessel particulars, specific areas of focus, report format required, access restrictions, any outstanding deficiencies..." />
               </div>
             </div>
 
             <div className="psr-row three-col">
               <div className="psr-group">
-                <label>Urgency</label>
+                <label>Request Priority</label>
                 <CustomSelect
                   width="100%"
                   value={
@@ -410,8 +412,8 @@ export default function PostServiceRequest() {
             </div>
 
             <div className="psr-row three-col">
-              <div className="psr-group"><label>Port <span className="opt">(opt.)</span></label>
-                <PortSelect portId={formData.portId} portName={formData.portName} disabled={loading} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} />
+              <div className="psr-group">
+                <PortSelect ports={formData.ports} terminalName={formData.terminalName} eta={formData.eta} portId={formData.portId} portName={formData.portName} disabled={loading} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} />
                 {fieldErrors.portId && <small role="alert">{fieldErrors.portId}</small>}
               </div>
               <div className="psr-group"><label>Terminal <span className="opt">(opt.)</span></label><input name="terminalName" maxLength={240} value={formData.terminalName} onChange={handleInputChange} className="psr-control" /></div>

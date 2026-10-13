@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { generateRequestScope } from "../../api/serviceRequestApi";
 import { generateScopeDraft, includeLegacyCertification, scopeGenerationErrorMessage } from "./scopeAssistantState";
 import "./RequestEnhancements.css";
@@ -7,6 +7,8 @@ export default function ScopeAssistant({ value, onChange, legacyCertification, d
   const [keywords, setKeywords] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const currentScope = useRef(value.scopeOfWork || "");
+  useLayoutEffect(() => { currentScope.current = value.scopeOfWork || ""; }, [value.scopeOfWork]);
   const generate = async () => {
     setBusy(true); setError("");
     try {
@@ -15,7 +17,8 @@ export default function ScopeAssistant({ value, onChange, legacyCertification, d
         vesselType: value.vesselType || "", portId: value.portId || null,
         portName: value.portName || "", terminalName: value.terminalName || "",
         eta: value.eta || "", existingScope: value.scopeOfWork || "",
-      }, onChange);
+        ...(value.ports?.length ? { portIds: value.ports.map((p) => Number(p.id)), primaryPortId: value.portId } : {}),
+      }, onChange, () => currentScope.current);
     } catch (error) { setError(scopeGenerationErrorMessage(error)); }
     finally { setBusy(false); }
   };

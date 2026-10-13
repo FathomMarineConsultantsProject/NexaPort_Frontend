@@ -288,10 +288,10 @@ button:disabled {
 }
 
 .workspace-head {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 20px;
-  align-items: flex-end;
+  align-items: center;
   padding: 16px 20px;
   border: 1px solid var(--wf-line);
   border-left: 3px solid var(--wf-teal);
@@ -332,12 +332,7 @@ button:disabled {
   gap: 5px;
 }
 
-.workspace-head > div:last-child {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  flex-direction: column;
-}
+
 
 .workspace-head a {
   display: flex;
@@ -353,22 +348,9 @@ button:disabled {
 }
 
 /* ── Workspace Layout & Stage Rail ── */
-.workspace-layout {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  gap: 18px;
-  margin-top: 16px;
-  align-items: start;
-}
+.workspace-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 16px; align-items: start; }
 
-.workflow-rail {
-  border: 1px solid var(--wf-line);
-  border-radius: var(--np-radius, 4px);
-  background: var(--wf-surface);
-  padding: 12px;
-  position: sticky;
-  top: 72px;
-}
+.workflow-rail { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0 16px; border: 1px solid var(--wf-line); border-radius: var(--np-radius,4px); background: var(--wf-surface); padding: 14px 18px; }
 
 .rail-kicker {
   padding: 0 6px 8px;
@@ -700,7 +682,7 @@ button:disabled {
 
 .quote-breakdown {
   display: grid;
-  grid-template-columns: repeat(5, minmax(85px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 12px 0;
   border: 1px solid var(--wf-line);
   border-radius: var(--np-radius, 4px);
@@ -1678,11 +1660,11 @@ button:disabled {
   .workflow-table td:before { content: attr(data-label); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wf-muted); }
   .workflow-table td:last-child { display: block; }
   .row-action { width: 100%; margin-top: 4px; }
-  .workspace-head { align-items: flex-start; flex-direction: column; }
-  .workspace-head > div:last-child { align-items: flex-start; }
-  .workspace-layout { display: block; }
-  .workflow-rail { display: none; }
-  .workflow-stage-select { display: grid; gap: 6px; margin-bottom: 10px; color: var(--wf-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+  .workspace-head { grid-template-columns: minmax(0,1fr); align-items: start; }
+
+
+
+
   .workflow-stage { padding: 14px; }
   .stage-heading, .stage-action-row { align-items: stretch; flex-direction: column; }
   .attention-pill, .budget-reference { text-align: left; }
@@ -1930,7 +1912,7 @@ button:disabled {
 }
 
 /* Phase 2 commercial workspace: one aligned sequence and financial dossier. */
-.workspace-head { align-items: center; }
+
 .workspace-title { min-width: 0; }
 .workspace-head .workspace-head-actions {
   display: flex; flex-direction: row; align-items: center; justify-content: flex-end;
@@ -1943,11 +1925,8 @@ button:disabled {
   font-size: 12px; font-weight: 700;
 }
 .workspace-head-actions .workflow-stage-chip { min-height: 34px; padding: 0 10px; }
-.workspace-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-.workflow-rail {
-  position: static; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 16px; padding: 14px 18px;
-}
+
+
 .workflow-rail .rail-kicker { grid-column: 1 / -1; margin-bottom: 4px; padding: 0 0 10px; }
 .workflow-rail .rail-group { min-width: 0; padding-top: 8px; }
 .workflow-rail .rail-group h2 { padding: 0 0 7px; font-size: 10px; color: var(--wf-muted); }
@@ -2017,3 +1996,39 @@ button:disabled {
 @media (max-width: 520px) {
   .commercial-inputs, .supplier-ledger .quote-breakdown { grid-template-columns: 1fr; }
 }
+.quotation-negotiation { min-width: 0; margin: 14px 0; padding: 16px; border-radius: 4px; font-family: "IBM Plex Sans", sans-serif; }
+.quotation-negotiation .negotiation-heading { display: block; margin: 0 0 16px; padding: 0 0 12px; border-bottom: 1px solid var(--wf-line); }
+.quotation-negotiation .negotiation-heading h4 { margin: 0 0 5px; color: var(--wf-navy); font-size: 15px; font-weight: 700; }
+.quotation-negotiation .negotiation-heading p { margin: 0; color: var(--wf-muted); font-size: 12px; line-height: 1.5; }
+.quotation-negotiation .negotiation-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.quotation-negotiation .negotiation-field { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.quotation-negotiation .negotiation-wide { grid-column: 1 / -1; }
+.quotation-negotiation .negotiation-field > label { display: block; margin: 0; color: var(--wf-navy); font-size: 12px; font-weight: 700; line-height: 1.5; }
+.quotation-negotiation label span { color: var(--wf-muted); font-weight: 400; }
+.quotation-negotiation input, .quotation-negotiation textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; margin: 0; padding: 9px 10px; border: 1px solid var(--wf-line); border-radius: 3px; color: var(--wf-navy); background: #fff; font: inherit; font-size: 12px; line-height: 1.5; }
+.quotation-negotiation input { height: 40px; }
+.quotation-negotiation textarea { resize: vertical; min-height: 80px; }
+.quotation-negotiation input:focus-visible, .quotation-negotiation textarea:focus-visible { outline: 2px solid var(--wf-teal); outline-offset: 1px; }
+.quotation-negotiation [aria-invalid="true"] { border-color: #b42318; }
+.quotation-negotiation .negotiation-amount { display: grid; grid-template-columns: minmax(0, 1fr) 88px; gap: 8px; align-items: start; min-width: 0; }
+.quotation-negotiation .negotiation-amount > div { min-width: 0; }
+.quotation-negotiation .negotiation-money, .quotation-negotiation .negotiation-currency { font-family: "IBM Plex Mono", monospace; }
+.quotation-negotiation .negotiation-currency { text-transform: uppercase; }
+.quotation-negotiation .negotiation-help, .quotation-negotiation .negotiation-error { margin: 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.quotation-negotiation .negotiation-help { color: var(--wf-muted); }
+.quotation-negotiation .negotiation-error { color: #b42318; }
+.quotation-negotiation .negotiation-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--wf-line); }
+.quotation-negotiation .negotiation-actions button { min-height: 40px; max-width: 100%; white-space: normal; }
+.quotation-negotiation .negotiation-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 760px) { .quotation-negotiation .negotiation-fields { grid-template-columns: minmax(0, 1fr); } .quotation-negotiation { padding: 12px; } }
+@media (max-width: 420px) { .quotation-negotiation .negotiation-actions { display: grid; grid-template-columns: minmax(0, 1fr); } .quotation-negotiation .negotiation-actions button { width: 100%; } }
+
+.inspection-workspace-page { max-width: none; box-sizing: border-box; }
+.inspection-workspace-page > .back-link { justify-content: flex-start; }
+.workspace-title h1, .workspace-meta { overflow-wrap: anywhere; }
+.workflow-quote, .quotation-list { min-width: 0; }
+.workflow-quote > header > div { min-width: 0; overflow-wrap: anywhere; }
+.workflow-quote-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.quote-breakdown .total, .quote-breakdown .grand-total { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; border-top: 1px solid var(--wf-line); }
+.quote-breakdown dd { overflow-wrap: anywhere; }
+.workflow-quote details { overflow-wrap: anywhere; }

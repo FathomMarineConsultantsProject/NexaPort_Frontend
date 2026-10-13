@@ -1,3 +1,5 @@
+import AdditionalPorts from "../components/requests/AdditionalPorts";
+import { requestPortPayload } from "../components/requests/requestPortState.js";
 import ScopeEditor from "../components/requests/ScopeEditor";
 import ScopeText from "../components/requests/ScopeText";
 import PortSelect from "../components/requests/PortSelect";
@@ -313,6 +315,8 @@ export default function ServiceRequestDetails() {
       flagState: request.vessel?.flagState || "",
       portName: request.port?.name || "",
       portId: request.port?.id || null,
+      ports: request.ports || [],
+      originalPortSchedule: { terminalName: request.terminalName || "", eta: request.port?.eta || "" },
       terminalName: request.terminalName || "",
       agentCompanyName: request.agentDetails?.companyName || "",
       agentContactName: request.agentDetails?.contactName || "",
@@ -356,6 +360,7 @@ export default function ServiceRequestDetails() {
     try {
       const payload = {
         ...editForm,
+        ...requestPortPayload(editForm),
         inspectionMethodId: editForm.serviceType === "Other" ? null : Number(editForm.inspectionMethodId),
         serviceCategory: editForm.serviceType === "Other" ? "Other" : editForm.serviceCategory,
         serviceTypeOther: editForm.serviceType === "Other" ? serviceTypeOther : null,
@@ -509,7 +514,7 @@ export default function ServiceRequestDetails() {
           : <div><span>Vertical</span><strong>{request.inspectionVertical || "Not provided"}</strong></div>}
         <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
         <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
-        <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
+        <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong><AdditionalPorts ports={request.ports}/></div>
         {request.terminalName && <div><span>Terminal</span><strong>{request.terminalName}</strong></div>}
         {request.approvedBudgetUsd != null && <div><span>Budget</span><strong>${money(request.approvedBudgetUsd)}</strong></div>}
       </section>
@@ -557,17 +562,7 @@ export default function ServiceRequestDetails() {
   const canSeeQuotations =
     isSuperAdmin() || isExpert() || Boolean(acceptedQuote);
   const getQuotePrice = (quote) => {
-    if (isClient()) {
-      return (
-        quote.finalTotalUsd ||
-        quote.final_total_usd ||
-        quote.clientTotalUsd ||
-        quote.client_total_usd ||
-        quote.totalQuoteUsd ||
-        quote.total_quote_usd ||
-        0
-      );
-    }
+    if (isClient()) return quote.finalTotalUsd ?? quote.clientTotalUsd ?? null;
 
     return quote.totalQuoteUsd || quote.total_quote_usd || 0;
   };
@@ -680,8 +675,8 @@ export default function ServiceRequestDetails() {
           <div className="request-meta-line">
             <span>
               <MapPin size={17} />
-              {port.locationSummary || port.name || port.port_name || "Port not added"}
-              {port.country && !port.locationSummary ? `, ${port.country}` : ""}
+              {port.name || port.port_name || port.locationSummary || "Port not added"}
+              {port.country ? `, ${port.country}` : ""}
             </span>
 
             <span>
@@ -781,11 +776,11 @@ export default function ServiceRequestDetails() {
                 <label>IMO Number<input value={editForm.imoNumber} onChange={(e) => setEditForm({ ...editForm, imoNumber: e.target.value })} /></label>
                 <label>Vessel Type<input value={editForm.vesselType} onChange={(e) => setEditForm({ ...editForm, vesselType: e.target.value })} /></label>
                 <label>Flag<input value={editForm.flagState} onChange={(e) => setEditForm({ ...editForm, flagState: e.target.value })} /></label>
-                <div><span>Port</span><PortSelect portId={editForm.portId} portName={editForm.portName} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} /></div>
+                <div><PortSelect ports={editForm.ports} originalPortSchedule={editForm.originalPortSchedule} disabled={editSaving} terminalName={editForm.terminalName} eta={editForm.eta} portId={editForm.portId} portName={editForm.portName} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} /></div>
                 <label>Terminal<input maxLength={240} value={editForm.terminalName} onChange={(e) => setEditForm({ ...editForm, terminalName: e.target.value })} /></label>
                 <label>ETA<input type="date" value={editForm.eta} onChange={(e) => setEditForm({ ...editForm, eta: e.target.value })} /></label>
-                <label className="wide">Scope of Work<ScopeEditor value={editForm.scopeOfWork} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} /></label>
                 <ScopeAssistant value={editForm} legacyCertification={request.requiredCertification} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} />
+                <label className="wide">Scope of Work<ScopeEditor value={editForm.scopeOfWork} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} /></label>
                 <AgentDetailsFields value={editForm} errors={editFieldErrors} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} />
               </div>
               <div className="request-edit-form-actions">
@@ -1102,7 +1097,7 @@ export default function ServiceRequestDetails() {
                   </div>
 
                   <div className="quotation-price">
-                    <strong>${money(getQuotePrice(quote))}</strong>
+                    <strong>{getQuotePrice(quote) == null ? "Price unavailable" : "$" + money(getQuotePrice(quote))}</strong>
                     <span className={`quote-status ${quote.status}`}>
                       {quote.status}
                     </span>
@@ -1275,7 +1270,7 @@ export default function ServiceRequestDetails() {
               Port & Schedule
             </h3>
 
-            <Info label="Port" value={port.name || port.port_name} required isPendingReview={isPendingReview} />
+            <Info label="Port" value={port.name || port.port_name} required isPendingReview={isPendingReview} /><AdditionalPorts ports={request.ports}/>
             {port.country && <Info label="Country (historical / port record)" value={port.country} isPendingReview={isPendingReview} />}
             <Info label="Terminal" value={request.terminalName} isPendingReview={isPendingReview} />
             <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} isPendingReview={isPendingReview} />

@@ -1,4 +1,5 @@
 export function scopeGenerationErrorMessage(error) {
+  if (error?.code === "SCOPE_DRAFT_CHANGED") return "Your scope changed while generation was running. Your edits were kept; generate again using the current draft.";
   const code = error?.response?.data?.code;
   if (code === "AI_PROVIDER_PAYMENT_REQUIRED") return "The OpenRouter account needs credits to generate scopes. Contact your administrator or write your scope manually.";
   if (["AI_PROVIDER_PAYMENT_REQUIRED", "AI_PROVIDER_ACCESS_DENIED", "AI_PROVIDER_PROJECT_ACCESS_DENIED", "AI_PROVIDER_AUTH_FAILED", "AI_PROVIDER_KEY_REVOKED", "AI_PROVIDER_NOT_CONFIGURED", "AI_PROVIDER_MODEL_UNAVAILABLE", "AI_PROVIDER_API_KEY_INVALID", "AI_PROVIDER_API_KEY_EXPIRED", "AI_PROVIDER_API_KEY_NOT_FOUND", "AI_PROVIDER_API_KEY_SERVICE_BLOCKED", "AI_PROVIDER_API_KEY_HTTP_REFERRER_BLOCKED", "AI_PROVIDER_API_KEY_IP_ADDRESS_BLOCKED", "AI_PROVIDER_SERVICE_DISABLED", "AI_PROVIDER_CONSUMER_INVALID"].includes(code)) {
@@ -8,9 +9,10 @@ export function scopeGenerationErrorMessage(error) {
   return "Scope generation is temporarily unavailable. Please retry or write your scope manually.";
 }
 
-export async function generateScopeDraft(generate, input, onChange) {
+export async function generateScopeDraft(generate, input, onChange, currentScope) {
   const response = await generate(input);
   if (typeof response.scopeOfWork !== "string" || !response.scopeOfWork.trim()) throw new Error("AI returned an empty scope. Please retry.");
+  if (currentScope && currentScope() !== (input.existingScope || "")) throw Object.assign(new Error("Scope draft changed"), { code: "SCOPE_DRAFT_CHANGED" });
   onChange(response.scopeOfWork);
 }
 

@@ -1,3 +1,5 @@
+import AdditionalPorts from "../components/requests/AdditionalPorts";
+import { requestPortPayload } from "../components/requests/requestPortState.js";
 import ScopeEditor from "../components/requests/ScopeEditor";
 import PortSelect from "../components/requests/PortSelect";
 import ScopeAssistant from "../components/requests/ScopeAssistant";
@@ -258,6 +260,8 @@ export default function ServiceRequests() {
     flagState: request.vessel?.flagState || "",
     portName: request.port?.name || "",
       portId: request.port?.id || null,
+      ports: request.ports || [],
+      originalPortSchedule: { terminalName: request.terminalName || "", eta: request.port?.eta || "" },
       terminalName: request.terminalName || "",
       agentCompanyName: request.agentDetails?.companyName || "",
       agentContactName: request.agentDetails?.contactName || "",
@@ -287,6 +291,7 @@ export default function ServiceRequests() {
     try {
       const response = await updateServiceRequest(editingRequest.id, {
         ...editingRequest,
+        ...requestPortPayload(editingRequest),
         inspectionMethodId: editingRequest.serviceType === "Other" ? null : Number(editingRequest.inspectionMethodId),
         serviceCategory: editingRequest.serviceType === "Other" ? "Other" : editingRequest.serviceCategory,
         serviceTypeOther: editingRequest.serviceType === "Other" ? serviceTypeOther : null,
@@ -395,7 +400,7 @@ export default function ServiceRequests() {
                   <div><span>Services Required</span><strong>{request.inspectionType || "Not provided"}</strong></div>
                   <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
                   <div><span>Date of Inspection</span><strong>{request.inspectionDate ? new Date(request.inspectionDate).toLocaleDateString() : "Not provided"}</strong></div>
-                  <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong></div>
+                  <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong><AdditionalPorts ports={request.ports}/></div>
                 </div>
                 <button type="button" onClick={() => navigate(`/requests/${request.id}`)} className="view-quote-btn">View Request</button>
               </div>
@@ -565,7 +570,7 @@ export default function ServiceRequests() {
         {[
           ["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["eta","ETA","date"]
         ].map(([field,label,type="text"]) => <label key={field}>{label}<input type={type} value={editingRequest[field] ?? ""} onChange={(event) => setEditingRequest({...editingRequest,[field]:event.target.value})}/></label>)}
-        <div className="wide"><span>Port</span><PortSelect portId={editingRequest.portId} portName={editingRequest.portName} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} /></div>
+        <div className="wide"><PortSelect ports={editingRequest.ports} originalPortSchedule={editingRequest.originalPortSchedule} disabled={editSaving} terminalName={editingRequest.terminalName} eta={editingRequest.eta} portId={editingRequest.portId} portName={editingRequest.portName} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} /></div>
         <label>Terminal<input maxLength={240} value={editingRequest.terminalName} onChange={(event) => setEditingRequest({ ...editingRequest, terminalName: event.target.value })} /></label>
         <AgentDetailsFields value={editingRequest} errors={editFieldErrors} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} />
         <ScopeAssistant value={editingRequest} legacyCertification={requests.find((item) => item.id === editingRequest.id)?.requiredCertification} disabled={editSaving} onChange={(scopeOfWork) => setEditingRequest((current) => ({ ...current, scopeOfWork }))} />

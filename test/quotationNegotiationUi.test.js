@@ -4,8 +4,9 @@ import test from "node:test";
 
 const source = (path) => readFile(new URL(path, import.meta.url),"utf8");
 test("Admin review exposes explicit latest-revision decisions and a private negotiation form",async()=>{
-  const [stage,workspace]=await Promise.all([source("../src/components/workflow/stages/StageQuote.jsx"),source("../src/pages/InspectionWorkflowWorkspace.jsx")]);
-  for(const label of ["Approve internally","Request revision","Reject","Suggested maximum","Internal Admin note","Revision history"]) assert.ok(stage.includes(label));
+  const [stage,workspace,form]=await Promise.all([source("../src/components/workflow/stages/StageQuote.jsx"),source("../src/pages/InspectionWorkflowWorkspace.jsx"),source("../src/components/workflow/stages/QuotationDecisionForm.jsx")]);
+  for(const label of ["Approve internally","Request revision","Reject","Revision history"]) assert.ok(stage.includes(label));
+  for(const label of ["Suggested Maximum Amount","Internal Admin Note","Message to Consultant"]) assert.ok(form.includes(label));
   assert.match(stage,/revisionId:quote\.latestRevisionId/);
   assert.match(workspace,/decideQuotation\(quotationId,payload\)/);
 });

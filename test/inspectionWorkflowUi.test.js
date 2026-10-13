@@ -15,7 +15,8 @@ test("Super Admin workflow routes and single navigation entry are wired", async 
 test("queue uses approved workflow data and truthful quotation wording", async () => {
   const queue = await source("../src/pages/InspectionWorkflowQueue.jsx");
   assert.match(queue, /Approved Budget/);
-  assert.match(queue, /awaiting review/);
+  assert.match(queue, /quotationCountLabel\(row\.quotationsTotal\)/);
+  assert.doesNotMatch(queue, /row\.quotationsAwaitingReview/);
   assert.doesNotMatch(queue, /new quotation/i);
   assert.match(queue, /Open Workflow/);
 });
