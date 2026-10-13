@@ -220,7 +220,7 @@ export default function ServiceRequestDetails() {
     setDecidingProposal(true);
     try {
       await approveProposal(id, { proposalId });
-      setToast("Commercial proposal approved successfully! Consultant assignment confirmed.");
+      setToast(request?.proposal?.amendsProposalId ? "Amendment approved. Updated terms are now in effect; your Consultant assignment is preserved." : "Commercial proposal approved successfully! Consultant assignment confirmed.");
       setShowApproveModal(false);
       loadPage();
       setTimeout(() => setToast(""), 4000);
@@ -522,6 +522,7 @@ export default function ServiceRequestDetails() {
         <div className="quotation-head"><h2>Your Quotation</h2>{!ownQuotes.length && <button className="submit-quote-toggle" onClick={() => setShowQuoteForm(!showQuoteForm)}><Briefcase size={17}/> Submit Quotation</button>}</div>
         {ownQuotes.map((quote) => {const negotiation=ownNegotiations[quote.id],latest=negotiation?.revisions.at(-1);return <article className="quotation-card" key={quote.id}><div className="quotation-top"><div><h3>Your quotation · Revision {latest?.revisionNumber||1}</h3><p>{formatDateTime(latest?.submittedAt||quote.createdAt)}</p></div><div className="quotation-price"><strong>${money(latest?.consultantTotal??quote.totalQuoteUsd)}</strong><span className={`quote-status ${quote.status}`}>{quote.status==="accepted"?"Client accepted / assigned":negotiation?.internalStatus==="approved"?"Commercially approved":negotiation?.internalStatus?.replaceAll("_"," ")||quote.status}</span></div></div>
           {negotiation?.revisions.map(r=><div key={r.id} className="workflow-panel"><strong>Revision {r.revisionNumber} · {formatDateTime(r.submittedAt)}</strong><p>Base ${money(r.baseFee)} · Travel ${money(r.travelCost)} · Accommodation ${money(r.accommodationCost)} · Report ${money(r.reportFee)} · Urgency ${money(r.urgencySurcharge)} · Total ${money(r.consultantTotal)}</p>{r.coverLetter&&<p>{r.coverLetter}</p>}{r.decision&&<p>Admin {r.decision.type.replaceAll("_"," ")} · {formatDateTime(r.decision.decidedAt)}{r.decision.consultantMessage&&<><br/>{r.decision.consultantMessage}</>}{r.decision.reason&&<><br/>Reason: {r.decision.reason}</>}{r.decision.suggestedMaxAmount!=null&&<><br/>Suggested maximum: {r.decision.suggestedMaxCurrency} {r.decision.suggestedMaxAmount} (advisory)</>}</p>}</div>)}
+          {negotiation?.reopenRequests?.map(r=><div key={r.id} className="workflow-panel"><strong>Another revision requested · {formatDateTime(r.decidedAt)}</strong><p>{r.consultantMessage}</p>{r.reason&&<p>Reason: {r.reason}</p>}{r.suggestedMaxAmount!=null&&<p>Suggested maximum: {r.suggestedMaxCurrency} {r.suggestedMaxAmount} (advisory)</p>}</div>)}
           {negotiation?.internalStatus==="revision_requested"&&latest&&<button type="button" className="primary-btn" onClick={()=>startRevision(quote,latest)}>Revise Quotation</button>}
           {revisingQuoteId===quote.id&&<form className="quote-form-card" onSubmit={e=>submitRevision(e,negotiation)}><h3>Submit revision {latest.revisionNumber+1}</h3><div className="quote-two-grid">{[["totalQuoteUsd","Professional / base fee (USD)"],["attendanceDays","Attendance days"],["travelCost","Travel"],["accommodationCost","Accommodation"],["reportFee","Report fee"],["urgencySurcharge","Urgency surcharge"]].map(([field,label])=><label key={field}>{label}<input type="number" step={field==="attendanceDays"?"1":"0.01"} min={field==="totalQuoteUsd"?"0.01":"0"} required={field==="totalQuoteUsd"} value={quoteForm[field]} onChange={e=>setQuoteForm({...quoteForm,[field]:e.target.value})}/></label>)}</div><label>Cover letter<textarea value={quoteForm.coverLetter} onChange={e=>setQuoteForm({...quoteForm,coverLetter:e.target.value})}/></label><button className="primary-btn">Submit new revision</button><button type="button" className="secondary-btn" onClick={()=>setRevisingQuoteId(null)}>Cancel</button></form>}
         </article>})}
@@ -908,7 +909,7 @@ export default function ServiceRequestDetails() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                 <div>
                   <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#0d766e" }}>
-                    Commercial Proposal Available (Revision #{request.proposal.revisionNumber || 1})
+                    {request.proposal.amendsProposalId ? "Commercial Amendment Available" : "Commercial Proposal Available"} (Revision #{request.proposal.revisionNumber || 1})
                   </span>
                   <h3 style={{ margin: "4px 0 8px 0", color: "#111827", fontSize: 18 }}>
                     Proposed Consultant: {request.proposal.expertName || "Certified Maritime Surveyor"}
@@ -927,6 +928,7 @@ export default function ServiceRequestDetails() {
                 </div>
               </div>
 
+              {request.proposal.amendsProposalId && <p>The previously approved agreement remains in effect until you approve this amendment. Your assigned Consultant is unchanged.</p>}
               {request.proposal.clientNotes && (
                 <div style={{ marginTop: 14, padding: "10px 14px", background: "white", borderRadius: 6, border: "1px solid #ccfbf1" }}>
                   <strong style={{ fontSize: 13, color: "#374151" }}>Commercial Notes &amp; Scope:</strong>

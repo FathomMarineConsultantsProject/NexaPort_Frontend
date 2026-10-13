@@ -26,6 +26,9 @@ export const getRequestEditPermission = (request, user) => {
     return blocked("This request is already in the inspection workflow. Core request details are locked to protect the accepted quotation and inspection record.");
   }
 
+  if (requestStatus === "pending_client_approval" || request?.proposal?.status === "sent")
+    return blocked("Core inspection terms are locked while an offer is with the Client. Recall the offer before changing request scope, vessel, port or dates.");
+
   const moderationStatus = String(request?.moderationStatus ?? request?.moderation_status ?? "pending").toLowerCase();
   if (!["pending", "rejected", "approved"].includes(moderationStatus)) {
     return blocked("This request is not in an editable moderation state.");

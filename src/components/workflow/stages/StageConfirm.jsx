@@ -6,7 +6,8 @@ import { previewCommercialFee } from "./commercialFee";
 
 export default function StageConfirm({ data, onSendProposal, onSaveDraft, onSupersedeProposal,
   onSelectOtherQuote, onAdvanceToSurveyor, busy }) {
-  const quote = data?.selectedQuotation;
+  const selectedQuote = data?.selectedQuotation;
+  const acceptedProposal = data?.acceptedProposal || data?.proposals?.find(p=>p.status==="approved") || null;
   const proposal = data?.proposal;
   const draftProposal = data?.proposals?.find((item) => item.status === "draft") || null;
   const formSource = draftProposal || proposal;
@@ -16,27 +17,30 @@ export default function StageConfirm({ data, onSendProposal, onSaveDraft, onSupe
   const [customAmount, setCustomAmount] = useState(String(formSource?.adminMarkupUsd ?? 0));
   const [clientNotes, setClientNotes] = useState(formSource?.clientNotes || "");
   const [internalAdminNotes, setInternalAdminNotes] = useState(formSource?.internalAdminNotes || "");
-  const [attendanceDays, setAttendanceDays] = useState(String(formSource?.estimatedAttendanceDays ?? quote?.attendanceDays ?? ""));
-  const [isEditing, setIsEditing] = useState(Boolean(draftProposal && ["sent", "rejected"].includes(proposal?.status)));
+  const [attendanceDays, setAttendanceDays] = useState(String(formSource?.estimatedAttendanceDays ?? selectedQuote?.attendanceDays ?? ""));
+  const [isEditing, setIsEditing] = useState(Boolean(draftProposal && (draftProposal.amendsProposalId || ["sent", "rejected", "approved"].includes(proposal?.status))));
 
+  const snapshotRevision = !isEditing && formSource ? selectedQuote?.revisions?.find(r=>Number(r.id)===Number(formSource.approvedQuotationRevisionId)) : null;
+  const quote = snapshotRevision ? {...selectedQuote, baseFeeUsd:snapshotRevision.baseFee,travelCostUsd:snapshotRevision.travelCost,
+    accommodationCostUsd:snapshotRevision.accommodationCost,reportFeeUsd:snapshotRevision.reportFee,urgencySurchargeUsd:snapshotRevision.urgencySurcharge,
+    consultantTotalUsd:snapshotRevision.consultantTotal} : selectedQuote;
   if (!quote) return <section className="workflow-stage"><div className="workflow-empty">
     <h2>Quotation selection required</h2>
     <p>Select an eligible Consultant quotation before preparing commercial terms.</p>
     <button className="workflow-secondary" onClick={onSelectOtherQuote}>Go to Quote Stage</button>
   </div></section>;
-  if (quote.internalStatus !== "approved" || Number(quote.latestRevisionId) !== Number(quote.approvedRevisionId))
-    return <section className="workflow-stage"><div className="workflow-alert warning">The latest Consultant revision requires internal approval.</div><button className="workflow-secondary" onClick={onSelectOtherQuote}>Return to quotation review</button></section>;
+  const quoteApproved = quote.internalStatus === "approved" && Number(quote.latestRevisionId) === Number(quote.approvedRevisionId);
 
   const preview = previewCommercialFee({ consultantTotal: quote.consultantTotalUsd,
     mode: feeMode, percentage: feePercentage, customAmount });
   const status = proposal?.status || "draft";
   const isSent = status === "sent";
-  const isApproved = status === "approved" || Boolean(request?.acceptedQuotationId);
+  const isApproved = Boolean(acceptedProposal);
   const isRejected = status === "rejected";
-  const canEdit = !busy && !isApproved && (!isSent || isEditing) && (!isRejected || isEditing);
+  const canEdit = !busy && quoteApproved && (!isApproved || isEditing) && (!isSent || isEditing) && (!isRejected || isEditing);
   const validDays = attendanceDays === "" || (/^[1-9]\d*$/.test(attendanceDays) && Number.isSafeInteger(Number(attendanceDays)));
   const canSubmit = canEdit && preview && validDays;
-  const payload = () => ({ quotationId: quote.id, feeMode,
+  const payload = () => ({ quotationId: quote.id, amendsProposalId: acceptedProposal?.id || null, feeMode,
     feePercentage: feeMode === "percentage" ? feePercentage : null,
     adminMarkupUsd: feeMode === "custom" ? customAmount : undefined,
     clientNotes: clientNotes.trim() || null,
@@ -49,9 +53,12 @@ export default function StageConfirm({ data, onSendProposal, onSaveDraft, onSupe
       <p>Approved Consultant costs form the supplier basis. Nexaport sets the Client proposal fee.</p>
     </div></header>
 
+    {!quoteApproved && <div className="workflow-alert warning">The latest Consultant revision requires fresh internal approval before preparing or sending terms. Existing offers and Client approvals remain preserved. <button type="button" className="workflow-secondary" onClick={onSelectOtherQuote}>Return to quotation review</button></div>}
+    {(data?.invoice || data?.inspectionCompletion?.completed) && <div className="workflow-alert warning">Financial amendments are unavailable after invoicing or inspection completion. An explicit financial adjustment workflow is required.</div>}
+    {acceptedProposal && <div className="workflow-alert success"><strong>Authoritative Client agreement: {money(acceptedProposal.clientTotalUsd)} · revision #{acceptedProposal.revisionNumber}</strong><p>These accepted terms and the existing assignment remain in effect until the Client approves an amendment.</p></div>}
     {proposal && ["sent","approved","rejected"].includes(status) && <div className={"workflow-alert " + (isApproved ? "success" : isRejected ? "error" : "warning") + " commercial-status"} role="status">
-      {isApproved ? <CheckCircle2 size={18}/> : isRejected ? <AlertCircle size={18}/> : <Clock size={18}/>}
-      <div><strong>{isApproved ? "Client approved" : isRejected ? "Client declined" : "Sent to Client"} · Proposal revision #{proposal.revisionNumber}</strong>
+      {status === "approved" ? <CheckCircle2 size={18}/> : isRejected ? <AlertCircle size={18}/> : <Clock size={18}/>}
+      <div><strong>{status === "approved" ? (proposal.amendsProposalId ? "Amendment approved" : "Client approved") : isRejected ? (proposal.amendsProposalId ? "Amendment declined" : "Client declined") : (proposal.amendsProposalId ? "Amendment awaiting Client" : "Sent to Client")} · Proposal revision #{proposal.revisionNumber}</strong>
         <p>Saved Client offer: <strong>{money(proposal.clientTotalUsd)}</strong> · Nexaport fee: {money(proposal.adminMarkupUsd)} · {date(proposal.sentAt || proposal.updatedAt)}.</p>
         {isSent && <p>Proposal status is sent. In-app alert and email delivery are not verified on this screen.</p>}
         {isRejected && <p>Client reason: {proposal.clientRejectionReason || "Not provided"}</p>}
@@ -101,14 +108,16 @@ export default function StageConfirm({ data, onSendProposal, onSaveDraft, onSupe
       <label>Internal Admin notes<textarea rows={3} value={internalAdminNotes} disabled={!canEdit} onChange={(event) => setInternalAdminNotes(event.target.value)} placeholder="Internal only; never shown to the Client"/></label>
     </div></article>
 
+    <details className="workflow-panel"><summary>Proposal history ({data?.proposals?.length || 0})</summary>{data?.proposals?.map(p=><p key={p.id}>Revision #{p.revisionNumber} · {p.amendsProposalId ? "Amendment · " : ""}{p.status} · {money(p.clientTotalUsd)} · {date(p.decidedAt || p.sentAt || p.createdAt)}</p>)}</details>
     <footer className="stage-action-row commercial-actions"><span className="confirmation-note"><ShieldCheck size={16}/>{isApproved ? "Client approval and assignment recorded." : "Client approval is required before assignment."}</span>
       <div>
-        {canEdit && <><button type="button" className="workflow-secondary" onClick={onSelectOtherQuote}>Select other quote</button>
+        {canEdit && <>{!isApproved && <button type="button" className="workflow-secondary" onClick={onSelectOtherQuote}>Select other quote</button>}
           <button type="button" className="workflow-secondary" disabled={!canSubmit} onClick={() => onSaveDraft?.(payload())}>Save draft</button>
           <button type="button" className="workflow-primary" disabled={!canSubmit} onClick={() => onSendProposal?.(payload())}><Send size={15}/> Send proposal to Client</button></>}
-        {isSent && !isEditing && <><button type="button" className="workflow-secondary" disabled={busy} onClick={() => setIsEditing(true)}>Prepare revised offer</button>
+        {isSent && !isEditing && <><button type="button" className="workflow-secondary" disabled={busy || !quoteApproved} onClick={() => { setIsEditing(true); onSaveDraft?.(payload()); }}>Revise Proposal</button>
           <button type="button" className="workflow-secondary" disabled={busy} onClick={() => onSupersedeProposal?.(proposal.id)}>Recall proposal</button></>}
         {isRejected && !isEditing && <button type="button" className="workflow-secondary" disabled={busy} onClick={() => setIsEditing(true)}>Revise commercial terms</button>}
+        {isApproved && !isEditing && !isSent && <button type="button" className="workflow-secondary" disabled={busy || !quoteApproved || Boolean(data?.invoice) || data?.inspectionCompletion?.completed} onClick={()=>{setIsEditing(true);onSaveDraft?.(payload());}}>Create Amendment</button>}
         {isApproved && <button type="button" className="workflow-primary" disabled={busy} onClick={onAdvanceToSurveyor}>Continue to Surveyor stage</button>}
       </div>
     </footer>

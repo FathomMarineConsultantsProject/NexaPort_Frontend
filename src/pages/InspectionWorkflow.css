@@ -2032,3 +2032,6 @@ button:disabled {
 .quote-breakdown .total, .quote-breakdown .grand-total { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; border-top: 1px solid var(--wf-line); }
 .quote-breakdown dd { overflow-wrap: anywhere; }
 .workflow-quote details { overflow-wrap: anywhere; }
+
+.inspection-workspace-page .negotiation-details { display: grid; gap: 16px; padding-top: 16px; border-top: 1px solid #dbe3ec; min-width: 0; }
+.inspection-workspace-page .negotiation-details h5 { margin: 0; font-size: 14px; }

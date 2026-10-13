@@ -19,7 +19,7 @@ test("Consultant revises from own thread and sees no Admin internal note",async(
 });
 test("Client proposal preparation is visibly gated on internal approval",async()=>{
   const confirm=await source("../src/components/workflow/stages/StageConfirm.jsx");
-  assert.match(confirm,/quote\.internalStatus !== "approved"/);
+  assert.match(confirm,/quote\.internalStatus === "approved"/);
   assert.match(confirm,/quote\.latestRevisionId/);
-  assert.match(confirm,/requires internal approval/);
+  assert.match(confirm,/requires fresh internal approval/);
 });

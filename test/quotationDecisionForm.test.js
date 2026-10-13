@@ -16,8 +16,10 @@ const render = (decision) => renderToStaticMarkup(createElement(Form, { decision
 
 test("revision form renders labels associated with full-width message and private-note controls", () => {
   const html = render("revision_requested");
-  assert.match(html, /Request Quotation Revision/);
-  assert.match(html, /Send the Consultant your feedback/);
+  assert.match(html, /Request a Revised Quotation/);
+  assert.match(html, /Explain what the Consultant should change/);
+  assert.match(html, /Additional Details/);
+  assert.match(html, /Please review your professional fees and travel expenses/);
   assert.match(html, /rows="4"/);
   assert.match(html, /rows="3"/);
   assert.match(html, /Not shared with the Consultant/);

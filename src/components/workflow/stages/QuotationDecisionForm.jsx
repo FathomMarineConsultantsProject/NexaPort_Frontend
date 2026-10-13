@@ -38,12 +38,10 @@ export default function QuotationDecisionForm({ decision, onSubmit, onCancel, bu
       <legend className="negotiation-sr-only">{copy.title} fields</legend>
       {decision !== "approved" && <>
         <div className="negotiation-field negotiation-wide"><label htmlFor={fieldId("consultantMessage")}>Message to Consultant {isRevision && <span>(required)</span>}</label>
-          <textarea {...accessibility("consultantMessage")} required={isRevision} rows={4} value={form.consultantMessage} onChange={update("consultantMessage")} placeholder={isRevision ? "Explain which charges need revision and what you expect in the updated quotation." : "Explain why this quotation is being rejected."}/>
+          <textarea {...accessibility("consultantMessage")} required={isRevision} rows={4} value={form.consultantMessage} onChange={update("consultantMessage")} placeholder={isRevision ? "Please review your professional fees and travel expenses and submit a revised quotation." : "Explain why this quotation is being rejected."}/>
           {errorFor("consultantMessage")}
         </div>
-        <div className={`negotiation-field${isRevision ? "" : " negotiation-wide"}`}><label htmlFor={fieldId("reason")}>{isRevision ? "Reason for Revision" : "Reason for Rejection"}</label>
-          <input {...accessibility("reason")} value={form.reason} onChange={update("reason")} placeholder="Brief reason for this decision"/>{errorFor("reason")}
-        </div>
+
       </>}
       {isRevision && <div className="negotiation-field"><label htmlFor={fieldId("suggestedMaxAmount")}>Suggested Maximum Amount <span>(Optional)</span></label>
         <div className="negotiation-amount">
@@ -55,11 +53,17 @@ export default function QuotationDecisionForm({ decision, onSubmit, onCancel, bu
           </div>
         </div><p className="negotiation-help">Advisory only. Future quotations are not automatically rejected above this amount.</p>
       </div>}
+      <section className="negotiation-details negotiation-wide" aria-labelledby={`${prefix}-details`}>
+        <h5 id={`${prefix}-details`}>Additional Details</h5>
+        {decision !== "approved" && <div className="negotiation-field"><label htmlFor={fieldId("reason")}>{isRevision ? "Reason for revision (Optional)" : "Reason for rejection"}</label>
+          <input {...accessibility("reason")} value={form.reason} onChange={update("reason")} placeholder={isRevision ? "Optional reason, if distinct from your message" : "Brief reason for this decision"}/>{errorFor("reason")}
+        </div>}
       <div className="negotiation-field negotiation-wide"><label htmlFor={fieldId("internalAdminNote")}>Internal Admin Note <span>(Private)</span></label>
         <textarea {...accessibility("internalAdminNote")} rows={3} value={form.internalAdminNote} onChange={update("internalAdminNote")} aria-describedby={`${prefix}-privacy${errors.internalAdminNote ? ` ${fieldId("internalAdminNote")}-error` : ""}`}/>
         {errorFor("internalAdminNote")}
         <p className="negotiation-help" id={`${prefix}-privacy`}>Visible only to authorized administrators. Not shared with the Consultant.</p>
       </div>
+      </section>
     </fieldset>
     <footer className="negotiation-actions"><button type="button" className="workflow-secondary" disabled={disabled} onClick={onCancel}>Cancel</button><button type="submit" className="workflow-primary" disabled={disabled}>{saving ? "Saving…" : copy.action}</button></footer>
   </form>;

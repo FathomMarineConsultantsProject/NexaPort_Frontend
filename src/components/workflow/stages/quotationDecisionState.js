@@ -1,5 +1,5 @@
 export const DECISION_COPY = {
-  revision_requested: { title: "Request Quotation Revision", description: "Send the Consultant your feedback and optionally suggest a revised maximum amount.", action: "Send Revision Request" },
+  revision_requested: { title: "Request a Revised Quotation", description: "Explain what the Consultant should change before submitting another quotation.", action: "Send Revision Request" },
   approved: { title: "Approve Quotation", description: "Approve this Consultant revision for Client proposal preparation.", action: "Approve Quotation" },
   rejected: { title: "Reject Quotation", description: "Explain the rejection to the Consultant using a message or reason.", action: "Reject Quotation" },
 };
