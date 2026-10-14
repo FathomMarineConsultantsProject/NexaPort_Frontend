@@ -1,53 +1,149 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getDirectoryVessels } from "../api/vesselDirectoryApi";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Anchor, Flag, Ship, X } from "lucide-react";
+import { getDirectoryFlags, getDirectoryVessels } from "../api/vesselDirectoryApi";
+import "./FleetManagement.css";
 import "./VesselDirectory.css";
 
-const display = (value) => value == null || value === "" ? "—" : value;
-const company = (vessel, role) => vessel.management?.find((item) => item.role === role);
-const Company = ({ item }) => item?.entityId ? <Link to={`/directories/owners_managers/${item.entityId}`}>{item.name}</Link> : <span>{display(item?.name)}</span>;
+const emptyData = { vessels: [], pagination: { total: 0, totalPages: 0 } };
+const normalize = (value) => String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase().trim();
+const company = (vessel, role) => vessel.management?.find((item) => item.role === role)?.name;
+const number = (value) => value == null || value === "" ? "" : Number(value).toLocaleString();
+
+function VesselField({ label, value, wide = false }) {
+  if (value == null || value === "") return null;
+  return <div className={`vessel-info-item${wide ? " vessel-info-wide" : ""}`}><span className="vessel-info-label">{label}</span><span className="vessel-info-value">{value}</span></div>;
+}
+
+function DirectoryCard({ vessel }) {
+  const owner = company(vessel, "Registered Owner");
+  const manager = company(vessel, "Commercial Manager");
+  return <Link className="vessel-card vessel-directory-card" to={`/vessel-directory/${vessel.id}`}>
+    <div className="vessel-card-header">
+      <div className="vessel-icon"><Ship size={24} /></div>
+      <div className="vessel-card-identity">
+        <h2 className="vessel-name">{vessel.name || "Unnamed vessel"}</h2>
+        {vessel.imo && <div className="vessel-imo"><Anchor size={14} /> IMO {vessel.imo}</div>}
+      </div>
+      {vessel.vessel_type && <span className="vessel-type-badge">{vessel.vessel_type}</span>}
+    </div>
+    <div className="vessel-info-grid">
+      <VesselField label="Flag" value={vessel.flag ? <><Flag size={13} /> {vessel.flag}</> : null} />
+      <VesselField label="DWT" value={number(vessel.dwt)} />
+      <VesselField label="GT" value={number(vessel.gt)} />
+      <VesselField label="Built" value={vessel.year_built} />
+      <VesselField label="Registered Owner" value={owner} wide />
+      <VesselField label="Commercial Manager" value={manager} wide />
+    </div>
+  </Link>;
+}
 
 export default function VesselDirectory() {
-  const [query, setQuery] = useState("");
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
-  const [flag, setFlag] = useState("");
-  const [dwtMin, setDwtMin] = useState("");
-  const [dwtMax, setDwtMax] = useState("");
-  const [gtMin, setGtMin] = useState("");
-  const [gtMax, setGtMax] = useState("");
-  const [sort, setSort] = useState("name");
-  const [direction, setDirection] = useState("asc");
-  const [page, setPage] = useState(1);
-  const [data, setData] = useState({ vessels: [], pagination: { total: 0, totalPages: 0 } });
+  const [params, setParams] = useSearchParams();
+  const search = params.get("search") || "";
+  const flag = params.get("flag") || "";
+  const page = Math.max(1, Number.parseInt(params.get("page"), 10) || 1);
+  const type = params.get("type") || "";
+  const dwtMin = params.get("dwtMin") || "";
+  const dwtMax = params.get("dwtMax") || "";
+  const gtMin = params.get("gtMin") || "";
+  const gtMax = params.get("gtMax") || "";
+  const sort = params.get("sort") || "name";
+  const direction = params.get("direction") || "asc";
+  const [query, setQuery] = useState(search);
+  const [flagInput, setFlagInput] = useState(flag);
+  const [flags, setFlags] = useState([]);
+  const [flagsError, setFlagsError] = useState("");
+  const [flagRetry, setFlagRetry] = useState(0);
+  const [flagOpen, setFlagOpen] = useState(false);
+  const [activeOption, setActiveOption] = useState(0);
+  const [data, setData] = useState(emptyData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  useEffect(() => { const timer = setTimeout(() => { setSearch(query.trim()); setPage(1); }, 300); return () => clearTimeout(timer); }, [query]);
+  const [retry, setRetry] = useState(0);
+  const requestId = useRef(0);
+
+  useEffect(() => { Promise.resolve().then(() => setQuery(search)); }, [search]);
+  useEffect(() => { if (!flagOpen) Promise.resolve().then(() => setFlagInput(flag)); }, [flag, flagOpen]);
   useEffect(() => {
     const controller = new AbortController();
-    Promise.resolve().then(() => { setLoading(true); setError(""); });
-    getDirectoryVessels({ search, type, flag, dwtMin, dwtMax, gtMin, gtMax, sort, direction, page, limit: 25 }, controller.signal)
-      .then(setData).catch((reason) => { if (!controller.signal.aborted) setError(reason.response?.data?.message || "Directory could not be loaded."); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    getDirectoryFlags(controller.signal)
+      .then((result) => setFlags(Array.isArray(result.flags) ? result.flags : []))
+      .catch(() => { if (!controller.signal.aborted) setFlagsError("Flag suggestions unavailable."); });
     return () => controller.abort();
-  }, [search, type, flag, dwtMin, dwtMax, gtMin, gtMax, sort, direction, page]);
-  const change = (setter) => (event) => { setter(event.target.value); setPage(1); };
-  return <div className="vessel-directory">
-    <header><div><span className="eyebrow">DIRECTORIES / VESSELS</span><h1>Vessel Directory</h1><p>MagicPort vessel records with verified identity links and dated source observations.</p></div><strong>{data.pagination.total.toLocaleString()} vessels</strong></header>
-    <div className="vessel-directory-filters">
-      <label>Search<input value={query} onChange={change(setQuery)} placeholder="Name, IMO, MMSI or call sign" /></label>
-      <label>Type<input value={type} onChange={change(setType)} placeholder="Vessel type" /></label>
-      <label>Flag<input value={flag} onChange={change(setFlag)} placeholder="Flag" /></label>
-      <label>DWT from<input type="number" min="0" value={dwtMin} onChange={change(setDwtMin)} /></label><label>to<input type="number" min="0" value={dwtMax} onChange={change(setDwtMax)} /></label>
-      <label>GT from<input type="number" min="0" value={gtMin} onChange={change(setGtMin)} /></label><label>to<input type="number" min="0" value={gtMax} onChange={change(setGtMax)} /></label>
-      <label>Sort<select value={sort} onChange={change(setSort)}><option value="name">Name</option><option value="imo">IMO</option><option value="dwt">DWT</option><option value="gt">GT</option><option value="yearBuilt">Year built</option></select></label>
-      <label>Order<select value={direction} onChange={change(setDirection)}><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+  }, [flagRetry]);
+
+  const update = (changes, resetPage = true) => {
+    setLoading(true);
+    setError("");
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      for (const [key, value] of Object.entries(changes)) value === "" || value == null ? next.delete(key) : next.set(key, String(value));
+      if (resetPage) next.delete("page");
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (query.trim() === search) return undefined;
+    const timer = setTimeout(() => {
+      setParams((current) => {
+        const next = new URLSearchParams(current);
+        query.trim() ? next.set("search", query.trim()) : next.delete("search");
+        next.delete("page");
+        return next;
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, search, setParams]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const currentId = ++requestId.current;
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setLoading(true); setError(""); } });
+    getDirectoryVessels({ search, type, flag, dwtMin, dwtMax, gtMin, gtMax, sort, direction, page, limit: 30 }, controller.signal)
+      .then((result) => { if (!controller.signal.aborted && currentId === requestId.current) setData(result); })
+      .catch((reason) => { if (!controller.signal.aborted && currentId === requestId.current) { setError(reason.response?.data?.message || "Vessels could not be loaded."); setData(emptyData); } })
+      .finally(() => { if (!controller.signal.aborted && currentId === requestId.current) setLoading(false); });
+    return () => controller.abort();
+  }, [search, type, flag, dwtMin, dwtMax, gtMin, gtMax, sort, direction, page, retry]);
+
+  const suggestions = useMemo(() => {
+    const term = normalize(flagInput);
+    if (!term) return flags.slice(0, 12);
+    return flags.filter((item) => normalize(item).startsWith(term)).slice(0, 12);
+  }, [flags, flagInput]);
+  const selectFlag = (value) => { setFlagInput(value); setFlagOpen(false); setActiveOption(0); if (value !== flag) update({ flag: value }); };
+  const flagKeyDown = (event) => {
+    if (event.key === "Escape") { setFlagOpen(false); return; }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault(); setFlagOpen(true);
+      setActiveOption((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + suggestions.length) % (suggestions.length || 1));
+    }
+    if (event.key === "Enter" && flagOpen && suggestions[activeOption]) { event.preventDefault(); selectFlag(suggestions[activeOption]); }
+  };
+  const onFlagInput = (value) => { setFlagInput(value); setFlagOpen(true); setActiveOption(0); if (flag) update({ flag: "" }); };
+  const updating = loading || query.trim() !== search;
+
+  return <main className="vessel-directory">
+    <header><div><span className="eyebrow">DIRECTORIES / VESSELS</span><h1>Vessel Directory</h1><p>Global vessel records and their known ownership links.</p></div><div className="vessel-directory-count"><strong>{data.pagination.total.toLocaleString()} vessels</strong>{updating && <span role="status" className="vessel-directory-loading"><i aria-hidden="true" /> Loading vessels...</span>}</div></header>
+    <div className="vessel-directory-filters" aria-busy={updating}>
+      <label>Search<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, IMO, MMSI or call sign" /></label>
+      <label>Type<input value={type} onChange={(event) => update({ type: event.target.value })} placeholder="Vessel type" /></label>
+      <div className="vessel-flag-control"><label htmlFor="vessel-flag-input">Flag</label><div className="vessel-flag-input"><input id="vessel-flag-input" role="combobox" aria-expanded={flagOpen && suggestions.length > 0} aria-controls="vessel-flag-options" aria-autocomplete="list" aria-activedescendant={flagOpen && suggestions[activeOption] ? `vessel-flag-option-${activeOption}` : undefined} value={flagInput} onChange={(event) => onFlagInput(event.target.value)} onFocus={() => setFlagOpen(true)} onBlur={() => setTimeout(() => setFlagOpen(false), 120)} onKeyDown={flagKeyDown} placeholder="Type a flag, e.g. IND" />{flagInput && <button type="button" aria-label="Clear flag" onClick={() => selectFlag("")}><X size={14} /></button>}</div>
+        {flagOpen && suggestions.length > 0 && <div id="vessel-flag-options" role="listbox" className="vessel-flag-options">{suggestions.map((item, index) => <button id={`vessel-flag-option-${index}`} role="option" aria-selected={index === activeOption} type="button" key={item} onMouseDown={(event) => event.preventDefault()} onClick={() => selectFlag(item)}>{item}</button>)}</div>}
+        {flagOpen && flagInput && flagInput !== flag && <small>Select a flag to apply it.</small>}
+        {flagsError && <small role="status">{flagsError} <button type="button" onClick={() => { setFlagsError(""); setFlagRetry((value) => value + 1); }}>Retry flags</button></small>}
+      </div>
+      <label>DWT from<input type="number" min="0" value={dwtMin} onChange={(event) => update({ dwtMin: event.target.value })} /></label><label>to<input type="number" min="0" value={dwtMax} onChange={(event) => update({ dwtMax: event.target.value })} /></label>
+      <label>GT from<input type="number" min="0" value={gtMin} onChange={(event) => update({ gtMin: event.target.value })} /></label><label>to<input type="number" min="0" value={gtMax} onChange={(event) => update({ gtMax: event.target.value })} /></label>
+      <label>Sort<select value={sort} onChange={(event) => update({ sort: event.target.value })}><option value="name">Name</option><option value="imo">IMO</option><option value="dwt">DWT</option><option value="gt">GT</option><option value="yearBuilt">Year built</option></select></label>
+      <label>Order<select value={direction} onChange={(event) => update({ direction: event.target.value })}><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+      {updating && <span className="vessel-filter-pending">Applying filters…</span>}
     </div>
-    {error && <p role="alert" className="vessel-directory-error">{error}</p>}
-    <div className="vessel-directory-scroll"><table><thead><tr><th>Vessel Name</th><th>IMO</th><th>Type</th><th>Flag</th><th>DWT</th><th>GT</th><th>Year Built</th><th>Registered Owner</th><th>Commercial Manager</th></tr></thead><tbody>
-      {data.vessels.map((vessel) => <tr key={vessel.id}><td><Link to={`/vessel-directory/${vessel.id}`}>{vessel.name}</Link></td><td className="mono">{display(vessel.imo)}</td><td>{display(vessel.vessel_type)}</td><td>{display(vessel.flag)}</td><td className="mono">{display(vessel.dwt)}</td><td className="mono">{display(vessel.gt)}</td><td>{display(vessel.year_built)}</td><td><Company item={company(vessel, "Registered Owner")} /></td><td><Company item={company(vessel, "Commercial Manager")} /></td></tr>)}
-    </tbody></table></div>
-    {loading && <p className="vessel-directory-state">Loading vessels…</p>}{!loading && !error && !data.vessels.length && <p className="vessel-directory-state">No matching vessels.</p>}
-    <footer><span>Page {page} of {Math.max(1, data.pagination.totalPages)}</span><div><button disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><button disabled={page >= data.pagination.totalPages} onClick={() => setPage(page + 1)}>Next</button></div></footer>
-  </div>;
+    {error && <div role="alert" className="vessel-directory-error">{error} <button type="button" onClick={() => { setLoading(true); setRetry((value) => value + 1); }}>Retry</button></div>}
+    <div className="vessel-grid vessel-directory-results" aria-busy={updating}>{data.vessels.map((vessel) => <DirectoryCard key={vessel.id} vessel={vessel} />)}</div>
+    {!updating && !error && !data.vessels.length && <p className="vessel-directory-state">No matching vessels.</p>}
+    <footer><span>Page {page} of {Math.max(1, data.pagination.totalPages)}</span><div><button disabled={updating || page <= 1} onClick={() => update({ page: page - 1 }, false)}>Previous</button><button disabled={updating || page >= data.pagination.totalPages} onClick={() => update({ page: page + 1 }, false)}>Next</button></div></footer>
+  </main>;
 }

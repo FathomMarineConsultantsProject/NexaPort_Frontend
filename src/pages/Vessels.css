@@ -1,0 +1,7 @@
+.vessels-workspace{background:var(--np-ground,#f1f5f9);min-height:calc(100vh - 110px)}
+.vessels-contexts{display:flex;gap:3px;flex-wrap:wrap;padding:16px 28px 0;border-bottom:1px solid #cbd5e1}
+.vessels-contexts a{padding:9px 14px;color:#475569;text-decoration:none;font:600 13px var(--np-font-sans,"IBM Plex Sans",sans-serif);border-bottom:2px solid transparent}
+.vessels-contexts a.active{color:#0f766e;border-bottom-color:#0f766e}
+.vessels-workspace .fleet-page{min-height:0}
+.vessels-unavailable{padding:28px;color:#475569;font:14px var(--np-font-sans,"IBM Plex Sans",sans-serif)}
+@media(max-width:760px){.vessels-contexts{padding:10px 14px 0}}

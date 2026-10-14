@@ -29,7 +29,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
     label: "Industry Network",
     items: [
       { label: "Owners & Managers", singular: "Company", type: "owners_managers", path: "/owners-managers", icon: Building2, description: "Ship owners and managers in the maritime company directory." },
-      { label: "Vessels", path: "/vessel-directory", icon: Ship },
+      { label: "Vessels", path: "/vessels?view=directory", icon: Ship },
       {
         label: "Service Providers",
         singular: "Service Provider",

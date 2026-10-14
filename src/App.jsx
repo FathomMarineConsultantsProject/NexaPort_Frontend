@@ -17,8 +17,7 @@ import UserProfile from "./pages/Userprofile";
 import ExpertDirectory from "./pages/ExpertDirectory";
 import ExpertProfile from "./pages/ExpertProfile";
 import RegisterExpert from "./pages/RegisterExpert";
-import FleetManagement from "./pages/FleetManagement";
-import VesselDirectory from "./pages/VesselDirectory";
+import Vessels from "./pages/Vessels";
 import VesselDirectoryDetail from "./pages/VesselDirectoryDetail";
 import PortDirectory from "./pages/PortDirectory";
 import PortDetailPage from "./pages/PortDetailPage";
@@ -71,6 +70,13 @@ function AdminOnly({ children }) {
   return getRoleId() === 1 ? children : <Navigate to="/requests" replace state={{ notice: "You do not have access to that page." }} />;
 }
 
+function LegacyVesselsRedirect({ view }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  params.set("view", view);
+  return <Navigate to={`/vessels?${params}`} replace />;
+}
+
 function HideFromClient({ children }) {
   return getRoleId() === 3 ? <Navigate to="/requests" replace state={{ notice: "Clients cannot access the Experts page." }} /> : children;
 }
@@ -109,8 +115,9 @@ const Shell = () => (
         <Route path="/experts" element={<HideFromClient><ExpertDirectory /></HideFromClient>} />
         <Route path="/experts/register" element={<AdminOnly><RegisterExpert /></AdminOnly>} />
         <Route path="/experts/:id" element={<HideFromClient><ExpertProfile /></HideFromClient>} />
-        <Route path="/fleet" element={<FleetManagement />} />
-        <Route path="/vessel-directory" element={<AdminOnly><VesselDirectory /></AdminOnly>} />
+        <Route path="/vessels" element={<Vessels />} />
+        <Route path="/fleet" element={<LegacyVesselsRedirect view="fleet" />} />
+        <Route path="/vessel-directory" element={<AdminOnly><LegacyVesselsRedirect view="directory" /></AdminOnly>} />
         <Route path="/vessel-directory/:id" element={<AdminOnly><VesselDirectoryDetail /></AdminOnly>} />
         <Route path="/flag" element={<AdminOnly><FlagDirectory /></AdminOnly>} />
         <Route path="/flag/:flagSlug" element={<AdminOnly><FlagDirectory /></AdminOnly>} />

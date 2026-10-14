@@ -42,7 +42,7 @@ export default function FleetManagement() {
     loadVessels();
   }, []);
 
-  const loadVessels = async (searchQuery = "") => {
+  async function loadVessels(searchQuery = "") {
     setLoading(true);
     setError("");
 
@@ -57,7 +57,7 @@ export default function FleetManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -216,8 +216,8 @@ export default function FleetManagement() {
     <div className="fleet-page">
       <div className="fleet-header">
         <div className="fleet-header-content">
-          <h1>Fleet Management</h1>
-          <p>Register and manage vessels in your fleet for service requests.</p>
+          <h1>{isSuperAdmin() ? "Managed Vessels" : "My Fleet"}</h1>
+          <p>Register and manage vessels for service requests.</p>
         </div>
         {canManageVessels && (
           <button onClick={() => setShowRegisterForm(true)} className="register-vessel-btn">

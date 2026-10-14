@@ -68,7 +68,7 @@ export default function Navbar() {
   const userId = user?.id;
   const visibleDirectoryGroups = getVisibleDirectoryGroups(roleId);
   const directoryActive = location.pathname.startsWith("/directories/") || visibleDirectoryGroups.flatMap((group) => group.items).some(({ path }) =>
-    matchPath({ path: `${path}/*` }, location.pathname)
+    matchPath({ path: `${path.split("?")[0]}/*` }, location.pathname)
   );
 
   const loadNotifications = useCallback(async () => {
@@ -326,9 +326,9 @@ export default function Navbar() {
             </div>
           )}
 
-        <NavLink to="/fleet">
-          <Ship size={17} /> Fleet
-        </NavLink>
+        {(isSuperAdmin || isClient) && <NavLink to="/vessels">
+          <Ship size={17} /> Vessels
+        </NavLink>}
 
         <NavLink to="/ports">
           <MapPin size={17} /> Ports
@@ -558,9 +558,9 @@ export default function Navbar() {
               </div>
           )}
 
-          <NavLink to="/fleet" onClick={closeMobileNavigation}>
-            <Ship size={18} /> Fleet
-          </NavLink>
+          {(isSuperAdmin || isClient) && <NavLink to="/vessels" onClick={closeMobileNavigation}>
+            <Ship size={18} /> Vessels
+          </NavLink>}
           <NavLink to="/ports" onClick={closeMobileNavigation}>
             <MapPin size={18} /> Ports
           </NavLink>
