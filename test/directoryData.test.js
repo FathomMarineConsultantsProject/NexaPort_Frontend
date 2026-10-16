@@ -254,6 +254,7 @@ test("company logo URLs reject malformed and banner-like assets", () => {
     "https://cdn.example.com/static/company-banners/acme.png",
     "https://cdn.example.com/banner-acme.png",
     "https://cdn.example.com/hero-acme.jpg",
+    "https://magicport.ai/logo/acme.png",
   ]) assert.equal(validLogoUrl(value), null);
 });
 

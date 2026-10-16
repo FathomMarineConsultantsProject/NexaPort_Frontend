@@ -98,7 +98,8 @@ export const validLogoUrl = (value) => {
   if (!text || ["/company-banners/", "static/company-banners", "banner-", "hero-"].some((part) => text.toLowerCase().includes(part))) return null;
   try {
     const url = new URL(text);
-    return ["http:", "https:"].includes(url.protocol) && url.hostname ? url.toString() : null;
+    return ["http:", "https:"].includes(url.protocol) && url.hostname && !url.hostname.toLowerCase().endsWith("magicport.ai")
+      ? url.toString() : null;
   } catch {
     return null;
   }
