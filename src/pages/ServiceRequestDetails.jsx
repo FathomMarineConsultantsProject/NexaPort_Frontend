@@ -3,6 +3,7 @@ import { requestPortPayload } from "../components/requests/requestPortState.js";
 import ScopeEditor from "../components/requests/ScopeEditor";
 import ScopeText from "../components/requests/ScopeText";
 import PortSelect from "../components/requests/PortSelect";
+import VesselIdentityFields from "../components/requests/VesselIdentityFields";
 import ScopeAssistant from "../components/requests/ScopeAssistant";
 import AgentDetails, { AgentDetailsFields } from "../components/requests/AgentDetails";
 import {
@@ -20,7 +21,7 @@ import {
   Star,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createQuotation, getQuotations, getQuotationNegotiation, submitQuotationRevision } from "../api/quotationApi";
 import { createExpertReview } from "../api/reviewApi";
 import {
@@ -36,6 +37,7 @@ import CopyRequestLink from "../components/requests/CopyRequestLink";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { displayCase, normalizeNarrative } from "../utils/requestPresentation";
 import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
+import { formatBudget, marketplaceBudget, submittedBudget } from "../utils/requestRegister";
 import "./ServiceRequestDetails.css";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -57,16 +59,14 @@ function Narrative({ title, text }) {
    Info — always renders, never suppresses rows
 ──────────────────────────────────────────── */
 
-function Info({ label, value, icon, required, isPendingReview }) {
+function Info({ label, value, icon }) {
   const empty = value === null || value === undefined || String(value).trim() === "" || value === "-";
-  const showWarning = empty && required && isPendingReview;
   return (
     <div className="info-row">
       <span>{label}</span>
       <strong className={empty ? "info-empty" : ""}>
         {icon}
         {empty ? "Not provided" : value}
-        {showWarning && <small className="info-required-hint">Required</small>}
       </strong>
     </div>
   );
@@ -119,6 +119,7 @@ export default function ServiceRequestDetails({ requestId }) {
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const [decidingProposal, setDecidingProposal] = useState(false);
+  const dialogRef = useRef(null);
 
   // Budget adjustment state
   const [budgetAdj, setBudgetAdj] = useState({
@@ -178,6 +179,32 @@ export default function ServiceRequestDetails({ requestId }) {
       .catch((error) => console.error("Failed to load inspection catalogue:", error));
   }, []);
 
+  useEffect(() => {
+    if (!showRejectModal && !showApproveModal && !showDeclineModal) return undefined;
+    const previousFocus = document.activeElement;
+    const frame = window.requestAnimationFrame(() => dialogRef.current?.querySelector("textarea:not(:disabled), button:not(:disabled)")?.focus());
+    const handleDialogKeyDown = (event) => {
+      if (event.key === "Escape" && !rejecting && !decidingProposal) {
+        setShowRejectModal(false);
+        setShowApproveModal(false);
+        setShowDeclineModal(false);
+      }
+      if (event.key !== "Tab") return;
+      const focusable = [...(dialogRef.current?.querySelectorAll("button:not(:disabled), textarea:not(:disabled), input:not(:disabled)") || [])];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleDialogKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleDialogKeyDown);
+      previousFocus?.focus?.();
+    };
+  }, [showRejectModal, showApproveModal, showDeclineModal, rejecting, decidingProposal]);
+
   const formatDate = (date) => {
     if (!date) return "Not provided";
 
@@ -207,11 +234,6 @@ export default function ServiceRequestDetails({ requestId }) {
     const num = Number(value);
     if (!Number.isFinite(num)) return "0";
     return num.toLocaleString();
-  };
-
-  const moneyOrNull = (value) => {
-    if (value == null) return null;
-    return `$${Number(value).toLocaleString()}`;
   };
 
   /* ────── Client Proposal decision handlers ────── */
@@ -309,7 +331,7 @@ export default function ServiceRequestDetails({ requestId }) {
       title: request.title || "",
       scopeOfWork: request.scopeOfWork || "",
       urgency: request.urgency || "routine",
-      budgetUsd: request.clientBudgetUsd ?? request.budgetUsd ?? "",
+      budgetUsd: submittedBudget(request) ?? "",
       requiredBy: request.requiredBy ? String(request.requiredBy).slice(0, 10) : "",
       vesselName: request.vessel?.name || "",
       imoNumber: request.vessel?.imoNumber || "",
@@ -320,10 +342,10 @@ export default function ServiceRequestDetails({ requestId }) {
       ports: request.ports || [],
       originalPortSchedule: { terminalName: request.terminalName || "", eta: request.port?.eta || "" },
       terminalName: request.terminalName || "",
-      agentCompanyName: request.agentDetails?.companyName || "",
-      agentContactName: request.agentDetails?.contactName || "",
-      agentEmail: request.agentDetails?.email || "",
-      agentPhone: request.agentDetails?.phone || "",
+      agentCompanyName: isClient() ? "" : request.agentDetails?.companyName || "",
+      agentContactName: isClient() ? "" : request.agentDetails?.contactName || "",
+      agentEmail: isClient() ? "" : request.agentDetails?.email || "",
+      agentPhone: isClient() ? "" : request.agentDetails?.phone || "",
 
       eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
 
@@ -378,7 +400,7 @@ export default function ServiceRequestDetails({ requestId }) {
           payload.adminBudgetAdjustmentType = "none";
           payload.adminBudgetAdjustmentValue = 0;
         }
-        if (budgetAdj.explicitApproved !== "" && request.clientBudgetUsd == null) {
+        if (budgetAdj.explicitApproved !== "" && submittedBudget(request) == null) {
           payload.approvedBudgetUsd = Number(budgetAdj.explicitApproved);
         }
       }
@@ -443,7 +465,7 @@ export default function ServiceRequestDetails({ requestId }) {
   /* ────── Review handlers ────── */
 
   if (loading) {
-    return <main className="request-details-page">Loading request...</main>;
+    return <main className="request-details-page"><div className="request-detail-feedback" role="status">Loading request…</div></main>;
   }
 
   const submitReview = async (quote) => {
@@ -501,7 +523,7 @@ export default function ServiceRequestDetails({ requestId }) {
   };
 
   if (!request) {
-    return <main className="request-details-page">Request not found.</main>;
+    return <main className="request-details-page"><div className="request-detail-feedback" role="alert"><strong>Request unavailable</strong><span>Check the request link or return to the register.</span><button type="button" onClick={() => navigate("/requests")}>Open request register</button></div></main>;
   }
 
   /* ────── Consultant View (unchanged) ────── */
@@ -509,6 +531,7 @@ export default function ServiceRequestDetails({ requestId }) {
   if (isExpert()) {
     const ownQuotes = request._ownQuotations || [];
     return <main className="request-details-page consultant-request-detail">
+      <header className="request-details-head consultant-detail-head"><div className="request-head-info"><span className="request-identifier">Request #{request.id || id}</span><h1>Inspection opportunity</h1><p className="consultant-detail-head__intro">Review the service, location and approved budget before quoting.</p></div></header>
       <section className="details-card consultant-safe-detail-grid">
         <div><span>Services Required</span><strong>{request.inspectionType || request.serviceType || "Not provided"}</strong></div>
         {request.serviceType === "Other"
@@ -518,6 +541,7 @@ export default function ServiceRequestDetails({ requestId }) {
         <div><span>Date of Inspection</span><strong>{request.inspectionDate ? formatDate(request.inspectionDate) : "Not provided"}</strong></div>
         <div><span>Port of Inspection</span><strong>{request.portOfInspection || "Not provided"}</strong><AdditionalPorts ports={request.ports}/></div>
         {request.terminalName && <div><span>Terminal</span><strong>{request.terminalName}</strong></div>}
+        {request.agentDetails?.contactName && <div><span>Port agent contact</span><strong>{request.agentDetails.contactName}</strong></div>}
         {request.approvedBudgetUsd != null && <div><span>Budget</span><strong>${money(request.approvedBudgetUsd)}</strong></div>}
       </section>
       <section className="consultant-quote-section">
@@ -532,7 +556,7 @@ export default function ServiceRequestDetails({ requestId }) {
           {[["totalQuoteUsd","Total Quotation (USD)"],["attendanceDays","Attendance Days"],["travelCost","Travel Cost"],["accommodationCost","Accommodation"],["reportFee","Report Fee"],["urgencySurcharge","Urgency Surcharge"]].map(([field,label]) => <label key={field}>{label}<input type="number" min="0" required={field === "totalQuoteUsd"} value={quoteForm[field]} onChange={(event) => setQuoteForm({...quoteForm,[field]:event.target.value})}/></label>)}
         </div><label>Cover Letter / Notes<textarea value={quoteForm.coverLetter} onChange={(event) => setQuoteForm({...quoteForm,coverLetter:event.target.value})}/></label><div className="quote-actions"><button type="submit" className="primary-btn">Submit Quotation</button><button type="button" className="secondary-btn" onClick={() => setShowQuoteForm(false)}>Cancel</button></div></form>}
       </section>
-      {toast && <div className="request-toast"><strong>{toast}</strong></div>}
+      {toast && <div className="request-toast" role="status"><strong>{toast}</strong></div>}
     </main>;
   }
 
@@ -586,14 +610,14 @@ export default function ServiceRequestDetails({ requestId }) {
   const showScope = Boolean(scope.trim()) && normalizeNarrative(scope) !== normalizeNarrative(overview);
 
   // Budget display values
-  const clientBudgetDisplay = moneyOrNull(request.clientBudgetUsd);
-  const approvedBudgetDisplay = moneyOrNull(request.approvedBudgetUsd);
+  const clientBudgetDisplay = submittedBudget(request) == null ? null : formatBudget(submittedBudget(request));
+  const approvedBudgetDisplay = marketplaceBudget(request) == null ? null : formatBudget(marketplaceBudget(request));
   const hasBudgetAdjustment = request.adminBudgetAdjustmentType && request.adminBudgetAdjustmentType !== "none";
 
   // Budget preview for edit mode
   const editBudgetPreview = (() => {
     if (!editing) return null;
-    const clientBudget = request.clientBudgetUsd;
+    const clientBudget = editForm.budgetUsd === "" ? null : editForm.budgetUsd;
     if (clientBudget == null && budgetAdj.explicitApproved) {
       return Number(budgetAdj.explicitApproved);
     }
@@ -660,14 +684,14 @@ export default function ServiceRequestDetails({ requestId }) {
           <div className="request-tags">
             <span className="request-identifier">Request #{request.id || id}</span>
             <span className={`urgency-tag ${request.urgency || ""}`}>
-              {request.urgency || "routine"}
+              Priority: {request.urgency || "routine"}
             </span>
             <span className={`status-tag ${request.status || ""}`}>
-              {request.status || "open"}
+              Work: {request.status || "open"}
             </span>
             {request.moderationStatus && (
               <span className={`status-tag moderation-${request.moderationStatus}`}>
-                {request.moderationStatus}
+                Review: {request.moderationStatus}
               </span>
             )}
           </div>
@@ -676,16 +700,16 @@ export default function ServiceRequestDetails({ requestId }) {
 
           <div className="request-meta-line">
             <span>
-              <MapPin size={17} />
+              <MapPin size={17} aria-hidden="true" />
               {port.name || port.port_name || port.locationSummary || "Port not added"}
               {port.country ? `, ${port.country}` : ""}
             </span>
 
             <span>
-              <CalendarDays size={17} />
+              <CalendarDays size={17} aria-hidden="true" />
               Due {formatDate(request.requiredBy)}
             </span>
-            {(vessel.name || vessel.vessel_name) && <span><Ship size={17} /> {vessel.name || vessel.vessel_name}</span>}
+            {(vessel.name || vessel.vessel_name) && <span><Ship size={17} aria-hidden="true" /> {vessel.name || vessel.vessel_name}</span>}
           </div>
         </div>
 
@@ -700,28 +724,21 @@ export default function ServiceRequestDetails({ requestId }) {
         {isSuperAdmin() && isApproved && <button type="button" className="open-workflow-btn" onClick={() => navigate(`/admin/inspection-workflow/${id}`)}><RouteIcon size={16}/> Open Inspection Workflow</button>}
         </div>
         {(isSuperAdmin() || isClient()) && !editing && !editPermission.allowed && <small className="request-edit-lock-reason">{editPermission.reason}</small>}
-        <div className="budget-block">
+        {!(isSuperAdmin() && (isPendingReview || editing)) && <div className="budget-block">
           {isSuperAdmin() ? (
             <>
               <strong>
                 {approvedBudgetDisplay || clientBudgetDisplay || "No budget"}
               </strong>
-              <span>{approvedBudgetDisplay ? "Approved budget" : "Client budget"}</span>
+              <span>{approvedBudgetDisplay ? "Market target budget (consultant-facing)" : "Client submitted budget"}</span>
             </>
           ) : isClient() ? (
             <>
-              <strong>
-                $
-                {money(
-                  acceptedQuote
-                    ? getQuotePrice(acceptedQuote)
-                    : request.approvedBudgetUsd ?? request.clientBudgetUsd ?? request.budgetUsd
-                )}
-              </strong>
+              <strong>{acceptedQuote ? formatBudget(getQuotePrice(acceptedQuote)) : clientBudgetDisplay || "Not provided"}</strong>
               <span>
                 {acceptedQuote
-                  ? "Accepted quotation"
-                  : isApproved ? "Approved budget" : "Submitted budget"}
+                  ? "Accepted client total"
+                  : "Submitted budget"}
               </span>
             </>
           ) : (
@@ -730,7 +747,7 @@ export default function ServiceRequestDetails({ requestId }) {
               <span>{`${Number(request.quotationCount || quotations.length || 0)} ${Number(request.quotationCount || quotations.length || 0) === 1 ? "quotation" : "quotations"}`}</span>
             </>
           )}
-        </div></div>
+        </div>}</div>
       </section>
 
       <section className="request-details-layout">
@@ -771,15 +788,14 @@ export default function ServiceRequestDetails({ requestId }) {
                   />
                 </label>
                 <label>Title<input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></label>
-                {isClient() && <label>Budget (USD)<input type="number" min="0" value={editForm.budgetUsd} onChange={(e) => setEditForm({ ...editForm, budgetUsd: e.target.value })} /></label>}
+                {(isClient() || isSuperAdmin()) && <label>Client Submitted Budget (USD)<input type="number" min="0" step="any" value={editForm.budgetUsd} onChange={(e) => setEditForm({ ...editForm, budgetUsd: e.target.value })} /></label>}
                 <label>Urgency
                   <select value={editForm.urgency} onChange={(e) => setEditForm({ ...editForm, urgency: e.target.value })}>
                     {["routine", "urgent", "emergency"].map((u) => <option key={u}>{u}</option>)}
                   </select>
                 </label>
                 <label>Required Date<input type="date" value={editForm.requiredBy} onChange={(e) => setEditForm({ ...editForm, requiredBy: e.target.value })} /></label>
-                <label>Vessel Name<input value={editForm.vesselName} onChange={(e) => setEditForm({ ...editForm, vesselName: e.target.value })} /></label>
-                <label>IMO Number<input value={editForm.imoNumber} onChange={(e) => setEditForm({ ...editForm, imoNumber: e.target.value })} /></label>
+                {isClient() ? <div><VesselIdentityFields value={editForm} disabled={editSaving} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} /></div> : <><label>Vessel Name<input value={editForm.vesselName} onChange={(e) => setEditForm({ ...editForm, vesselName: e.target.value })} /></label><label>IMO Number<input value={editForm.imoNumber} onChange={(e) => setEditForm({ ...editForm, imoNumber: e.target.value })} /></label></>}
                 <label>Vessel Type<input value={editForm.vesselType} onChange={(e) => setEditForm({ ...editForm, vesselType: e.target.value })} /></label>
                 <label>Flag<input value={editForm.flagState} onChange={(e) => setEditForm({ ...editForm, flagState: e.target.value })} /></label>
                 <div><PortSelect ports={editForm.ports} originalPortSchedule={editForm.originalPortSchedule} disabled={editSaving} terminalName={editForm.terminalName} eta={editForm.eta} portId={editForm.portId} portName={editForm.portName} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} /></div>
@@ -787,7 +803,7 @@ export default function ServiceRequestDetails({ requestId }) {
                 <label>ETA<input type="date" value={editForm.eta} onChange={(e) => setEditForm({ ...editForm, eta: e.target.value })} /></label>
                 <ScopeAssistant value={editForm} legacyCertification={request.requiredCertification} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} />
                 <label className="wide">Scope of Work<ScopeEditor value={editForm.scopeOfWork} disabled={editSaving} onChange={(scopeOfWork) => setEditForm((current) => ({ ...current, scopeOfWork }))} /></label>
-                <AgentDetailsFields value={editForm} errors={editFieldErrors} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} />
+                <AgentDetailsFields writeOnly={isClient()} value={editForm} errors={editFieldErrors} onChange={(patch) => setEditForm((current) => ({ ...current, ...patch }))} />
               </div>
               <div className="request-edit-form-actions">
                 <button type="button" className="secondary-btn" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
@@ -808,7 +824,7 @@ export default function ServiceRequestDetails({ requestId }) {
               </div>
               {editing && (
                 <>
-                  {request.clientBudgetUsd != null ? (
+                  {submittedBudget(request) != null ? (
                     <div className="budget-adjustment-controls">
                       <label>Adjustment
                         <div className="budget-adj-row">
@@ -852,7 +868,7 @@ export default function ServiceRequestDetails({ requestId }) {
                   )}
                   <div className="budget-review-row">
                     <div className="budget-review-item approved-preview">
-                      <span>Approved Consultant Budget</span>
+                      <span>Market Target Budget (Consultant-Facing)</span>
                       <strong className="approved-budget-value">
                         {editBudgetPreview != null ? `$${Number(editBudgetPreview).toLocaleString()}` : "Not set"}
                       </strong>
@@ -875,11 +891,81 @@ export default function ServiceRequestDetails({ requestId }) {
                     </div>
                   )}
                   <div className="budget-review-item">
-                    <span>Approved Consultant Budget</span>
+                    <span>Market Target Budget (Consultant-Facing)</span>
                     <strong className="approved-budget-value">{approvedBudgetDisplay || "Not set"}</strong>
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {isClient() && request?.proposal?.status === "sent" && (
+            <div className="details-card proposal-decision-card">
+              <div className="proposal-decision-card__summary">
+                <div>
+                  <span className="proposal-decision-card__eyebrow">
+                    {request.proposal.amendsProposalId ? "Commercial Amendment Available" : "Commercial Proposal Available"} (Revision #{request.proposal.revisionNumber || 1})
+                  </span>
+                  <h3>
+                    Proposed Consultant: {request.proposal.expertName || "Certified Maritime Surveyor"}
+                  </h3>
+                  <p>
+                    {request.proposal.expertLocation && <span>Based in {request.proposal.expertLocation} · </span>}
+                    {request.proposal.expertRating ? <span>★ {request.proposal.expertRating} / 5 · </span> : null}
+                    <span>Estimated Attendance: {request.proposal.estimatedAttendanceDays || 1} day(s)</span>
+                  </p>
+                </div>
+                <div className="proposal-decision-card__amount">
+                  <span>Total authorized fee</span>
+                  <strong>
+                    ${money(request.proposal.finalTotalUsd || request.proposal.clientTotalUsd)} USD
+                  </strong>
+                </div>
+              </div>
+
+              {request.proposal.amendsProposalId && <p>The previously approved agreement remains in effect until you approve this amendment. Your assigned Consultant is unchanged.</p>}
+              {request.proposal.clientNotes && (
+                <div className="proposal-decision-card__notes">
+                  <strong>Commercial notes &amp; scope</strong>
+                  <p>{request.proposal.clientNotes}</p>
+                </div>
+              )}
+
+              <div className="proposal-decision-card__actions">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={() => setShowDeclineModal(true)}
+                >
+                  <XCircle size={16} aria-hidden="true" />
+                  Decline Proposal
+                </button>
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={() => setShowApproveModal(true)}
+                >
+                  <CheckCircle2 size={16} aria-hidden="true" />
+                  Approve Quotation &amp; Authorize Inspection
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isClient() && request?.proposal?.status === "rejected" && (
+            <div className="workflow-alert error proposal-declined">
+              <strong>You declined Commercial Proposal (Revision #{request.proposal.revisionNumber || 1})</strong>
+              <p>
+                Feedback submitted: "{request.proposal.clientRejectionReason}". NexaPort Admin is preparing revised terms.
+              </p>
+            </div>
+          )}
+
+          {isClient() && !acceptedQuote && (!request?.proposal || !["sent", "rejected"].includes(request.proposal.status)) && (
+            <div className="details-card">
+              <p>
+                Quotations are under admin review. Once commercial terms are finalized, your proposal will appear here for review and authorization.
+              </p>
             </div>
           )}
 
@@ -888,8 +974,6 @@ export default function ServiceRequestDetails({ requestId }) {
               {overview && <Narrative title="Request Overview" text={overview} />}
               {showScope && <Narrative title="Scope of Work" text={scope} />}
               {!overview && !scope && <section className="request-narrative empty"><h2>Request Overview</h2><p>No description was provided.</p></section>}
-              {!overview && scope && !showScope && <section className="request-narrative empty"><h2>Request Overview</h2><p>No description was provided.</p></section>}
-              {!showScope && scope && overview && null}
             </>
           )}
 
@@ -908,78 +992,6 @@ export default function ServiceRequestDetails({ requestId }) {
               </button>
             )}
           </div>
-
-          {isClient() && request?.proposal?.status === "sent" && (
-            <div className="details-card proposal-decision-card" style={{ border: "2px solid #149d94", borderRadius: 8, padding: 20, marginBottom: 20, background: "#f0fdfa" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-                <div>
-                  <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#0d766e" }}>
-                    {request.proposal.amendsProposalId ? "Commercial Amendment Available" : "Commercial Proposal Available"} (Revision #{request.proposal.revisionNumber || 1})
-                  </span>
-                  <h3 style={{ margin: "4px 0 8px 0", color: "#111827", fontSize: 18 }}>
-                    Proposed Consultant: {request.proposal.expertName || "Certified Maritime Surveyor"}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: 14, color: "#4b5563" }}>
-                    {request.proposal.expertLocation && <span>Based in {request.proposal.expertLocation} · </span>}
-                    {request.proposal.expertRating ? <span>★ {request.proposal.expertRating} / 5 · </span> : null}
-                    <span>Estimated Attendance: {request.proposal.estimatedAttendanceDays || 1} day(s)</span>
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>Total Authorized Fee</span>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: "#0f766e" }}>
-                    ${money(request.proposal.finalTotalUsd || request.proposal.clientTotalUsd)} USD
-                  </div>
-                </div>
-              </div>
-
-              {request.proposal.amendsProposalId && <p>The previously approved agreement remains in effect until you approve this amendment. Your assigned Consultant is unchanged.</p>}
-              {request.proposal.clientNotes && (
-                <div style={{ marginTop: 14, padding: "10px 14px", background: "white", borderRadius: 6, border: "1px solid #ccfbf1" }}>
-                  <strong style={{ fontSize: 13, color: "#374151" }}>Commercial Notes &amp; Scope:</strong>
-                  <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#4b5563" }}>{request.proposal.clientNotes}</p>
-                </div>
-              )}
-
-              <div style={{ marginTop: 18, display: "flex", gap: 12, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  style={{ borderColor: "#ef4444", color: "#dc2626" }}
-                  onClick={() => setShowDeclineModal(true)}
-                >
-                  <XCircle size={16} style={{ marginRight: 6 }} />
-                  Decline Proposal
-                </button>
-                <button
-                  type="button"
-                  className="primary-btn"
-                  style={{ background: "#0d9488" }}
-                  onClick={() => setShowApproveModal(true)}
-                >
-                  <CheckCircle2 size={16} style={{ marginRight: 6 }} />
-                  Approve Quotation &amp; Authorize Inspection
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isClient() && request?.proposal?.status === "rejected" && (
-            <div className="workflow-alert error" style={{ marginBottom: 20 }}>
-              <strong>You declined Commercial Proposal (Revision #{request.proposal.revisionNumber || 1})</strong>
-              <p style={{ margin: "4px 0 0 0", fontSize: 13 }}>
-                Feedback submitted: "{request.proposal.clientRejectionReason}". NexaPort Admin is preparing revised terms.
-              </p>
-            </div>
-          )}
-
-          {isClient() && !acceptedQuote && (!request?.proposal || !["sent", "rejected"].includes(request.proposal.status)) && (
-            <div className="details-card">
-              <p>
-                Quotations are under admin review. Once commercial terms are finalized, your proposal will appear here for review and authorization.
-              </p>
-            </div>
-          )}
 
           {showQuoteForm && canSubmitQuote && (
             <form className="quote-form-card" onSubmit={submitQuotation}>
@@ -1229,8 +1241,8 @@ export default function ServiceRequestDetails({ requestId }) {
                 )}
 
                 {isSuperAdmin() && quote.status !== "accepted" && (
-                  <div className="admin-accept-box" style={{ background: "#f8fafc", padding: 14, borderRadius: 6, border: "1px solid #e2e8f0", marginTop: 12 }}>
-                    <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
+                  <div className="admin-accept-box">
+                    <p>
                       Commercial proposals and surveyor assignments are managed in the Inspection Workflow.
                     </p>
                     {/* Preservation reference for quotation breakdown:
@@ -1242,7 +1254,6 @@ export default function ServiceRequestDetails({ requestId }) {
                     <button
                       type="button"
                       className="primary-btn"
-                      style={{ marginTop: 8 }}
                       onClick={() => navigate(`/admin/inspection-workflows/${id}`)}
                     >
                       Manage in Inspection Workflow &rarr;
@@ -1260,14 +1271,13 @@ export default function ServiceRequestDetails({ requestId }) {
               Vessel Particulars
             </h3>
 
-            <Info label="Name" value={vessel.name || vessel.vessel_name} required isPendingReview={isPendingReview} />
-            <Info label="IMO" value={vessel.imoNumber || vessel.imo_number} isPendingReview={isPendingReview} />
-            <Info label="Type" value={vessel.type || vessel.vessel_type} required isPendingReview={isPendingReview} />
+            <Info label="Name" value={vessel.name || vessel.vessel_name} />
+            <Info label="IMO" value={vessel.imoNumber || vessel.imo_number} />
+            <Info label="Type" value={vessel.type || vessel.vessel_type} />
             <Info
               label="Flag"
               value={vessel.flagState || vessel.flag_state}
               icon={<Flag size={14} />}
-              isPendingReview={isPendingReview}
             />
           </div>
 
@@ -1277,39 +1287,39 @@ export default function ServiceRequestDetails({ requestId }) {
               Port & Schedule
             </h3>
 
-            <Info label="Port" value={port.name || port.port_name} required isPendingReview={isPendingReview} /><AdditionalPorts ports={request.ports}/>
-            {port.country && <Info label="Country (historical / port record)" value={port.country} isPendingReview={isPendingReview} />}
-            <Info label="Terminal" value={request.terminalName} isPendingReview={isPendingReview} />
-            <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} isPendingReview={isPendingReview} />
-            <Info label="Deadline" value={request.requiredBy ? formatDate(request.requiredBy) : null} required isPendingReview={isPendingReview} />
+            <Info label="Port" value={port.name || port.port_name} /><AdditionalPorts ports={request.ports}/>
+            {port.country && <Info label="Country (historical / port record)" value={port.country} />}
+            <Info label="Terminal" value={request.terminalName} />
+            <Info label="ETA" value={port.eta ? formatDateTime(port.eta) : null} />
+            <Info label="Deadline" value={request.requiredBy ? formatDate(request.requiredBy) : null} />
           </div>
 
-          <AgentDetails value={request.agentDetails} />
+          <AgentDetails value={request.agentDetails} showEmpty />
+          {isSuperAdmin() && <div className="side-info-card submitted-by-card">
+            <h3>Submitted By</h3>
+            {request.submittedBy?.source === "account" ? <dl>
+              <div><dt>Account holder</dt><dd>{request.submittedBy.fullName || "Name unavailable"}</dd></div>
+              <div><dt>Email</dt><dd>{request.submittedBy.email ? <a href={`mailto:${request.submittedBy.email}`}>{request.submittedBy.email}</a> : "Unavailable"}</dd></div>
+              <div><dt>Account ID</dt><dd>{request.submittedBy.id}</dd></div>
+              {request.companyName && <div><dt>Associated company</dt><dd>{request.companyName}</dd></div>}
+              <div><dt>Submitted</dt><dd>{formatDateTime(request.createdAt)}</dd></div>
+            </dl> : <><p>Legacy request — no linked user account</p>{request.requesterName && <p className="submitted-by-legacy">Legacy source detail: {request.requesterName}</p>}</>}
+          </div>}
           {request.requiredCertification && (          <div className="side-info-card">
             <h3>
               <Award size={18} />
-              Legacy Certification Requirements
+              Required Qualifications <small>Legacy Certification Requirements</small>
             </h3>
             <p>{request.requiredCertification ? displayCase(request.requiredCertification) : "Not provided"}</p>
           </div>)}
 
-          {!isExpert() && (
+          {!isExpert() && !isSuperAdmin() && (
             <div className="side-info-card">
               <h3>{request.companyVerified ? "Company" : "Legacy requester"}</h3>
               <p>{request.companyName || request.requesterName || "Not provided"}</p>
             </div>
           )}
 
-          {/* Client budget info for Client view */}
-          {isClient() && (
-            <div className="side-info-card">
-              <h3><DollarSign size={18} /> Budget</h3>
-              <Info label="Submitted" value={clientBudgetDisplay} />
-              {isApproved && approvedBudgetDisplay && approvedBudgetDisplay !== clientBudgetDisplay && (
-                <Info label="Approved" value={approvedBudgetDisplay} />
-              )}
-            </div>
-          )}
         </aside>
       </section>
 
@@ -1318,10 +1328,12 @@ export default function ServiceRequestDetails({ requestId }) {
         <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
           if (e.target === e.currentTarget && !rejecting) setShowRejectModal(false);
         }}>
-          <section className="delete-request-dialog" role="dialog" aria-modal="true">
-            <h2>Reject Service Request</h2>
-            <p>Provide a reason for rejection. This will be visible to the Client.</p>
+          <section ref={dialogRef} className="delete-request-dialog" role="dialog" aria-modal="true" aria-labelledby="reject-request-title" aria-describedby="reject-request-help">
+            <h2 id="reject-request-title">Reject Service Request</h2>
+            <p id="reject-request-help">Provide a reason for rejection. This will be visible to the Client.</p>
+            <label htmlFor="reject-request-reason">Reason for rejection</label>
             <textarea
+              id="reject-request-reason"
               className="reject-reason-input"
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
@@ -1348,28 +1360,28 @@ export default function ServiceRequestDetails({ requestId }) {
         <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
           if (e.target === e.currentTarget && !decidingProposal) setShowApproveModal(false);
         }}>
-          <section className="delete-request-dialog" role="dialog" aria-modal="true" style={{ maxWidth: 520 }}>
-            <h2>Authorize Inspection &amp; Confirm Terms</h2>
-            <p style={{ marginTop: 6, color: "#4b5563", fontSize: 14 }}>
+          <section ref={dialogRef} className="delete-request-dialog request-decision-dialog" role="dialog" aria-modal="true" aria-labelledby="approve-proposal-title">
+            <h2 id="approve-proposal-title">Authorize Inspection &amp; Confirm Terms</h2>
+            <p className="request-decision-dialog__intro">
               You are authorizing the inspection for <strong>{request.vessel?.name || "the vessel"}</strong> with the proposed consultant.
             </p>
 
-            <div style={{ background: "#f0fdfa", padding: 14, borderRadius: 6, border: "1px solid #ccfbf1", margin: "14px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: "#475569" }}>Designated Consultant:</span>
-                <strong style={{ fontSize: 13, color: "#0f766e" }}>{request.proposal.expertName || "Certified Surveyor"}</strong>
+            <div className="request-decision-dialog__terms">
+              <div>
+                <span>Designated Consultant</span>
+                <strong>{request.proposal.expertName || "Certified Surveyor"}</strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: "#475569" }}>Estimated Attendance:</span>
-                <strong style={{ fontSize: 13, color: "#334155" }}>{request.proposal.estimatedAttendanceDays || 1} day(s)</strong>
+              <div>
+                <span>Estimated Attendance</span>
+                <strong>{request.proposal.estimatedAttendanceDays || 1} day(s)</strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid #99f6e4" }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#0f766e" }}>Total Commercial Fee:</span>
-                <strong style={{ fontSize: 16, color: "#0f766e" }}>${money(request.proposal.finalTotalUsd || request.proposal.clientTotalUsd)} USD</strong>
+              <div className="request-decision-dialog__total">
+                <span>Total Commercial Fee</span>
+                <strong>${money(request.proposal.finalTotalUsd || request.proposal.clientTotalUsd)} USD</strong>
               </div>
             </div>
 
-            <p style={{ fontSize: 12, color: "#6b7280", margin: "10px 0 18px 0" }}>
+            <p className="request-decision-dialog__note">
               By confirming, you agree to the commercial fee and authorize NexaPort to lock consultant assignment and initiate inspection preparation.
             </p>
 
@@ -1380,7 +1392,6 @@ export default function ServiceRequestDetails({ requestId }) {
               <button
                 type="button"
                 className="primary-btn"
-                style={{ background: "#0d9488" }}
                 disabled={decidingProposal}
                 onClick={handleApproveProposal}
               >
@@ -1396,20 +1407,21 @@ export default function ServiceRequestDetails({ requestId }) {
         <div className="delete-request-backdrop" role="presentation" onMouseDown={(e) => {
           if (e.target === e.currentTarget && !decidingProposal) setShowDeclineModal(false);
         }}>
-          <section className="delete-request-dialog" role="dialog" aria-modal="true" style={{ maxWidth: 520 }}>
-            <h2>Decline Commercial Proposal</h2>
-            <p style={{ marginTop: 6, color: "#4b5563", fontSize: 14 }}>
+          <section ref={dialogRef} className="delete-request-dialog request-decision-dialog" role="dialog" aria-modal="true" aria-labelledby="decline-proposal-title" aria-describedby="decline-proposal-help">
+            <h2 id="decline-proposal-title">Decline Commercial Proposal</h2>
+            <p id="decline-proposal-help" className="request-decision-dialog__intro">
               Please provide feedback on why this proposal is declined (e.g. price adjustment, scheduling conflict, or scope modification). NexaPort will review your feedback and submit revised terms.
             </p>
 
+            <label htmlFor="decline-proposal-reason">Reason for declining</label>
             <textarea
+              id="decline-proposal-reason"
               className="reject-reason-input"
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
               placeholder="e.g., Requested attendance dates overlap with vessel drydocking; please adjust schedule or rate."
               maxLength={1000}
               rows={4}
-              style={{ marginTop: 12 }}
             />
 
             <div className="delete-request-actions">
@@ -1430,7 +1442,7 @@ export default function ServiceRequestDetails({ requestId }) {
       )}
 
       {toast && (
-        <div className="request-toast">
+        <div className="request-toast" role="status">
           <strong>{toast}</strong>
         </div>
       )}

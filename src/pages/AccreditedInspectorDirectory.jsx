@@ -9,7 +9,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   getAccreditationSchemes,
   getAccreditedInspectors,
@@ -33,14 +33,16 @@ const initialView = () => {
 export default function AccreditedInspectorDirectory() {
   const { schemeSlug } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get("search") || "";
+  const country = searchParams.get("country") || "";
+  const rcms = searchParams.get("rcms") || "";
+  const setFilter = (key, value) => setSearchParams((current) => { const next = new URLSearchParams(current); value ? next.set(key, value) : next.delete(key); return next; });
   const [schemes, setSchemes] = useState([]);
   const [scheme, setScheme] = useState(null);
   const [inspectors, setInspectors] = useState([]);
   const [filters, setFilters] = useState({ countries: [], rcms_statuses: [] });
   const [summary, setSummary] = useState(emptySummary);
-  const [search, setSearch] = useState("");
-  const [country, setCountry] = useState("");
-  const [rcms, setRcms] = useState("");
   const [loadingSchemes, setLoadingSchemes] = useState(true);
   const [loadingDirectory, setLoadingDirectory] = useState(false);
   const [error, setError] = useState("");
@@ -123,12 +125,9 @@ export default function AccreditedInspectorDirectory() {
   }, [country, rcms, retryKey, schemeSlug, schemes, search]);
 
   const changeScheme = (nextSlug) => {
-    setSearch("");
-    setCountry("");
-    setRcms("");
     setInspectors([]);
     setSummary(emptySummary);
-    navigate(`/accredited-inspectors/${nextSlug}`);
+    navigate(`/accredited-inspectors/${nextSlug}${searchParams.toString() ? `?${searchParams}` : ""}`);
   };
 
   const schemeLabel = (item) => `${item.code} — ${item.name}`;
@@ -138,13 +137,6 @@ export default function AccreditedInspectorDirectory() {
   const changeView = (nextView) => {
     setView(nextView);
     try { localStorage.setItem(VIEW_KEY, nextView); } catch { /* Preference remains in memory. */ }
-  };
-  const handleRowKeyDown = (event, inspector) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setSelectedInspector(inspector);
-    }
   };
 
   return (
@@ -192,7 +184,7 @@ export default function AccreditedInspectorDirectory() {
               <Search size={18} />
               <input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => { setLoadingDirectory(true); setFilter("search", event.target.value); }}
                 placeholder="Search by inspector name, country, email, or phone..."
               />
             </div>
@@ -200,7 +192,7 @@ export default function AccreditedInspectorDirectory() {
 
           <label>
             <span>Country</span>
-            <select value={country} onChange={(event) => setCountry(event.target.value)}>
+            <select value={country} onChange={(event) => { setLoadingDirectory(true); setFilter("country", event.target.value); }}>
               <option value="">All Countries</option>
               {filters.countries.map((item) => (
                 <option key={item} value={item}>{item}</option>
@@ -210,7 +202,7 @@ export default function AccreditedInspectorDirectory() {
 
           <label>
             <span>RCMS status</span>
-            <select value={rcms} onChange={(event) => setRcms(event.target.value)}>
+            <select value={rcms} onChange={(event) => { setLoadingDirectory(true); setFilter("rcms", event.target.value); }}>
               <option value="">All RCMS Statuses</option>
               {filters.rcms_statuses.map((item) => (
                 <option key={item} value={item}>{item}</option>
@@ -238,11 +230,7 @@ export default function AccreditedInspectorDirectory() {
         </section>
       )}
 
-      {!error && loadingSchemes && (
-        <section className="accredited-skeleton-grid" aria-label="Loading accreditation schemes">
-          {[1, 2, 3].map((item) => <div className="accredited-skeleton" key={item} />)}
-        </section>
-      )}
+      {!error && loadingSchemes && <div className="accredited-state" role="status">Loading accreditation schemes…</div>}
 
       {!error && !loadingSchemes && schemes.length === 0 && (
         <section className="accredited-state">
@@ -252,11 +240,7 @@ export default function AccreditedInspectorDirectory() {
         </section>
       )}
 
-      {!error && !loadingSchemes && schemes.length > 0 && loadingDirectory && (
-        <section className="accredited-skeleton-grid" aria-label="Loading accredited inspectors">
-          {[1, 2, 3, 4, 5, 6].map((item) => <div className="accredited-skeleton" key={item} />)}
-        </section>
-      )}
+      {!error && !loadingSchemes && schemes.length > 0 && loadingDirectory && <div className="accredited-state" role="status">Loading accredited inspectors…</div>}
 
       {!error && !loadingDirectory && scheme && inspectors.length === 0 && (
         <section className="accredited-state">
@@ -313,6 +297,7 @@ export default function AccreditedInspectorDirectory() {
                 <div className="accredited-card-foot">
                   {inspector.rcms_status && <span className="accredited-rcms">RCMS: {inspector.rcms_status}</span>}
                   <span className="accredited-source">Source: {sourceLabel}</span>
+                  <button type="button" onClick={() => setSelectedInspector(inspector)}>View details</button>
                 </div>
               </article>
             ))}
@@ -322,12 +307,7 @@ export default function AccreditedInspectorDirectory() {
                 <thead><tr><th>Name</th><th>Accreditation scheme</th><th>Email</th><th>Phone</th><th>Country</th><th>RCMS status</th><th><span className="sr-only">Action</span></th></tr></thead>
                 <tbody>
                   {inspectors.map((inspector) => (
-                    <tr
-                      key={inspector.id}
-                      tabIndex={0}
-                      onClick={() => setSelectedInspector(inspector)}
-                      onKeyDown={(event) => handleRowKeyDown(event, inspector)}
-                    >
+                    <tr key={inspector.id}>
                       <td><strong>{inspector.full_name}</strong></td>
                       <td>{scheme.code} — {scheme.name}</td>
                       <td>{inspector.email ? <CopyableContact value={inspector.email} href={`mailto:${inspector.email}`} type="email" /> : "—"}</td>

@@ -323,16 +323,23 @@
   margin-top: 6px;
 }
 
-.expert-admin-actions button {
+.expert-admin-actions button,
+.expert-admin-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
   border: 1px solid var(--np-slate-300, #cbd5e1);
   background: var(--np-surface, #ffffff);
   border-radius: var(--np-radius-sm, 3px);
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: 7px 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--np-navy-900, #0f172a);
   cursor: pointer;
+  text-decoration: none;
 }
+.expert-admin-actions a:focus-visible, .expert-admin-actions button:focus-visible { outline: 2px solid var(--np-teal-700); outline-offset: 2px; }
 
 .expert-admin-actions .danger {
   color: var(--np-red-800, #991b1b);

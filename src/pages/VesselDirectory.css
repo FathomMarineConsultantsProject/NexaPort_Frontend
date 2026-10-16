@@ -11,6 +11,10 @@
 .vessel-directory-filters input,.vessel-directory-filters select{height:35px;border:1px solid #ccd7df;border-radius:4px;background:white;padding:0 9px;min-width:90px;color:#172b40;font:13px "IBM Plex Sans",Arial,sans-serif}
 .vessel-directory-filters>label:first-child input{min-width:240px}.vessel-flag-control{position:relative}.vessel-flag-control>label{font:inherit;color:inherit}
 .vessel-directory-filters[aria-busy="true"] input:focus,.vessel-directory-filters[aria-busy="true"] select:focus{border-color:#0f766e}.vessel-filter-pending{align-self:flex-end;padding:9px 0;color:#0f766e;font-size:11px;font-weight:600}
+.vessel-active-filters{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:-3px 0 18px;font-size:13px;color:var(--np-slate-600)}
+.vessel-active-filters button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 10px;border:1px solid var(--np-slate-300);border-radius:var(--np-radius);background:var(--np-surface);color:var(--np-navy-900);font:inherit;cursor:pointer}
+.vessel-active-filters .vessel-clear-filters{border-color:transparent;color:var(--np-teal-700)}
+.vessel-active-filters button:focus-visible{outline:2px solid var(--np-teal-700);outline-offset:2px}
 .vessel-flag-input{display:flex;align-items:center;border:1px solid #ccd7df;border-radius:4px;background:#fff}.vessel-flag-input:focus-within{border-color:#0f766e}
 .vessel-flag-input input{width:170px;min-width:0;border:0;outline:0}.vessel-flag-input button{border:0;background:transparent;color:#64748b;cursor:pointer;padding:3px 7px}
 .vessel-flag-options{position:absolute;z-index:10;top:100%;left:0;right:0;max-height:240px;overflow:auto;background:#fff;border:1px solid #ccd7df;border-radius:4px;box-shadow:0 5px 14px #0f172a1a}

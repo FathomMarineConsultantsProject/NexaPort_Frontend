@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getExpertDashboard } from "../api/Dashboardapi";
 import {
   DashboardError,
@@ -38,23 +39,9 @@ export default function ExpertDashboard() {
   const kpis = data?.kpis || {};
   return (
     <main className="dashboard-page">
-      <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Consultant operations</span><h1>Dashboard</h1><p>Available assignments and quotation activity</p></div></header>
-      <div className="dashboard-kpi-grid dashboard-kpi-grid--expert">
-        <DashboardKpiCard label="Available requests" value={kpis.available_requests} />
-        <DashboardKpiCard label="Matching requests" value={kpis.matching_requests} priority={kpis.matching_requests > 0} />
-        <DashboardKpiCard label="Quotations submitted" value={kpis.quotes_submitted} />
-        <DashboardKpiCard label="Pending quotations" value={kpis.quotes_pending} priority={kpis.quotes_pending > 0} />
-        <DashboardKpiCard label="Awaiting Admin review" value={kpis.quotes_awaiting_admin} />
-        <DashboardKpiCard label="Revision requested" value={kpis.quotes_revision_requested} priority={kpis.quotes_revision_requested > 0} />
-        <DashboardKpiCard label="Commercially approved" value={kpis.quotes_internally_approved} />
-        <DashboardKpiCard label="Accepted quotations" value={kpis.quotes_accepted} />
-        <DashboardKpiCard label="Rejected quotations" value={kpis.quotes_rejected} />
-        <DashboardKpiCard label="Active assignments" value={kpis.active_assignments} />
-        <DashboardKpiCard label="Completed jobs" value={kpis.completed_jobs} />
-        <DashboardKpiCard label="Accepted quotation value" value={formatMoney(kpis.accepted_quotation_value_usd)} note="Accepted value, not payment status" />
-      </div>
+      <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Consultant workspace</span><h1>Opportunities & assignments</h1><p>Find suitable inspections, respond to revisions and follow active work.</p></div><Link className="dashboard-primary-action" to="/requests">Browse requests</Link></header>
 
-      <DashboardSection title="Matching requests" description="Deterministic matches against your ports, vessel types, and discipline." urgent>
+      <DashboardSection title="Matching requests" description="Available work matched to your ports, vessel types and discipline." count={data.matching_requests?.length || 0} urgent>
         <DashboardTable
           columns={[
             { key: "request", label: "Request", primary: true, render: requestTitle },
@@ -71,7 +58,7 @@ export default function ExpertDashboard() {
         />
       </DashboardSection>
 
-      <DashboardSection title="Active assignments" description="Assigned and active work linked to your consultant profile.">
+      <DashboardSection title="Active assignments" description="Inspections currently assigned to you." count={data.active_assignments?.length || 0}>
         <DashboardTable
           columns={[
             { key: "request", label: "Request", primary: true, render: requestTitle },
@@ -85,6 +72,24 @@ export default function ExpertDashboard() {
           emptyMessage="You do not have any active assignments."
         />
       </DashboardSection>
+
+      <section className="dashboard-metrics" aria-labelledby="expert-metrics-title">
+        <div className="dashboard-metrics__header"><div><span className="dashboard-eyebrow">Your activity</span><h2 id="expert-metrics-title">Quotation & work status</h2></div></div>
+        <div className="dashboard-kpi-grid dashboard-kpi-grid--expert">
+          <DashboardKpiCard label="Available requests" value={kpis.available_requests} />
+          <DashboardKpiCard label="Matching requests" value={kpis.matching_requests} priority={kpis.matching_requests > 0} />
+          <DashboardKpiCard label="Quotations submitted" value={kpis.quotes_submitted} />
+          <DashboardKpiCard label="Pending quotations" value={kpis.quotes_pending} priority={kpis.quotes_pending > 0} />
+          <DashboardKpiCard label="Awaiting Admin review" value={kpis.quotes_awaiting_admin} />
+          <DashboardKpiCard label="Revision requested" value={kpis.quotes_revision_requested} priority={kpis.quotes_revision_requested > 0} href="/requests" />
+          <DashboardKpiCard label="Commercially approved" value={kpis.quotes_internally_approved} />
+          <DashboardKpiCard label="Accepted quotations" value={kpis.quotes_accepted} />
+          <DashboardKpiCard label="Rejected quotations" value={kpis.quotes_rejected} />
+          <DashboardKpiCard label="Active assignments" value={kpis.active_assignments} />
+          <DashboardKpiCard label="Completed jobs" value={kpis.completed_jobs} />
+          <DashboardKpiCard label="Accepted quotation value" value={formatMoney(kpis.accepted_quotation_value_usd)} note="Accepted value, not payment status" />
+        </div>
+      </section>
 
       <div className="dashboard-split">
         <DashboardSection title="Quotation status" description="Your most recent quotation submissions.">

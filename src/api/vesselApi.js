@@ -1,5 +1,8 @@
 import axiosClient from "./axiosClient";
 
+export const suggestRequestVessels = async (search, signal) =>
+  (await axiosClient.get("/vessels/request-suggestions", { params: { search }, signal })).data.data;
+
 export const getVessels = async (search = "") => {
   const params = search ? { search } : {};
   const res = await axiosClient.get("/vessels", { params });

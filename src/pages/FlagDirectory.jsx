@@ -1,6 +1,6 @@
 import { Building2, ChevronDown, ChevronRight, MapPin, Search, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getFlagDirectory, getFlags } from "../api/flagApi";
 import ConsultantAvatar from "../components/experts/ConsultantAvatar";
 import { isClient } from "../utils/auth";
@@ -30,15 +30,18 @@ const countText = (count) => `${count} ${count === 1 ? "inspector" : "inspectors
 export default function FlagDirectory() {
   const { flagSlug } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get("search") || "";
   const [flags, setFlags] = useState([]);
   const [selectedFlag, setSelectedFlag] = useState(null);
-  const [search, setSearch] = useState("");
   const [records, setRecords] = useState([]);
   const [openCountry, setOpenCountry] = useState(null);
   const [openLocations, setOpenLocations] = useState({});
   const [loadingFlags, setLoadingFlags] = useState(true);
   const [loadingDirectory, setLoadingDirectory] = useState(false);
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const setSearch = (value) => { setLoadingDirectory(true); setSearchParams((current) => { const next = new URLSearchParams(current); value ? next.set("search", value) : next.delete("search"); return next; }); };
 
   useEffect(() => {
     let active = true;
@@ -56,7 +59,7 @@ export default function FlagDirectory() {
       finally { if (active) setLoadingFlags(false); }
     })();
     return () => { active = false; };
-  }, [flagSlug, navigate]);
+  }, [flagSlug, navigate, retry]);
 
   useEffect(() => {
     if (!selectedFlag?.slug) return undefined;
@@ -76,7 +79,7 @@ export default function FlagDirectory() {
       finally { if (active) setLoadingDirectory(false); }
     }, 250);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [selectedFlag, search]);
+  }, [selectedFlag, search, retry]);
 
   const groups = useMemo(() => {
     const countries = new Map();
@@ -92,7 +95,7 @@ export default function FlagDirectory() {
   }, [records]);
 
   const locationCount = groups.reduce((sum, group) => sum + group.locations.length, 0);
-  const chooseFlag = (flag) => { if (flag) { setSelectedFlag(flag); setSearch(""); navigate(`/flag/${flag.slug}`); } };
+  const chooseFlag = (flag) => { if (flag) { setSelectedFlag(flag); setLoadingDirectory(true); navigate(`/flag/${flag.slug}`); } };
 
   const renderRecord = (record) => {
     const external = record.record_type === "external";
@@ -124,8 +127,9 @@ export default function FlagDirectory() {
       </div>
       {!loadingFlags && !!flags.length && <div className="flag-quick-select"><span className="flag-quick-select__label">Quick select</span><div className="flag-quick-select__viewport"><div className="flag-quick-select__track">{flags.map((flag) => <button type="button" key={flag.id} className={selectedFlag?.id === flag.id ? "active" : ""} onClick={() => chooseFlag(flag)}>{flag.name}</button>)}</div></div></div>}
     </section>
-    {error && <div className="flag-state error">{error}</div>}
-    {loadingDirectory ? <div className="flag-skeleton-list" aria-label="Loading Flag inspectors">{[1,2,3].map((n) => <div className="flag-skeleton" key={n}><span /><span /></div>)}</div>
+    {error && <div className="flag-state error" role="alert"><strong>Directory unavailable</strong><p>{error}</p><button type="button" onClick={() => { setError(""); setRetry((value) => value + 1); }}>Try again</button></div>}
+    {loadingDirectory ? <div className="flag-state loading" role="status">Loading {selectedFlag?.name || "flag"} inspectors…</div>
+      : error ? null
       : !selectedFlag ? <div className="flag-state"><h2>No flag states available</h2><p>No active Flag directories are currently available.</p></div>
       : !groups.length ? <div className="flag-state"><Search size={25} /><h2>No inspectors found</h2><p>Try a different search term or choose another flag state.</p>{search && <button type="button" onClick={() => setSearch("")}>Clear search</button>}</div>
       : <section className="flag-results"><div className="flag-results-heading"><div><span>Directory results</span><h2>{selectedFlag.name}</h2></div><p>{countText(records.length)} across {groups.length} {groups.length === 1 ? "country" : "countries"}</p></div>

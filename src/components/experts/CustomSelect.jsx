@@ -2,7 +2,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import "./CustomSelect.css";
 
-export default function CustomSelect({ value, options, onChange, width }) {
+export default function CustomSelect({ value, options, onChange, width, label }) {
   const [open, setOpen] = useState(false);
   const selectRef = useRef(null);
 
@@ -12,13 +12,18 @@ export default function CustomSelect({ value, options, onChange, width }) {
         setOpen(false);
       }
     };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
 
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
@@ -28,6 +33,8 @@ export default function CustomSelect({ value, options, onChange, width }) {
         type="button"
         onClick={() => setOpen(!open)}
         className="select-trigger"
+        aria-label={label ? `${label}: ${value}` : undefined}
+        aria-expanded={open}
       >
         <span>{value}</span>
         <ChevronDown size={16} />
@@ -40,6 +47,7 @@ export default function CustomSelect({ value, options, onChange, width }) {
               type="button"
               key={option}
               className={`select-option ${value === option ? "active" : ""}`}
+              aria-pressed={value === option}
               onClick={() => {
                 onChange(option);
                 setOpen(false);

@@ -227,8 +227,8 @@ export default function RegisterClient({
               : "Register your company to request inspections, manage vessels and access inspection services."}
           </p>
         </div>
-        <ol className="client-stepper">{STEPS.map((label, index) => <li key={label} className={index === step ? "active" : index < step ? "complete" : ""}><span>{index < step ? <Check size={14} /> : index + 1}</span><small>{label}</small></li>)}</ol>
-        {message && <div className="client-form-message">{message}</div>}
+        <ol className="client-stepper" aria-label="Registration progress">{STEPS.map((label, index) => <li key={label} className={index === step ? "active" : index < step ? "complete" : ""} aria-current={index === step ? "step" : undefined} aria-label={`${label}, ${index < step ? "completed" : index === step ? "current step" : "upcoming"}`}><span>{index < step ? <Check size={14} aria-hidden="true" /> : index + 1}</span><small>{label}</small></li>)}</ol>
+        {message && <div className="client-form-message" role="alert">{message}</div>}
 
         <section className="client-form-card">
           {step === 0 && <UserStep form={form} setValue={(name, value) => { setValue(name, value); if (name === "email") { setRegistrationDraftToken(""); setDraftEmail(""); setDocuments({}); } }} />}

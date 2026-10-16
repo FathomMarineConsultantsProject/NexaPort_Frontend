@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { deactivateConsultantAsAdmin, deleteConsultantAsAdmin, getConsultantDeletionImpact, getExperts } from "../api/expertApi";
 import TypedConfirmationModal from "../components/common/TypedConfirmationModal";
@@ -19,19 +19,20 @@ const availabilityOptions = [
 ];
 
 export default function ExpertDirectory() {
-  const navigate = useNavigate();
   const [experts, setExperts] = useState([]);
   const [specialties, setSpecialties] = useState(["All Specialties"]);
   const [search, setSearch] = useState("");
   const [availability, setAvailability] = useState("All Availability");
   const [specialty, setSpecialty] = useState("All Specialties");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [accountAction, setAccountAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const loadPageData = useCallback(async () => {
     setLoading(true);
+    setLoadError("");
 
     try {
       const expertRes = await getExperts();
@@ -47,6 +48,7 @@ export default function ExpertDirectory() {
       }
     } catch (error) {
       console.error("Failed to load expert directory:", error);
+      setLoadError(error.response?.data?.message || "Consultants could not be loaded. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ export default function ExpertDirectory() {
           <p>
             {isExpert()
               ? "View your maritime consultant profile."
-              : "OCIMF-accredited surveyors, class-approved inspectors, and ISM auditors."}
+              : "Search consultant profiles, specialties and current availability."}
           </p>
         </div>
 
@@ -121,8 +123,9 @@ export default function ExpertDirectory() {
       {isSuperAdmin() && (
         <section className="expert-filters">
           <div className="search-box">
-            <Search size={20} />
+            <Search size={20} aria-hidden="true" />
             <input
+              aria-label="Search consultants by name"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search consultants by name..."
@@ -130,6 +133,7 @@ export default function ExpertDirectory() {
           </div>
 
           <CustomSelect
+            label="Availability"
             width="190px"
             value={availability}
             options={availabilityOptions}
@@ -137,6 +141,7 @@ export default function ExpertDirectory() {
           />
 
           <CustomSelect
+            label="Specialty"
             width="200px"
             value={specialty}
             options={specialties}
@@ -146,13 +151,15 @@ export default function ExpertDirectory() {
       )}
 
       {loading ? (
-        <div className="experts-empty">Loading consultants...</div>
+        <div className="experts-empty" role="status">Loading consultants…</div>
+      ) : loadError ? (
+        <div className="experts-empty" role="alert"><strong>Consultants unavailable</strong><p>{loadError}</p><button type="button" onClick={loadPageData}>Try again</button></div>
       ) : filteredExperts.length === 0 ? (
         <div className="experts-empty">No consultant profile found.</div>
       ) : (
         <section className="expert-grid">
           {filteredExperts.map((expert) => (
-            <article className="expert-admin-card" key={expert.id}><ExpertCard expert={expert} />{isSuperAdmin() && <div className="expert-admin-actions"><button type="button" onClick={() => navigate(`/experts/${expert.id}`)}>Edit</button><button type="button" className="danger" onClick={() => prepareDelete(expert)}>Delete</button></div>}</article>
+            <article className="expert-admin-card" key={expert.id}><ExpertCard expert={expert} />{isSuperAdmin() && <div className="expert-admin-actions"><Link to={`/experts/${expert.id}`}>Edit</Link><button type="button" className="danger" onClick={() => prepareDelete(expert)}>Delete</button></div>}</article>
           ))}
         </section>
       )}

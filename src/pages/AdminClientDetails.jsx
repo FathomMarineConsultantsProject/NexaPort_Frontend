@@ -135,7 +135,7 @@ export default function AdminClientDetails() {
     finally { setSaving(false); }
   };
 
-  if (loading && !data) return <PageState message="Loading Client profile..." />;
+  if (loading && !data) return <PageState message="Loading Client profile…" />;
   if (!data) return <PageState message={error || "Client profile not found."} retry={load} />;
   const { account, registration, company, flags } = data;
   const registrationUrl = registration ? `/admin/client-registrations/${registration.client_profile_id}` : null;
@@ -146,7 +146,9 @@ export default function AdminClientDetails() {
     <header className="client-profile-header"><div><span className="client-profile-eyebrow">Client Profile</span><h1>{account.full_name}</h1><p>{company?.legal_name || (flags.is_legacy ? "Legacy Client" : "Company information not provided")}</p><div className="client-profile-badges"><StatusBadge value={registration?.verification_status || "legacy"}/><span className={`client-account-badge ${account.is_active ? "active" : "inactive"}`}>{account.is_active ? "Active account" : "Inactive account"}</span>{flags.missing_registration_data && <span className="client-legacy-badge">Legacy Client · Missing Formal Registration Data</span>}</div></div><div className="client-header-actions">{registrationUrl && <Link to={registrationUrl}>View Registration History</Link>}<button className="danger-outline" type="button" onClick={prepareAccountAction}>Delete or Deactivate</button></div></header>
     {error && <div className="client-profile-message error" role="alert">{error}<button type="button" onClick={load}>Retry</button></div>}
     {notice && <div className="client-profile-message success" role="status">{notice}</div>}
+    <nav className="client-profile-nav" aria-label="Client profile sections"><a href="#client-account-overview">Account</a><a href="#client-registration-overview">Registration</a><a href="#client-company-details">Company</a><a href="#client-fleet-information">Fleet</a><a href="#client-verification-documents">Documents</a><a href="#client-recent-service-requests">Requests</a></nav>
 
+    <div className="client-profile-overview">
     <Section title="Account Overview" action={!editing && <EditButton onClick={() => beginEdit("account")}>Edit Account</EditButton>}>
       {editing === "account" ? <EditForm onSave={saveAccount} onCancel={cancelEdit} saving={saving}>
         <Field label="Full name" value={form.full_name} onChange={(value) => setForm({ ...form, full_name: value })} error={fieldErrors["user.full_name"]}/>
@@ -170,6 +172,7 @@ export default function AdminClientDetails() {
     <Section title="Authorised Representative">
       {company ? <DetailGrid entries={[["Name", company.authorized_representative_name], ["Designation", shown(company.authorized_representative_designation)], ["Email", company.authorized_representative_email ? <CopyableContact value={company.authorized_representative_email} href={`mailto:${company.authorized_representative_email}`} type="email"/> : "Not provided"], ["Phone", company.authorized_representative_phone ? <CopyableContact value={company.authorized_representative_phone} href={`tel:${company.authorized_representative_phone}`} type="phone"/> : "Not provided"]]}/> : <EmptyState title="Representative not provided" text="No authorised representative is recorded for this Client."/>}
     </Section>
+    </div>
 
     <Section title="Fleet Information" action={!editing && <EditButton onClick={() => beginEdit("fleet")}>Edit Fleet Information</EditButton>}>
       {editing === "fleet" ? <FleetEdit form={form} setForm={setForm} fieldErrors={fieldErrors} vesselTypes={vesselTypes} onSave={saveFleet} onCancel={cancelEdit} saving={saving}/> : <><p className="section-summary">Declared vessel count: <strong>{registration?.declared_vessel_count ?? "Not provided"}</strong></p>{data.onboarding_vessels.length ? <div className="client-vessel-list">{data.onboarding_vessels.map((vessel) => <article key={vessel.id}><div><strong>{vessel.vessel_name}</strong>{vessel.converted_vessel_id && <Link to={`/fleet?open=${vessel.converted_vessel_id}`}>Operational vessel #{vessel.converted_vessel_id}</Link>}</div><span>IMO: {shown(vessel.imo_number)}</span><span>Type: {shown(vessel.vessel_type_name || vessel.vessel_type_text)}</span><span>Relationship: {shown(vessel.ownership_relationship)}</span><span>Regions: {shown(vessel.operating_regions)}</span></article>)}</div> : <EmptyState title="No onboarding vessels" text="No fleet rows have been recorded for this Client."/>}</>}
@@ -193,13 +196,11 @@ export default function AdminClientDetails() {
       {data.recent_service_requests.length ? <div className="recent-request-list">{data.recent_service_requests.map((request) => <article key={request.id}><div><strong>{request.title}</strong><span>{request.service_type === "Other" ? `Other — ${shown(request.service_type_other)}` : `${shown(request.service_type)} · ${shown(request.service_category)}`}</span></div><div><span>{request.status} · {request.moderation_status}</span><small>Required {dateTime(request.required_by)} · Created {dateTime(request.created_at)}</small></div><Link to={`/requests/${request.id}`}>View Request</Link></article>)}</div> : <EmptyState title="No service requests" text="This Client has not created any service requests."/>}
     </Section>
 
-    <Section title="Administrative Actions" destructive><div className="administrative-actions"><button type="button" onClick={() => beginEdit("account")}>Edit Account</button><button type="button" onClick={() => beginEdit("company")}>Edit Company/Profile</button><button type="button" onClick={() => beginEdit("fleet")}>Edit Fleet Information</button><button type="button" onClick={() => beginEdit("services")}>Edit Required Services</button>{registrationUrl && <Link to={registrationUrl}>View Registration History</Link>}<button className="danger" type="button" onClick={prepareAccountAction}>Delete or Deactivate</button></div></Section>
-
     {accountAction && <TypedConfirmationModal title={accountAction.mode === "delete" ? "Permanently delete Client?" : "Deactivate and anonymize Client?"} subject={account.full_name} company={company?.legal_name} warning={accountAction.mode === "delete" ? "This dependency-free account and disposable registration data will be permanently removed." : "Operational history will be preserved while login and identifying account data are removed."} dependencies={accountAction.dependencies} confirmationText={accountAction.mode === "delete" ? "DELETE" : "DEACTIVATE"} confirmLabel={accountAction.mode === "delete" ? "Permanently Delete" : "Deactivate and Anonymize"} requireReason busy={saving} error={error} onCancel={() => !saving && setAccountAction(null)} onConfirm={completeAccountAction}/>} 
   </main>;
 }
 
-function Section({ title, action, children, destructive = false }) { return <section className={`client-profile-section${destructive ? " destructive" : ""}`}><header><h2>{title}</h2>{action}</header>{children}</section>; }
+function Section({ title, action, children }) { return <section id={`client-${title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/-$/, "")}`} className="client-profile-section"><header><h2>{title}</h2>{action}</header>{children}</section>; }
 function EditButton({ onClick, children }) { return <button className="section-edit" type="button" onClick={onClick}>{children}</button>; }
 function StatusBadge({ value }) { return <span className={`client-verification-badge ${String(value).toLowerCase()}`}>{value}</span>; }
 function DetailGrid({ entries }) { return <dl className="client-detail-grid">{entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>; }

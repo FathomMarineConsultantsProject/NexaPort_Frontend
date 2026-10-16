@@ -1195,7 +1195,7 @@ export default function RegisterConsultant() {
             <h1>Join NexaPort as a Maritime Consultant</h1>
           </div>
           <p>Complete each section with your professional registration details.</p>
-          {errors.form && <div className="consultant-alert">{errors.form}</div>}
+          {errors.form && <div className="consultant-alert" role="alert">{errors.form}</div>}
         </header>
 
         <form onSubmit={handleSubmit} className="consultant-layout">
@@ -1204,6 +1204,7 @@ export default function RegisterConsultant() {
               <button
                 type="button"
                 key={step.id}
+                aria-current={index === activeStep ? "step" : undefined}
                 className={`consultant-step ${index === activeStep ? "active" : ""} ${index < activeStep ? "complete" : ""}`}
                 onClick={() => setActiveStep(index)}
               >

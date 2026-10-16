@@ -3,10 +3,10 @@ import ScopeEditor from "../components/requests/ScopeEditor";
 import PortSelect from "../components/requests/PortSelect";
 import ScopeAssistant from "../components/requests/ScopeAssistant";
 import { AgentDetailsFields } from "../components/requests/AgentDetails";
+import VesselIdentityFields from "../components/requests/VesselIdentityFields";
 import { getMyClientOnboarding } from "../api/clientRegistrationApi";
 import { isClient } from "../utils/auth";
-import { Anchor, Ship } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getServiceRequestDropdowns } from "../api/masterApi";
 import { createServiceRequest } from "../api/serviceRequestApi";
@@ -21,6 +21,7 @@ export default function PostServiceRequest() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const submitInFlight = useRef(false);
 
   const [dropdownData, setDropdownData] = useState({
     serviceTypes: [],
@@ -47,8 +48,11 @@ export default function PostServiceRequest() {
     imoNumber: "",
     vesselType: "",
     flagState: "",
+    selectedVessel: null,
     portName: "",
     portId: null,
+    country: "",
+    manualPort: false,
     terminalName: "",
     agentCompanyName: "",
     agentContactName: "",
@@ -99,6 +103,7 @@ export default function PostServiceRequest() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitInFlight.current || success) return;
     setError("");
     setSuccess("");
     setFieldErrors({});
@@ -112,10 +117,11 @@ export default function PostServiceRequest() {
     } else if (!formData.inspectionMethodId) {
       nextFieldErrors.inspectionMethodId = "Select a service.";
     }
+    if (!formData.title.trim()) nextFieldErrors.title = "Enter a request title.";
+    if (!formData.scopeOfWork.trim()) nextFieldErrors.scopeOfWork = "Describe the scope of work.";
+    if (formData.manualPort && !formData.country.trim()) nextFieldErrors.country = "Enter the country for the new port.";
 
     if (
-      !formData.title ||
-      !formData.scopeOfWork ||
       Object.keys(nextFieldErrors).length
     ) {
       setFieldErrors(nextFieldErrors);
@@ -123,6 +129,7 @@ export default function PostServiceRequest() {
       return;
     }
 
+    submitInFlight.current = true;
     setLoading(true);
 
     try {
@@ -143,9 +150,11 @@ export default function PostServiceRequest() {
         imoNumber: formData.imoNumber || null,
         vesselType: formData.vesselType || null,
         flagState: formData.flagState || null,
+        selectedVessel: formData.selectedVessel || null,
 
         portName: formData.portName || null,
         portId: formData.portId || null,
+        country: formData.manualPort ? formData.country.trim() : null,
         terminalName: formData.terminalName || null,
         agentCompanyName: formData.agentCompanyName || null,
         agentContactName: formData.agentContactName || null,
@@ -169,32 +178,33 @@ export default function PostServiceRequest() {
     } catch (err) {
       console.error("Error creating service request:", err);
       setFieldErrors(err.response?.data?.field_errors || {});
-      setError(err.response?.data?.message || "Failed to post service request");
+      setError(err.response?.data?.message || (err.response ? "Failed to post service request" : "The submission result is unknown. Check Requests before submitting again."));
     } finally {
+      submitInFlight.current = false;
       setLoading(false);
     }
   };
 
   return (
-    <main className="psr-page">
+    <main className="psr-page np-page-container np-page-container--detail">
       <section className="psr-wrap">
         <div className="psr-head">
-          <h1>Service Request</h1>
+          <span className="psr-eyebrow">New service request</span>
+          <h1>Create a service request</h1>
           <p>
-            Describe your maritime survey, inspection, audit, or specialist service requirement. Verified experts will
-            respond with quotations.
+            Describe the service, vessel and scope. Your request will be reviewed by NexaPort before consultants can quote.
           </p>
         </div>
 
-        {error && <div className="psr-error-alert">{error}</div>}
-        {success && <div className="psr-success-alert">{success}</div>}
+        {error && <div className="psr-error-alert" role="alert">{error}</div>}
+        {success && <div className="psr-success-alert" role="status">{success}</div>}
 
         <form onSubmit={handleSubmit} className="psr-form">
           <section className="psr-card">
             <div className="psr-card-header">
-              <Anchor size={24} />
               <div className="psr-card-header-content">
                 <h2>Service Details</h2>
+                <p>Choose the work required and when it is needed.</p>
               </div>
             </div>
 
@@ -240,8 +250,9 @@ export default function PostServiceRequest() {
 
             <div className="psr-row full">
               <div className="psr-group">
-                <label>Request Title</label>
+                <label htmlFor="request-title">Request title <span className="psr-required">Required</span></label>
                 <input
+                  id="request-title"
                   type="text"
                   name="title"
                   value={formData.title}
@@ -249,22 +260,18 @@ export default function PostServiceRequest() {
                   placeholder="e.g. Pre-PSC Inspection — Container Vessel at Port of Singapore"
                   className="psr-control"
                   required
+                  aria-invalid={Boolean(fieldErrors.title)}
+                  aria-describedby={fieldErrors.title ? "request-title-error" : undefined}
                 />
-              </div>
-            </div>
-
-            <div className="psr-row full">
-              <div className="psr-group">
-                <label>Scope of Work</label>
-                <ScopeAssistant value={formData} disabled={loading} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} />
-                <ScopeEditor value={formData.scopeOfWork} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} disabled={loading} required placeholder="Describe the full scope: vessel particulars, specific areas of focus, report format required, access restrictions, any outstanding deficiencies..." />
+                {fieldErrors.title && <small id="request-title-error" className="psr-field-error">{fieldErrors.title}</small>}
               </div>
             </div>
 
             <div className="psr-row three-col">
               <div className="psr-group">
-                <label>Request Priority</label>
+                <label>Request priority</label>
                 <CustomSelect
+                  label="Request priority"
                   width="100%"
                   value={
                     dropdownData.urgencyOptions.find(
@@ -287,8 +294,9 @@ export default function PostServiceRequest() {
               </div>
 
               <div className="psr-group">
-                <label>Budget (USD)</label>
+                <label htmlFor="request-budget">Budget (USD)</label>
                 <input
+                  id="request-budget"
                   type="number"
                   name="budgetUsd"
                   value={formData.budgetUsd}
@@ -299,8 +307,9 @@ export default function PostServiceRequest() {
               </div>
 
               <div className="psr-group">
-                <label>Required By</label>
+                <label htmlFor="request-required-by">Required by</label>
                 <input
+                  id="request-required-by"
                   type="date"
                   name="requiredBy"
                   value={formData.requiredBy}
@@ -312,10 +321,11 @@ export default function PostServiceRequest() {
 
             <div className="psr-row full">
               <div className="psr-group">
-                <label>
+                <label htmlFor="request-company">
                   Company <span className="opt">(optional)</span>
                 </label>
                 <input
+                  id="request-company"
                   type="text"
                   name="requesterName"
                   value={formData.requesterName}
@@ -330,42 +340,16 @@ export default function PostServiceRequest() {
 
           <section className="psr-card">
             <div className="psr-card-header">
-              <Ship size={24} />
               <div className="psr-card-header-content">
                 <h2>Vessel and Port Particulars</h2>
                 <p>Provide vessel details to help experts prepare their quotation accurately.</p>
               </div>
             </div>
 
-            <div className="psr-row">
-              <div className="psr-group">
-                <label>
-                  Vessel Name <span className="opt">(opt.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="vesselName"
-                  value={formData.vesselName}
-                  onChange={handleInputChange}
-                  placeholder="MT Nordic Spirit"
-                  className="psr-control"
-                />
-              </div>
-
-              <div className="psr-group">
-                <label>
-                  IMO Number <span className="opt">(opt.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="imoNumber"
-                  value={formData.imoNumber}
-                  onChange={handleInputChange}
-                  placeholder="9378654"
-                  className="psr-control"
-                />
-              </div>
-            </div>
+            {isClient() ? <VesselIdentityFields value={formData} disabled={loading}
+              onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} /> :
+              <div className="psr-row"><div className="psr-group"><label htmlFor="request-vessel-name">Vessel Name <span className="opt">(opt.)</span></label><input id="request-vessel-name" name="vesselName" value={formData.vesselName} onChange={handleInputChange} className="psr-control" /></div><div className="psr-group"><label htmlFor="request-imo-number">IMO Number <span className="opt">(opt.)</span></label><input id="request-imo-number" name="imoNumber" value={formData.imoNumber} onChange={handleInputChange} className="psr-control" /></div></div>}
+            {fieldErrors.imoNumber && <small role="alert">{fieldErrors.imoNumber}</small>}
 
             <div className="psr-row">
               <div className="psr-group">
@@ -373,6 +357,7 @@ export default function PostServiceRequest() {
                   Vessel Type <span className="opt">(opt.)</span>
                 </label>
                 <CustomSelect
+                  label="Vessel type"
                   width="100%"
                   value={formData.vesselType || "Select type..."}
                   options={[
@@ -394,6 +379,7 @@ export default function PostServiceRequest() {
                   Flag <span className="opt">(opt.)</span>
                 </label>
                 <CustomSelect
+                  label="Flag"
                   width="100%"
                   value={formData.flagState || "Select flag..."}
                   options={[
@@ -413,19 +399,38 @@ export default function PostServiceRequest() {
 
             <div className="psr-row three-col">
               <div className="psr-group">
-                <PortSelect ports={formData.ports} terminalName={formData.terminalName} eta={formData.eta} portId={formData.portId} portName={formData.portName} disabled={loading} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} />
+                <PortSelect ports={formData.ports} terminalName={formData.terminalName} eta={formData.eta} portId={formData.portId} portName={formData.portName} country={formData.country} manualPort={formData.manualPort} allowManual disabled={loading} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} />
                 {fieldErrors.portId && <small role="alert">{fieldErrors.portId}</small>}
+                {fieldErrors.country && <small role="alert">{fieldErrors.country}</small>}
               </div>
-              <div className="psr-group"><label>Terminal <span className="opt">(opt.)</span></label><input name="terminalName" maxLength={240} value={formData.terminalName} onChange={handleInputChange} className="psr-control" /></div>
-              <div className="psr-group"><label>ETA <span className="opt">(opt.)</span></label><input type="date" name="eta" value={formData.eta} onChange={handleInputChange} className="psr-control" /></div>
+              <div className="psr-group"><label htmlFor="request-terminal">Terminal <span className="opt">(opt.)</span></label><input id="request-terminal" name="terminalName" maxLength={240} value={formData.terminalName} onChange={handleInputChange} className="psr-control" /></div>
+              <div className="psr-group"><label htmlFor="request-eta">ETA <span className="opt">(opt.)</span></label><input id="request-eta" type="date" name="eta" value={formData.eta} onChange={handleInputChange} className="psr-control" /></div>
             </div>
           </section>
 
-          <section className="psr-card"><AgentDetailsFields value={formData} errors={fieldErrors} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} /></section>
+          <section className="psr-card psr-card--scope">
+            <div className="psr-card-header"><div className="psr-card-header-content"><h2>Scope of Work</h2><p>Explain the inspection outcome, focus areas and any access or reporting needs.</p></div></div>
+            <ScopeAssistant value={formData} disabled={loading} onChange={(scopeOfWork) => setFormData((current) => ({ ...current, scopeOfWork }))} />
+            <div className="psr-group">
+              <label>Scope of work <span className="psr-required">Required</span></label>
+              <ScopeEditor value={formData.scopeOfWork} onChange={(scopeOfWork) => { setFieldErrors((current) => ({ ...current, scopeOfWork: undefined })); setFormData((current) => ({ ...current, scopeOfWork })); }} disabled={loading} required placeholder="Describe the areas to inspect, deliverables, access restrictions and reporting needs…" error={fieldErrors.scopeOfWork} />
+              {fieldErrors.scopeOfWork && <small id="request-scope-error" className="psr-field-error" role="alert">{fieldErrors.scopeOfWork}</small>}
+            </div>
+          </section>
 
-          <button type="submit" className="psr-submit-btn" disabled={loading}>
-            {loading ? "Posting Request..." : "Post"}
-          </button>
+          <section className="psr-card psr-card--coordination"><h2>Coordination & contacts</h2><AgentDetailsFields value={formData} errors={fieldErrors} onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} /></section>
+
+          <section className="psr-card psr-card--review">
+            <div className="psr-card-header"><div className="psr-card-header-content"><h2>Review & submission</h2><p>Confirm the essentials before sending this request for review.</p></div></div>
+            <dl className="psr-review-grid">
+              <div><dt>Service</dt><dd>{formData.serviceType === "Other" ? formData.serviceTypeOther || "Not selected" : formData.serviceType || "Not selected"}</dd></div>
+              <div><dt>Vessel</dt><dd>{formData.vesselName || "Not provided"}</dd></div>
+              <div><dt>Primary port</dt><dd>{formData.portName || "Not selected"}</dd></div>
+              <div><dt>Required by</dt><dd>{formData.requiredBy || "Not specified"}</dd></div>
+            </dl>
+            <p className="psr-submit-note">NexaPort will review the request before it becomes available for quotation.</p>
+            <button type="submit" className="psr-submit-btn" disabled={loading || Boolean(success)}>{loading ? "Submitting for review..." : "Submit for Admin Review"}</button>
+          </section>
         </form>
       </section>
     </main>

@@ -90,3 +90,29 @@ export function getVisibleDirectoryGroups(roleId) {
   }));
   return groups.map((group) => ({ ...group, items: group.items.filter((item) => (!item.roles || item.roles.includes(role)) && !item.excludedRoles?.includes(role)) })).filter((group) => group.items.length);
 }
+
+// Navigation groups reuse the same role-filtered destinations as the directory pages.
+export function getNavigationDirectoryGroups(roleId) {
+  const role = Number(roleId);
+  const visible = getVisibleDirectoryGroups(role);
+  const surveyors = visible.find((group) => group.label === "Surveyors")?.items || [];
+  const network = visible.find((group) => group.label === "Industry Network")?.items || [];
+  return [
+    { label: "Vessels & ports", items: [
+      ...([1, 3].includes(role) ? [{ label: "My Vessels", path: "/vessels?view=fleet", icon: Ship, description: "Your operational fleet" }] : []),
+      ...network.filter((item) => item.path === "/vessels?view=directory").map((item) => ({ ...item, label: "Vessel Directory", description: "Search the vessel register" })),
+      { label: "Ports", path: "/ports", icon: Flag, description: "Ports and locations" },
+    ] },
+    { label: "Maritime companies", items: network
+      .filter((item) => item.path !== "/vessels?view=directory")
+      .map((item) => ({ ...item, description: ({
+        "/owners-managers": "Owners and vessel managers",
+        "/service-providers": "Technical and marine support",
+        "/ship-agents": "Vessel call coordination",
+        "/suppliers": "Equipment and vessel stores",
+        "/shipyards": "Building and repair facilities",
+        "/tug-boats": "Towage and tug fleets",
+      })[item.path] || item.description })) },
+    { label: "Maritime professionals", items: surveyors },
+  ].filter((group) => group.items.length);
+}

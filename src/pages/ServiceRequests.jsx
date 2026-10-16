@@ -2,6 +2,7 @@ import AdditionalPorts from "../components/requests/AdditionalPorts";
 import { requestPortPayload } from "../components/requests/requestPortState.js";
 import ScopeEditor from "../components/requests/ScopeEditor";
 import PortSelect from "../components/requests/PortSelect";
+import VesselIdentityFields from "../components/requests/VesselIdentityFields";
 import ScopeAssistant from "../components/requests/ScopeAssistant";
 import { AgentDetailsFields } from "../components/requests/AgentDetails";
 import { Calendar, CheckCircle2, ChevronDown, Edit3, MapPin, Plus, Search, Ship, Trash2 } from "lucide-react";
@@ -13,6 +14,7 @@ import { getServiceRequestDropdowns } from "../api/masterApi";
 import InspectionCatalogueSelect from "../components/requests/InspectionCatalogueSelect";
 import { getStoredUser, isClient, isExpert, isSuperAdmin } from "../utils/auth";
 import { getRequestEditPermission } from "../utils/serviceRequestEditPermission";
+import { requestBudgetPresentation, submittedBudget } from "../utils/requestRegister";
 
 import "./ServiceRequests.css";
 
@@ -20,13 +22,14 @@ function FilterDropdown({ label, options, value, onChange, setDropdownRef, openD
   const dropdownId = label.toLowerCase().replace(/\s/g, "-");
   return (
     <div className="filter-select" ref={(element) => setDropdownRef(dropdownId, element)}>
-      <button type="button" onClick={() => setOpenDropdown(openDropdown === dropdownId ? null : dropdownId)} className="filter-select-trigger">
+      <span className="filter-select-label">{label}</span>
+      <button type="button" onClick={() => setOpenDropdown(openDropdown === dropdownId ? null : dropdownId)} className="filter-select-trigger" aria-label={`${label}: ${value}`} aria-expanded={openDropdown === dropdownId} aria-controls={`${dropdownId}-filter-options`}>
         <span>{value}</span><ChevronDown size={18} />
       </button>
       {openDropdown === dropdownId && (
-        <div className="filter-select-menu">
+        <div id={`${dropdownId}-filter-options`} className="filter-select-menu">
           {options.map((option) => (
-            <button type="button" key={option} className={`filter-option ${value === option ? "active" : ""}`} onClick={() => { onChange(option); setOpenDropdown(null); }}>
+            <button type="button" key={option} className={`filter-option ${value === option ? "active" : ""}`} aria-pressed={value === option} onClick={() => { onChange(option); setOpenDropdown(null); }}>
               {option}
             </button>
           ))}
@@ -44,6 +47,9 @@ export default function ServiceRequests() {
   const [notice, setNotice] = useState(location.state?.notice || "");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState("");
+  const [listRetry, setListRetry] = useState(0);
+  const listRequestId = useRef(0);
   const [search, setSearch] = useState("");
   const [requestToDelete, setRequestToDelete] = useState(null);
   const [deletingRequest, setDeletingRequest] = useState(false);
@@ -79,7 +85,9 @@ export default function ServiceRequests() {
   }, [openDropdown]);
 
   const loadRequests = useCallback(async () => {
+    const currentId = ++listRequestId.current;
     setLoading(true);
+    setListError("");
 
     try {
       const params = {};
@@ -89,24 +97,24 @@ export default function ServiceRequests() {
       if (selectedStatus !== "All Statuses") params.status = selectedStatus;
       if (selectedUrgency !== "Any Urgency") params.urgency = selectedUrgency;
       if (isSuperAdmin()) params.moderation = moderation;
-
       const response = await getServiceRequests(params);
 
       // Backend now handles role filtering:
       // admin = all, expert = assigned/available, client = own.
-      setRequests(response.data || []);
+      if (!Array.isArray(response?.data)) throw new Error("Invalid requests response.");
+      if (currentId === listRequestId.current) setRequests(response.data);
     } catch (error) {
       console.error("Failed to load requests:", error);
-      setRequests([]);
+      if (currentId === listRequestId.current) { setListError(error.response?.data?.message || error.message || "Requests could not be loaded."); setRequests([]); }
     } finally {
-      setLoading(false);
+      if (currentId === listRequestId.current) setLoading(false);
     }
   }, [search, selectedStatus, selectedType, selectedUrgency, moderation]);
 
   useEffect(() => {
     const loadId = window.setTimeout(loadRequests, 0);
     return () => window.clearTimeout(loadId);
-  }, [loadRequests]);
+  }, [loadRequests, listRetry]);
 
   useEffect(() => {
     getServiceRequestDropdowns()
@@ -160,32 +168,6 @@ export default function ServiceRequests() {
     if (isSuperAdmin()) return "All maritime requests across the platform.";
     if (isExpert()) return "Requests available or assigned to you for quotation.";
     return "Your maritime survey, inspection, and audit requests.";
-  };
-
-  const getBudgetLabel = (request) => {
-    if (isClient()) {
-      const acceptedQuote = (request.quotations || []).find(
-        (q) => q.status === "accepted"
-      );
-
-      if (acceptedQuote?.clientTotalUsd || acceptedQuote?.client_total_usd) {
-        return `$${Number(
-          acceptedQuote.clientTotalUsd || acceptedQuote.client_total_usd
-        ).toLocaleString()}`;
-      }
-
-      if (request.status === "assigned") {
-        return `$${Number(request.budgetUsd || request.budget_usd || 0).toLocaleString()}`;
-      }
-
-      const clientBudget = request.clientBudgetUsd ?? request.client_budget_usd ?? request.budgetUsd ?? request.budget_usd;
-      if (clientBudget == null) return "Awaiting approval";
-      return `$${Number(clientBudget).toLocaleString()}`;
-    }
-
-    const budget = request.approvedBudgetUsd ?? request.approved_budget_usd ?? request.clientBudgetUsd ?? request.client_budget_usd ?? request.budgetUsd ?? request.budget_usd;
-    if (budget == null) return "Not provided";
-    return `$${Number(budget).toLocaleString()}`;
   };
 
   const getQuotationText = (request) => {
@@ -252,7 +234,7 @@ export default function ServiceRequests() {
     title: request.title || "",
     scopeOfWork: request.scopeOfWork || "",
     urgency: request.urgency || "routine",
-    budgetUsd: request.clientBudgetUsd ?? request.budgetUsd ?? "",
+    budgetUsd: submittedBudget(request) ?? "",
     requiredBy: request.requiredBy ? String(request.requiredBy).slice(0, 10) : "",
     vesselName: request.vessel?.name || "",
     imoNumber: request.vessel?.imoNumber || "",
@@ -263,10 +245,10 @@ export default function ServiceRequests() {
       ports: request.ports || [],
       originalPortSchedule: { terminalName: request.terminalName || "", eta: request.port?.eta || "" },
       terminalName: request.terminalName || "",
-      agentCompanyName: request.agentDetails?.companyName || "",
-      agentContactName: request.agentDetails?.contactName || "",
-      agentEmail: request.agentDetails?.email || "",
-      agentPhone: request.agentDetails?.phone || "",
+      agentCompanyName: isClient() ? "" : request.agentDetails?.companyName || "",
+      agentContactName: isClient() ? "" : request.agentDetails?.contactName || "",
+      agentEmail: isClient() ? "" : request.agentDetails?.email || "",
+      agentPhone: isClient() ? "" : request.agentDetails?.phone || "",
 
     eta: request.port?.eta ? String(request.port.eta).slice(0, 10) : "",
 
@@ -306,14 +288,14 @@ export default function ServiceRequests() {
   };
 
   return (
-    <div className="requests-page">
-      <div className="requests-header">
+    <div className="requests-page np-page-container np-page-container--operations">
+      <div className="requests-header np-page-header">
         <div className="requests-header-content">
           <h1>Service Requests</h1>
           <p>{getPageSubtitle()}</p>
         </div>
 
-        <div className="requests-header-actions">
+        <div className="requests-header-actions np-action-bar">
           {(isClient() || isSuperAdmin()) && (
             <button
               type="button"
@@ -327,14 +309,14 @@ export default function ServiceRequests() {
         </div>
       </div>
 
-      {isSuperAdmin() && <div className="moderation-tabs" role="tablist">
-        {["pending", "approved", "rejected", "all"].map((item) => <button type="button" role="tab" aria-selected={moderation === item} className={moderation === item ? "active" : ""} key={item} onClick={() => setModeration(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
+      {isSuperAdmin() && <div className="moderation-tabs" role="group" aria-label="Request review status">
+        {["pending", "approved", "rejected", "all"].map((item) => <button type="button" aria-pressed={moderation === item} className={moderation === item ? "active" : ""} key={item} onClick={() => setModeration(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
       </div>}
 
       {notice && (
         <div className="request-notice">
           <span>{notice}</span>
-          <button type="button" onClick={() => setNotice("")}>
+          <button type="button" aria-label="Dismiss notice" onClick={() => setNotice("")}>
             ×
           </button>
         </div>
@@ -342,8 +324,10 @@ export default function ServiceRequests() {
 
       <div className="requests-filters">
         <div className="filter-search">
-          <Search size={20} />
+          <label htmlFor="request-register-search">Search requests</label>
+          <Search size={20} aria-hidden="true" />
           <input
+            id="request-register-search"
             type="text"
             placeholder="Search requests..."
             value={search}
@@ -370,7 +354,6 @@ export default function ServiceRequests() {
           openDropdown={openDropdown}
           setOpenDropdown={setOpenDropdown}
         />}
-
         {!isExpert() && <FilterDropdown
           label="Urgency"
           options={urgencies}
@@ -382,20 +365,30 @@ export default function ServiceRequests() {
         />}
       </div>
 
+      <div className="requests-register-summary" aria-live="polite">
+        <strong className="tabular-nums">{loading || listError ? "—" : requests.length}</strong>
+        <span>{loading ? "Loading the register…" : listError ? "Requests unavailable" : requests.length === 1 ? "request shown" : "requests shown"}</span>
+        <span className="requests-register-summary__hint">Open a record for its scope, quotations and workflow.</span>
+      </div>
+
       {loading ? (
-        <div className="empty-state">
-          <p>Loading requests...</p>
+        <div className="empty-state" role="status">
+          <p>Loading requests…</p>
         </div>
+      ) : listError ? (
+        <div className="empty-state" role="alert"><strong>Requests could not be loaded</strong><p>{listError}</p><button type="button" onClick={() => setListRetry((value) => value + 1)}>Retry</button></div>
       ) : requests.length === 0 ? (
         <div className="empty-state">
-          <Ship size={64} />
-          <p>No service requests found</p>
+          <Ship size={28} aria-hidden="true" />
+          <strong>No matching requests</strong>
+          <p>Try another search or adjust the filters.</p>
         </div>
       ) : (
         <div className="requests-list">
           {requests.map((request) => {
             if (isExpert()) return (
               <div key={request.id} className="request-card consultant-safe-card">
+                <div className="request-record-top"><span className="request-identifier">Request #{request.id}</span><span className="request-record-context">Available inspection</span></div>
                 <div className="request-main consultant-safe-grid">
                   <div><span>Services Required</span><strong>{request.inspectionType || "Not provided"}</strong></div>
                   <div><span>Ship Type</span><strong>{request.vesselType || "Not provided"}</strong></div>
@@ -410,26 +403,32 @@ export default function ServiceRequests() {
             const editPermission = getRequestEditPermission(request, currentUser);
             const editLabel = isClient() && request.moderationStatus === "rejected" ? "Edit & Resubmit" : "Edit";
 
+            const budget = requestBudgetPresentation(request, isClient() ? "client" : "admin");
             return (
               <div key={request.id} className="request-card">
                 <div className="request-main">
-                  <div className="request-type-badges">
-                    <span className="request-type-badge">
-                      {request.inspectionType || request.serviceType || request.service_type || "-"}
-                    </span>
+                  <div className="request-record-top">
+                    <span className="request-identifier">Request #{request.id}</span>
+                    <div className="request-type-badges">
                     <span className={`urgency-badge ${request.urgency || ""}`}>
-                      {request.urgency || "-"}
+                      Priority: {request.urgency || "—"}
                     </span>
+                    {request.moderationStatus && <span className={`moderation-badge moderation-${request.moderationStatus}`}>Review: {request.moderationStatus}</span>}
                     <span className={`status-badge ${request.status || ""}`}>
-                      {request.status || "-"}
+                      Work: {request.status || "—"}
                     </span>
+                    </div>
                   </div>
 
                   <h2 className="request-title">{request.title || "Untitled request"}</h2>
 
                   <div className="request-details">
+                    <div className="detail-item request-service-field">
+                      <span className="request-field-label">Service</span>
+                      <strong>{request.inspectionType || request.serviceType || request.service_type || "Not provided"}</strong>
+                    </div>
                     <div className="detail-item">
-                      <Ship size={16} />
+                      <Ship size={16} aria-hidden="true" />
                       <strong>{vessel.name || vessel.vessel_name || "Vessel not added"}</strong>
                       {(vessel.imoNumber || vessel.imo_number) && (
                         <span>· IMO {vessel.imoNumber || vessel.imo_number}</span>
@@ -441,14 +440,14 @@ export default function ServiceRequests() {
 
                     {(port.name || port.port_name) && (
                       <div className="detail-item">
-                        <MapPin size={16} />
+                        <MapPin size={16} aria-hidden="true" />
                         {port.name || port.port_name}
                         {port.country ? `, ${port.country}` : ""}
                       </div>
                     )}
 
                     <div className="detail-item">
-                      <Calendar size={16} />
+                      <Calendar size={16} aria-hidden="true" />
                       Due{" "}
                       {request.requiredBy || request.required_by
                         ? new Date(
@@ -466,10 +465,10 @@ export default function ServiceRequests() {
                 <div className="request-sidebar">
                   <div className="budget-section">
                     <div className="budget-label">
-                      {isClient() ? "Final Cost" : "Budget"}
+                      {budget.label}
                     </div>
 
-                    <div className="budget-amount">{getBudgetLabel(request)}</div>
+                    <div className="budget-amount">{budget.value}</div>
 
                     <div className="quotations-count">
                       {getQuotationText(request)}
@@ -530,7 +529,7 @@ export default function ServiceRequests() {
         </div>
       )}
 
-      {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true"><h2>{isClient() && editingRequest.moderationStatus === "rejected" ? "Edit & Resubmit Request" : "Edit Request"}</h2><div className="request-edit-grid">
+      {editingRequest && <div className="request-edit-backdrop"><section className="request-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="request-edit-title"><h2 id="request-edit-title">{isClient() && editingRequest.moderationStatus === "rejected" ? "Edit & Resubmit Request" : "Edit Request"}</h2><div className="request-edit-grid">
         <label className="wide">Services Required
           <InspectionCatalogueSelect
             verticals={inspectionVerticals}
@@ -568,11 +567,12 @@ export default function ServiceRequests() {
           />
         </label>
         {[
-          ["title","Title"],["urgency","Urgency"],["budgetUsd","Budget"],["requiredBy","Inspection date","date"],["vesselName","Vessel name"],["imoNumber","IMO number"],["vesselType","Ship type"],["flagState","Flag"],["eta","ETA","date"]
+          ["title","Title"],["urgency","Urgency"],["budgetUsd","Client Submitted Budget (USD)","number"],["requiredBy","Inspection date","date"],["vesselType","Ship type"],["flagState","Flag"],["eta","ETA","date"]
         ].map(([field,label,type="text"]) => <label key={field}>{label}<input type={type} value={editingRequest[field] ?? ""} onChange={(event) => setEditingRequest({...editingRequest,[field]:event.target.value})}/></label>)}
+        {isClient() ? <div className="wide"><VesselIdentityFields value={editingRequest} disabled={editSaving} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} /></div> : <><label>Vessel name<input value={editingRequest.vesselName} onChange={(event) => setEditingRequest({ ...editingRequest, vesselName: event.target.value })} /></label><label>IMO number<input value={editingRequest.imoNumber} onChange={(event) => setEditingRequest({ ...editingRequest, imoNumber: event.target.value })} /></label></>}
         <div className="wide"><PortSelect ports={editingRequest.ports} originalPortSchedule={editingRequest.originalPortSchedule} disabled={editSaving} terminalName={editingRequest.terminalName} eta={editingRequest.eta} portId={editingRequest.portId} portName={editingRequest.portName} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} /></div>
         <label>Terminal<input maxLength={240} value={editingRequest.terminalName} onChange={(event) => setEditingRequest({ ...editingRequest, terminalName: event.target.value })} /></label>
-        <AgentDetailsFields value={editingRequest} errors={editFieldErrors} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} />
+        <AgentDetailsFields writeOnly={isClient()} value={editingRequest} errors={editFieldErrors} onChange={(patch) => setEditingRequest((current) => ({ ...current, ...patch }))} />
         <ScopeAssistant value={editingRequest} legacyCertification={requests.find((item) => item.id === editingRequest.id)?.requiredCertification} disabled={editSaving} onChange={(scopeOfWork) => setEditingRequest((current) => ({ ...current, scopeOfWork }))} />
         <label className="wide">Scope of work<ScopeEditor value={editingRequest.scopeOfWork} disabled={editSaving} onChange={(scopeOfWork) => setEditingRequest((current) => ({ ...current, scopeOfWork }))} /></label>
       </div><div className="request-edit-actions"><button type="button" disabled={editSaving} onClick={() => setEditingRequest(null)}>Cancel</button><button type="button" className="save" disabled={editSaving} onClick={saveEdit}>{editSaving ? "Saving..." : "Save Changes"}</button></div></section></div>}

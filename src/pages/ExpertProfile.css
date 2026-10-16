@@ -1,10 +1,15 @@
 .expert-profile-page {
-  width: calc(100% - 40px);
+  width: calc(100% - clamp(28px, 5vw, 80px));
   max-width: 1240px;
   margin: 0 auto;
-  padding: 32px 0 48px;
-  color: #111827;
+  padding: clamp(20px, 3vw, 44px) 0 48px;
+  color: var(--np-color-text);
 }
+.expert-profile-state { display: grid; justify-items: center; gap: 8px; border: var(--np-border); border-radius: var(--np-radius-md); padding: 44px 20px; background: var(--np-surface); color: var(--np-color-text-muted); text-align: center; font-size: 15px; }
+.expert-profile-state strong { color: var(--np-navy-900); font-size: 19px; }
+.expert-profile-state p { margin: 0; }
+.expert-profile-state button { min-height: 44px; border: 1px solid var(--np-teal-700); border-radius: var(--np-radius); padding: 0 16px; background: var(--np-surface); color: var(--np-teal-800); font: 600 14px var(--np-font-sans); cursor: pointer; }
+.expert-profile-page :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--np-teal-700); outline-offset: 2px; }
 
 .expert-profile-identity,
 .profile-card,

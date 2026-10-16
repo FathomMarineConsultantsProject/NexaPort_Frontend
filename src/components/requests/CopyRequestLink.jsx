@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link2 } from "lucide-react";
 import { copyRequestLink } from "../../api/requestShareApi";
+import { copyShareUrl, requestShareUrl } from "../../utils/requestShare";
 import "./CopyRequestLink.css";
 
 export default function CopyRequestLink({ requestId }) {
@@ -18,11 +19,6 @@ export default function CopyRequestLink({ requestId }) {
     if (value === "Copied to clipboard") timerRef.current = setTimeout(() => setMessage(""), 3000);
   };
 
-  const writeToClipboard = async (shareUrl) => {
-    if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-    await navigator.clipboard.writeText(shareUrl);
-  };
-
   const share = async () => {
     if (busyRef.current) return;
     busyRef.current = true;
@@ -31,13 +27,10 @@ export default function CopyRequestLink({ requestId }) {
     showMessage("");
     try {
       const result = await copyRequestLink(requestId);
-      const locator = result?.data?.locator;
-      if (!/^[0-9a-f]{64}$/.test(locator || "")) throw new Error("Invalid share locator");
-      const shareUrl = new URL(`/s/${locator}`, window.location.origin).href;
-      try {
-        await writeToClipboard(shareUrl);
+      const shareUrl = requestShareUrl(result?.data?.locator, window.location.origin);
+      if (await copyShareUrl(shareUrl, navigator.clipboard?.writeText?.bind(navigator.clipboard))) {
         showMessage("Copied to clipboard");
-      } catch {
+      } else {
         setUrl(shareUrl);
         showMessage("Select the link or use Copy.");
       }
@@ -50,18 +43,17 @@ export default function CopyRequestLink({ requestId }) {
   };
 
   const copyFallback = async () => {
-    try {
-      await writeToClipboard(url);
+    if (await copyShareUrl(url, navigator.clipboard?.writeText?.bind(navigator.clipboard))) {
       setUrl("");
       showMessage("Copied to clipboard");
-    } catch {
+    } else {
       showMessage("Select the link to copy it manually.");
     }
   };
 
   return <span className="request-share">
     <button type="button" className="secondary-btn" disabled={busy} onClick={share}>
-      <Link2 size={14} /> {busy ? "Preparing…" : "Share"}
+      <Link2 size={14} /> {busy ? "Getting secure link…" : "Share"}
     </button>
     {message && <small role="status" className="request-share-message">{message}</small>}
     {url && <span className="request-share-fallback">

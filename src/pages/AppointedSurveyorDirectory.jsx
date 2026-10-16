@@ -10,6 +10,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getAppointedSurveyors } from "../api/appointedSurveyorApi";
 import CopyableContact from "../components/common/CopyableContact";
 import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
@@ -65,14 +66,16 @@ function ContactRow({ icon: Icon, label, value, type }) {
 }
 
 export default function AppointedSurveyorDirectory() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get("search") || "";
+  const country = searchParams.get("country") || "";
+  const scope = searchParams.get("scope") || "";
+  const mlc = searchParams.get("mlc") || "";
+  const setFilter = (key, value) => { setLoading(true); setSearchParams((current) => { const next = new URLSearchParams(current); value ? next.set(key, value) : next.delete(key); return next; }); };
   const [surveyors, setSurveyors] = useState([]);
   const [summary, setSummary] = useState(emptySummary);
   const [countries, setCountries] = useState([]);
-  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [country, setCountry] = useState("");
-  const [scope, setScope] = useState("");
-  const [mlc, setMlc] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
@@ -134,13 +137,6 @@ export default function AppointedSurveyorDirectory() {
     setView(nextView);
     try { localStorage.setItem(VIEW_KEY, nextView); } catch { /* Preference remains in memory. */ }
   };
-  const handleRowKeyDown = (event, surveyor) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setSelectedSurveyor(surveyor);
-    }
-  };
 
   return (
     <main className="appointed-page">
@@ -158,7 +154,7 @@ export default function AppointedSurveyorDirectory() {
             <Search size={18} />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => setFilter("search", event.target.value)}
               placeholder="Search surveyors, organizations, countries, emails or phone numbers..."
             />
           </div>
@@ -166,7 +162,7 @@ export default function AppointedSurveyorDirectory() {
 
         <label>
           <span>Country</span>
-          <select value={country} onChange={(event) => setCountry(event.target.value)}>
+          <select value={country} onChange={(event) => setFilter("country", event.target.value)}>
             <option value="">All Countries</option>
             {countries.map((item) => (
               <option key={item} value={item}>{item}</option>
@@ -176,7 +172,7 @@ export default function AppointedSurveyorDirectory() {
 
         <label>
           <span>Appointment type</span>
-          <select value={scope} onChange={(event) => setScope(event.target.value)}>
+          <select value={scope} onChange={(event) => setFilter("scope", event.target.value)}>
             <option value="">All Appointments</option>
             <option value="general">General</option>
             <option value="restricted">Restricted</option>
@@ -185,7 +181,7 @@ export default function AppointedSurveyorDirectory() {
 
         <label>
           <span>MLC authorization</span>
-          <select value={mlc} onChange={(event) => setMlc(event.target.value)}>
+          <select value={mlc} onChange={(event) => setFilter("mlc", event.target.value)}>
             <option value="">All MLC Statuses</option>
             <option value="true">MLC Authorized</option>
             <option value="false">Not MLC Authorized</option>
@@ -212,13 +208,7 @@ export default function AppointedSurveyorDirectory() {
         </section>
       )}
 
-      {!error && loading && (
-        <section className="appointed-grid" aria-label="Loading appointed ship surveyors">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div className="appointed-skeleton" key={item} />
-          ))}
-        </section>
-      )}
+      {!error && loading && <div className="appointed-state" role="status">Loading appointed ship surveyors…</div>}
 
       {!error && !loading && surveyors.length === 0 && (
         <section className="appointed-state">
@@ -283,9 +273,7 @@ export default function AppointedSurveyorDirectory() {
                     <ContactRow icon={MapPin} label="Address" value={surveyor.address_text} />
                   </div>
 
-                  <div className="appointed-card-foot">
-                    Source: {surveyor.source_document_title}
-                  </div>
+                  <div className="appointed-card-foot"><span>Source: {surveyor.source_document_title}</span><button type="button" onClick={() => setSelectedSurveyor(surveyor)}>View details</button></div>
                 </article>
               );
             })}
@@ -298,7 +286,7 @@ export default function AppointedSurveyorDirectory() {
                     const email = splitValues(surveyor.email_addresses)[0];
                     const phone = splitValues(surveyor.mobile_numbers || surveyor.telephone_numbers)[0];
                     return (
-                      <tr key={surveyor.id} tabIndex={0} onClick={() => setSelectedSurveyor(surveyor)} onKeyDown={(event) => handleRowKeyDown(event, surveyor)}>
+                      <tr key={surveyor.id}>
                         <td><strong>{[surveyor.professional_title, surveyor.full_name].filter(Boolean).join(" ")}</strong></td>
                         <td>{surveyor.organization_name || "—"}</td>
                         <td className="capitalize">{surveyor.appointment_scope || "—"}</td>

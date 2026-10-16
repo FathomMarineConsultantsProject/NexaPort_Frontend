@@ -33,17 +33,18 @@ test("Consultants stays available to previous non-Client roles under Directories
 
 test("new form wording, Company profile prefill and seven Vessel/Port fields", async () => {
   const jsx = await source("pages/PostServiceRequest.jsx");
-  assert.match(jsx, /<h1>Service Request<\/h1>/);
+  assert.match(jsx, /<h1>Create a service request<\/h1>/);
   assert.match(jsx, /<label>Services Required<\/label>/);
   assert.match(jsx, /Submitted for Admin review\./);
-  assert.match(jsx, /"Post"/);
+  assert.match(jsx, /"Submit for Admin Review"/);
   assert.match(jsx, /getMyClientOnboarding/);
   assert.match(jsx, /company\?\.legal_name/);
   assert.match(jsx, /readOnly=\{isClient\(\)\}/);
   const vessel = jsx.split("<h2>Vessel and Port Particulars</h2>")[1].split("</section>")[0];
   for (const field of ["vesselName", "imoNumber", "vesselType", "flagState", "portId", "terminalName", "eta"]) assert.ok(vessel.includes(field), field);
   assert.doesNotMatch(vessel, /Country|Location Summary|Required Certification/);
-  assert.doesNotMatch(jsx, /formData\.(country|locationSummary|requiredCertification)/);
+  assert.match(jsx, /country=\{formData\.country\} manualPort=\{formData\.manualPort\} allowManual/);
+  assert.doesNotMatch(jsx, /formData\.(locationSummary|requiredCertification)/);
   assert.match(jsx, /AgentDetailsFields/);
   assert.match(jsx, /ScopeAssistant/);
 });

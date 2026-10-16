@@ -47,6 +47,7 @@ export default function FlagInspectorProfile() {
   const [inspector, setInspector] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -74,16 +75,16 @@ export default function FlagInspectorProfile() {
     return () => {
       active = false;
     };
-  }, [flagSlug, inspectorId]);
+  }, [flagSlug, inspectorId, retry]);
 
   if (loading) {
-    return <main className="flag-profile-page">Loading Flag inspector...</main>;
+    return <main className="flag-profile-page"><div className="flag-profile-state" role="status">Loading Flag inspector…</div></main>;
   }
 
   if (error || !inspector) {
     return (
       <main className="flag-profile-page">
-        <div className="flag-profile-state">{error || "Flag inspector not found."}</div>
+        <div className="flag-profile-state" role="alert"><strong>Profile unavailable</strong><p>{error || "Flag inspector not found."}</p><button type="button" onClick={() => { setLoading(true); setRetry((value) => value + 1); }}>Try again</button></div>
       </main>
     );
   }

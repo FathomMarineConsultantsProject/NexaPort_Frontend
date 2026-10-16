@@ -37,7 +37,7 @@
 .consultant-step-title span,
 .consultant-mobile-progress {
   color: var(--np-teal-700, #0f766e);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -46,7 +46,7 @@
 .consultant-header h1,
 .consultant-success h1 {
   margin: 4px 0 0;
-  font-size: 24px;
+  font-size: clamp(26px, 2.6vw, 34px);
   font-weight: 700;
   line-height: 1.2;
   color: var(--np-navy-900, #0f172a);
@@ -57,7 +57,7 @@
   max-width: 420px;
   margin: 0;
   color: var(--np-slate-600, #475569);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.5;
 }
 

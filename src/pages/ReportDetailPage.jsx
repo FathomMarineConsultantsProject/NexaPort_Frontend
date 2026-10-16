@@ -1,12 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Download, Eye, FileCheck2, Save, Trash2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { generateReport, getReport, getReportDownloadUrl, saveReport } from "../api/reportApi";
 import { cacheReportMedia, clearReportMedia, getReportMedia, mediaToGenerationPayload, removeReportMedia, cacheReportMediaItem, removeReportMediaItem } from "../utils/reportMediaCache";
 import "../styles/templates.css";
+import "../styles/documentWorkspace.css";
 
 const fieldKind = (field) => /signature/i.test(field.label || "") ? "signature" : /^(inspector|surveyor|consultant)( name)?$/i.test(field.label || "") ? "identity" : field.type;
 const groupFields = (fields) => fields.reduce((groups, field) => { (groups[field.section || "General"] ||= []).push(field); return groups; }, {});
+
+function MediaPreview({ blob, alt }) {
+  const imageRef = useRef(null);
+  useEffect(() => { const next = URL.createObjectURL(blob); if (imageRef.current) imageRef.current.src = next; return () => URL.revokeObjectURL(next); }, [blob]);
+  return <img ref={imageRef} alt={alt} width="240" height="180" />;
+}
 
 function LocalMediaField({ field, items, canChoose, generated, onChoose, onCaption, onRemove }) {
   const maxPhotos = Number(field.maxPhotos) || 1;
@@ -19,11 +26,11 @@ function LocalMediaField({ field, items, canChoose, generated, onChoose, onCapti
       {signature && <span>{items[0] ? "Stored in this browser" : generated ? "Included in the current PDF" : "No image selected"}</span>}
     </div>
     {items.map((item) => <div key={item.itemId} className="template-report-photo-item">
-      {item.blob && <img src={URL.createObjectURL(item.blob)} alt={`${field.label} preview`} onLoad={(event) => URL.revokeObjectURL(event.target.src)} />}
+      {item.blob && <MediaPreview blob={item.blob} alt={`${field.label} preview`} />}
       {field.captionEnabled && canChoose && <input aria-label={`${field.label} caption`} placeholder="Optional caption" value={item.caption || ""} onChange={(event) => onCaption(field, item.itemId, event.target.value)} />}
       {canChoose && <div className="template-media-actions"><button type="button" className="template-secondary" onClick={() => onRemove(field, item.itemId)}><Trash2 size={15} /> Remove</button></div>}
     </div>)}
-    {canChoose && !atLimit && <div className="template-media-actions"><label className="template-secondary">{signature ? "Choose signature image" : count ? "Add another photo" : "Select photo"}<input id={`media-${field.fieldKey}`} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => onChoose(field, event.target.files?.[0])} /></label></div>}
+    {canChoose && !atLimit && <div className="template-media-actions"><label className="template-secondary">{signature ? "Choose signature image" : count ? "Add another photo" : "Select photo"}<input id={`media-${field.fieldKey}`} className="template-visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => onChoose(field, event.target.files?.[0])} /></label></div>}
   </div>;
 }
 
@@ -42,9 +49,13 @@ export default function ReportDetailPage() {
   const { id } = useParams();
   const [report, setReport] = useState(null); const [values, setValues] = useState({}); const [media, setMedia] = useState({});
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [dirty, setDirty] = useState(false); const [error, setError] = useState(""); const [message, setMessage] = useState("");
+  useEffect(() => { const warn = (event) => { if (!dirty) return; event.preventDefault(); event.returnValue = ""; }; window.addEventListener("beforeunload", warn); return () => window.removeEventListener("beforeunload", warn); }, [dirty]);
   const load = useCallback(async () => { setLoading(true); setError(""); try { const [response, cached] = await Promise.all([getReport(id), getReportMedia(id)]); setReport(response.data); setValues(response.data.values_jsonb || {}); const mediaMap = {}; for (const item of cached) { (mediaMap[item.fieldKey] ||= []).push(item); } setMedia(mediaMap); setDirty(false); } catch (requestError) { setReport(null); setError(requestError.response?.data?.message || "Unable to load report."); } finally { setLoading(false); } }, [id]);
   useEffect(() => { const loadId = window.setTimeout(load, 0); return () => window.clearTimeout(loadId); }, [load]);
   const grouped = useMemo(() => groupFields(report?.fields_jsonb || []), [report]);
+  const sections = Object.entries(grouped);
+  const fieldCount = report?.fields_jsonb?.filter((field) => field.type !== "section_heading").length || 0;
+  const answeredCount = report?.fields_jsonb?.filter((field) => field.type !== "section_heading" && (values[field.fieldKey] !== "" && values[field.fieldKey] != null && values[field.fieldKey] !== false || (media[field.fieldKey] || []).length > 0)).length || 0;
   const readOnly = !report?.permissions?.canEdit || report?.status === "completed";
   const canGenerate = Boolean(report?.permissions?.canGenerate);
   const updateValue = (key, value) => { setValues((current) => ({ ...current, [key]: value })); setDirty(true); };
@@ -88,15 +99,17 @@ export default function ReportDetailPage() {
   const generate = async () => { if (!(await save({ quiet: true }))) return; setBusy(true); setError(""); try { const allMedia = Object.values(media).flat(); await generateReport(id, await Promise.all(allMedia.map(mediaToGenerationPayload))); await clearReportMedia(id); setMedia({}); setMessage("PDF generated. The report images were cleared from this browser."); await load(); } catch (requestError) { setError(requestError.response?.data?.message || "PDF generation failed. Your images remain in this browser."); } finally { setBusy(false); } };
   const openPdf = async (download) => { setBusy(true); setError(""); try { const response = await getReportDownloadUrl(id); if (download) { const link = document.createElement("a"); link.href = response.data.url; link.download = `${report.title}.pdf`; link.rel = "noopener"; link.click(); } else window.open(response.data.url, "_blank", "noopener,noreferrer"); } catch (requestError) { setError(requestError.response?.data?.message || `PDF ${download ? "download" : "preview"} failed.`); } finally { setBusy(false); } };
   if (loading) return <main className="templates-page"><div className="template-state">Loading report…</div></main>;
-  if (!report) return <main className="templates-page"><div className="template-state error" role="alert">{error || "Report not found."}</div></main>;
-  return <main className="templates-page report-folio"><Link className="template-back" to="/templates"><ArrowLeft size={16} /> Templates and reports</Link>
-    <header className="report-folio-header"><div><span>Inspection report</span><h1>{report.title}</h1><p>{report.template_title}</p></div><dl><div><dt>Inspector</dt><dd>NexaPort Inspector</dd></div><div><dt>Template</dt><dd>Version {report.version_number}</dd></div><div><dt>Status</dt><dd><span className={`template-status ${report.status}`}>{report.status}</span></dd></div></dl></header>
+  if (!report) return <main className="templates-page"><div className="template-state error" role="alert">{error || "Report not found."}<button type="button" className="template-secondary" onClick={load}>Try again</button></div></main>;
+  return <main className="templates-page report-folio"><Link className="template-back" to="/templates" onClick={(event) => { if (dirty && !window.confirm("Leave this report without saving your changes?")) event.preventDefault(); }}><ArrowLeft size={16} /> Templates and reports</Link>
+    <header className="report-folio-header"><div><span>Inspection report</span><h1>{report.title}</h1><p>{report.template_title}</p></div><dl><div><dt>Template</dt><dd>Version {report.version_number}</dd></div><div><dt>Fields with responses</dt><dd>{answeredCount} / {fieldCount}</dd></div><div><dt>Status</dt><dd><span className={`template-status ${report.status}`}>{report.status}</span></dd></div></dl></header>
     {error && <div className="template-message error" role="alert">{error}</div>}{message && <div className="template-message success" role="status">{message}</div>}
-    <div className="template-report-form">{Object.entries(grouped).map(([section, fields]) => <section className="report-section" key={section}><header><span aria-hidden="true" /><h2>{section}</h2></header><div className="template-report-grid">{fields.map((field) => {
+    <div className="report-editor-overview"><div><strong>{readOnly ? "Report locked" : dirty ? "Unsaved changes" : "Draft saved"}</strong><span>{sections.length} section{sections.length === 1 ? "" : "s"} · {answeredCount} of {fieldCount} fields with responses</span></div><progress max={Math.max(1, fieldCount)} value={answeredCount} aria-label="Fields with responses" /></div>
+    {sections.length > 1 && <nav className="report-section-nav" aria-label="Report sections">{sections.map(([section], index) => <a href={`#report-section-${index + 1}`} key={section}>{String(index + 1).padStart(2, "0")} {section}</a>)}</nav>}
+    <div className="template-report-form">{sections.map(([section, fields], sectionIndex) => <section id={`report-section-${sectionIndex + 1}`} className="report-section" key={section}><header><span aria-hidden="true" /><h2>{section}</h2><small>{fields.filter((field) => field.type !== "section_heading").length} fields</small></header><div className="template-report-grid">{fields.map((field) => {
       const kind = fieldKind(field); if (kind === "section_heading") return <h3 key={field.fieldKey}>{field.label}</h3>;
       if (["photo", "signature"].includes(kind)) return <LocalMediaField key={field.fieldKey} field={field} items={media[field.fieldKey] || []} canChoose={canGenerate} generated={report.generated} onChoose={chooseMedia} onCaption={changeCaption} onRemove={removeMedia} />;
       return <ReportField key={field.fieldKey} field={field} value={kind === "identity" ? "NexaPort Inspector" : values[field.fieldKey]} disabled={readOnly || kind === "identity"} onChange={(value) => updateValue(field.fieldKey, value)} />;
-    })}</div></section>)}</div>
+    })}</div></section>)}{!sections.length && <div className="template-empty"><strong>No fields in this report version</strong><span>Open the source template to review its field definitions.</span></div>}</div>
     <div className="template-savebar report-actionbar"><span>Version {report.version_number} · {report.status === "completed" ? "Completed" : "Draft"} · {dirty ? "Unsaved changes" : "Saved"}</span><div>{!readOnly && <button type="button" className="template-secondary" disabled={busy || !dirty} onClick={() => save()}><Save size={16} /> Save Draft</button>}{canGenerate && <button type="button" className="template-primary" disabled={busy} onClick={generate}><FileCheck2 size={16} /> {report.generated ? "Regenerate PDF" : "Generate PDF"}</button>}{report.generated && <><button type="button" className="template-secondary" disabled={busy} onClick={() => openPdf(false)}><Eye size={16} /> Preview PDF</button><button type="button" className="template-secondary" disabled={busy} onClick={() => openPdf(true)}><Download size={16} /> Download PDF</button></>}</div></div>
   </main>;
 }

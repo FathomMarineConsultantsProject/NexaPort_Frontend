@@ -1,6 +1,6 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getMaritimeDirectory } from "../api/maritimeDirectoryApi";
 import {
   DirectoryPageHeader,
@@ -14,16 +14,21 @@ import { DIRECTORY_TYPE_LABELS } from "../config/maritimeDirectories";
 import { directoryFleetCount } from "../utils/directoryData";
 
 const initialFilters = { search: "", country: "", companyType: "all", reviewStatus: "", isActive: "", sort: "name-asc" };
+const readFilters = (params) => Object.fromEntries(Object.entries(initialFilters).map(([key, fallback]) => [key, params.get(key) || fallback]));
 
 export default function MaritimeDirectoryPage({ directory }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const applied = useMemo(() => readFilters(searchParams), [searchParams]);
+  const page = Math.max(1, Number.parseInt(searchParams.get("page"), 10) || 1);
+  const viewMode = searchParams.get("view") === "table" ? "table" : "grid";
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [filters, setFilters] = useState(initialFilters);
-  const [applied, setApplied] = useState(initialFilters);
-  const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState("grid");
+  const [filters, setFilters] = useState(() => readFilters(searchParams));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refresh, setRefresh] = useState(0);
+
+  useEffect(() => { Promise.resolve().then(() => setFilters(applied)); }, [applied]);
 
   useEffect(() => {
     let active = true;
@@ -50,7 +55,7 @@ export default function MaritimeDirectoryPage({ directory }) {
         if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, [applied, directory.type, page]);
+  }, [applied, directory.type, page, refresh]);
 
   const sortedRows = useMemo(() => rows, [rows]);
 
@@ -58,8 +63,13 @@ export default function MaritimeDirectoryPage({ directory }) {
     event.preventDefault();
     setLoading(true);
     setError("");
-    setPage(1);
-    setApplied(filters);
+    setRefresh((value) => value + 1);
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      for (const [key, value] of Object.entries(filters)) value && value !== initialFilters[key] ? next.set(key, value) : next.delete(key);
+      next.delete("page");
+      return next;
+    });
   };
 
   return (
@@ -70,7 +80,7 @@ export default function MaritimeDirectoryPage({ directory }) {
         <div className="md-filters__label">
           <SlidersHorizontal size={17} aria-hidden="true" />
           <span>Filter directory</span>
-          <ViewToggle value={viewMode} onChange={setViewMode} label="Directory layout" />
+          <ViewToggle value={viewMode} onChange={(value) => setSearchParams((current) => { const next = new URLSearchParams(current); value === "table" ? next.set("view", "table") : next.delete("view"); return next; })} label="Directory layout" />
         </div>
         <label className="md-filters__search">
           <span>Search</span>
@@ -82,11 +92,13 @@ export default function MaritimeDirectoryPage({ directory }) {
         <label><span>Activity</span><select value={filters.isActive} onChange={(event) => setFilters({ ...filters, isActive: event.target.value })}><option value="">Active and inactive</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
         <label><span>Sort</span><select value={filters.sort} onChange={(event) => setFilters({ ...filters, sort: event.target.value })}><option value="name-asc">Company name A–Z</option><option value="name-desc">Company name Z–A</option></select></label>
         <button type="submit">Apply filters</button>
+        <button type="button" className="md-filter-clear" onClick={() => { setFilters(initialFilters); setLoading(true); setError(""); setRefresh((value) => value + 1); setSearchParams((current) => { const next = new URLSearchParams(current); for (const key of Object.keys(initialFilters)) next.delete(key); next.delete("page"); return next; }); }}>Clear filters</button>
       </form>
 
-      {error && <div className="md-alert" role="alert">{error}</div>}
       {loading ? (
-        <div className="md-empty-state">Loading {directory.label.toLowerCase()}…</div>
+        <div className="md-empty-state" role="status">Loading {directory.label.toLowerCase()}…</div>
+      ) : error ? (
+        <div className="md-empty-state" role="alert"><h2>Directory unavailable</h2><p>{error}</p><button type="button" className="md-primary-action" onClick={() => { setLoading(true); setError(""); setRefresh((value) => value + 1); }}>Try again</button></div>
       ) : sortedRows.length ? (
         viewMode === "grid" ? (
           <div className="md-results" aria-live="polite">
@@ -140,9 +152,9 @@ export default function MaritimeDirectoryPage({ directory }) {
 
       {pagination.pages > 1 && (
         <nav className="md-pagination" aria-label={`${directory.label} pages`}>
-          <button type="button" disabled={page <= 1 || loading} onClick={() => { setLoading(true); setPage((value) => value - 1); }}>Previous</button>
+          <button type="button" disabled={page <= 1 || loading} onClick={() => { setLoading(true); setSearchParams((current) => { const next = new URLSearchParams(current); next.set("page", String(page - 1)); return next; }); }}>Previous</button>
           <span>Page {pagination.page || page} of {pagination.pages}</span>
-          <button type="button" disabled={page >= pagination.pages || loading} onClick={() => { setLoading(true); setPage((value) => value + 1); }}>Next</button>
+          <button type="button" disabled={page >= pagination.pages || loading} onClick={() => { setLoading(true); setSearchParams((current) => { const next = new URLSearchParams(current); next.set("page", String(page + 1)); return next; }); }}>Next</button>
         </nav>
       )}
     </main>

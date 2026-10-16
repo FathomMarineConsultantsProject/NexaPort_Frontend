@@ -2,9 +2,10 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f8fafc;
+  background: var(--np-color-canvas);
 }
 
 .app-main {
   flex: 1;
+  min-width: 0;
 }

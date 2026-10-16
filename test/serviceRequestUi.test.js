@@ -52,7 +52,7 @@ test("6. Due date is rendered in list cards", async () => {
 test("7. Budget is rendered in list cards", async () => {
   const jsx = await source("../src/pages/ServiceRequests.jsx");
   assert.match(jsx, /budget-amount/);
-  assert.match(jsx, /getBudgetLabel/);
+  assert.match(jsx, /requestBudgetPresentation/);
 });
 
 test("8. Quotation count is rendered in list cards", async () => {
@@ -167,12 +167,13 @@ test("22. Empty side-card rows remain visible as Not provided", async () => {
   assert.match(jsx, /Info — always renders, never suppresses rows/);
 });
 
-test("23. Overview card does not stretch to right-column height", async () => {
+test("23. Overview card fills its column without stretching to sidebar height", async () => {
   const css = await source("../src/pages/ServiceRequestDetails.css");
   // Grid uses align-items: start
   assert.match(css, /\.request-details-layout[^}]*align-items:\s*start/);
-  // Narrative uses align-self: start
-  assert.match(css, /\.request-narrative[^}]*align-self:\s*start/);
+  // Narrative fills the main column; grid rows still size to content.
+  assert.match(css, /\.request-narrative[^}]*align-self:\s*stretch/);
+  assert.match(css, /\.request-narrative[^}]*width:\s*100%/);
 });
 
 test("24. Quotations remain functional", async () => {

@@ -107,7 +107,7 @@ export default function FleetManagement() {
   };
 
   const handleDeleteVessel = async (id) => {
-    if (!window.confirm("Delete this vessel?")) return;
+    if (!window.confirm(isClient() ? "Remove this vessel from My Fleet?" : "Delete this vessel?")) return;
 
     try {
       await deleteVessel(id);
@@ -127,15 +127,15 @@ export default function FleetManagement() {
       return;
     }
 
-    if (!formData.vessel_name || !formData.imo_number || !formData.vessel_type || !formData.flag_state) {
-      setError("Vessel Name, IMO Number, Vessel Type, and Flag State are required");
+    if (!formData.vessel_name || (!editingVessel && !formData.imo_number) || !formData.vessel_type || !formData.flag_state) {
+      setError("Vessel name, type and flag are required. New manual registrations also need an IMO number.");
       return;
     }
 
     try {
       const payload = {
         vessel_name: formData.vessel_name,
-        imo_number: formData.imo_number,
+        imo_number: formData.imo_number || null,
         vessel_type: formData.vessel_type,
         flag_state: formData.flag_state,
         class_subtype: formData.class_subtype || null,
@@ -265,7 +265,7 @@ export default function FleetManagement() {
                   <h3 className="vessel-name">{vessel.vessel_name}</h3>
                   <div className="vessel-imo">
                     <Anchor size={14} />
-                    IMO {vessel.imo_number}
+                    {vessel.imo_number ? `IMO ${vessel.imo_number}` : "IMO not recorded · provisional"}
                     {vessel.class_subtype && ` · ${vessel.class_subtype}`}
                   </div>
                 </div>
@@ -311,20 +311,20 @@ export default function FleetManagement() {
               </div>
               {canManageVessels && (
                 <div className="vessel-admin-actions">
-                  <button
+                  {(isSuperAdmin() || vessel.can_edit) && <button
                     type="button"
                     className="vessel-edit-btn"
                     onClick={() => handleEditVessel(vessel)}
                   >
                     Edit
-                  </button>
+                  </button>}
 
                   <button
                     type="button"
                     className="vessel-delete-btn"
                     onClick={() => handleDeleteVessel(vessel.id)}
                   >
-                    Delete
+                    {isClient() ? "Remove" : "Delete"}
                   </button>
                 </div>
               )}

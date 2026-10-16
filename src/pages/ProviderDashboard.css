@@ -1,167 +1,52 @@
-/* =============================================
-   PROVIDER DASHBOARD — NexaPort
-   Supplements shared Dashboard.css
-============================================= */
-
-/* Header action link */
 .pd-header-action {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--np-slate-300, #cbd5e1);
-  border-radius: var(--np-radius, 4px);
-  background: var(--np-surface, #ffffff);
-  color: var(--np-navy-900, #0f172a);
-  font-size: 12px;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--np-control-height);
+  padding: 0 16px;
+  border: 1px solid var(--np-color-accent);
+  border-radius: var(--np-radius);
+  background: var(--np-color-accent);
+  color: white;
+  font-size: 14px;
   font-weight: 600;
-  text-decoration: none;
   white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: background .15s ease, border-color .15s ease;
 }
+.pd-header-action:hover { background: var(--np-color-accent-hover); border-color: var(--np-color-accent-hover); }
 
-.pd-header-action:hover {
-  border-color: var(--np-slate-400, #94a3b8);
-  background: var(--np-slate-50, #f8fafc);
-  color: var(--np-navy-900, #0f172a);
-}
-
-/* Directory status bar */
 .pd-status-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  max-width: var(--dash-content, 1440px);
-  margin: 0 auto 16px;
-  padding: 10px 16px;
-  background: var(--dash-surface, #ffffff);
-  border: 1px solid var(--dash-line, #cbd5e1);
-  border-left: 3px solid var(--np-teal-700, #0f766e);
-  border-radius: var(--np-radius, 4px);
-  font-size: 12px;
+  max-width: var(--dash-content);
+  margin: 0 auto 20px;
+  padding: 16px 20px;
+  border: 1px solid var(--dash-line);
+  border-radius: var(--np-radius);
+  background: var(--dash-surface);
 }
+.pd-status-label { color: var(--dash-muted); font-size: var(--np-type-small); font-weight: 600; }
+.pd-rejection-reason { color: var(--np-red-800); font-size: 14px; overflow-wrap: anywhere; }
 
-.pd-status-label {
-  color: var(--dash-muted, #64748b);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
+.pd-missing-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; list-style: none; margin: 0; padding: 4px 20px 12px; }
+.pd-missing-list li { display: flex; align-items: center; gap: 10px; padding: 10px 0; color: var(--np-color-text); font-size: 14px; }
+.pd-missing-list li > svg { color: var(--np-amber-700); flex: none; }
 
-.pd-rejection-reason {
-  color: var(--np-red-800, #991b1b);
-  font-size: 12px;
-  margin-left: 8px;
-}
-
-/* Profile Setup — missing items list */
-.pd-missing-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.pd-missing-list li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--dash-line, #cbd5e1);
-  color: var(--np-navy-900, #0f172a);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.pd-missing-list li:last-child {
-  border-bottom: 0;
-}
-
-.pd-missing-list li > svg {
-  color: var(--np-amber-700, #b45309);
-  flex-shrink: 0;
-}
-
-/* Company Overview */
-.pd-overview {
-  padding: 16px 18px;
-}
-
-.pd-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-  margin: 0;
-}
-
-.pd-overview-grid > div {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
-}
-
-.pd-overview-grid > div:nth-last-child(-n+2) {
-  border-bottom: 0;
-}
-
-.pd-overview-grid dt {
-  color: var(--dash-muted, #64748b);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin: 0 0 3px;
-}
-
-.pd-overview-grid dd {
-  color: var(--dash-ink, #0f172a);
-  font-size: 13px;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.pd-website-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--np-blue-600, #0284c7);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.pd-website-link:hover {
-  text-decoration: underline;
-}
-
-/* ── Responsive ── */
+.pd-overview { padding: 8px 20px 18px; }
+.pd-overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 0; }
+.pd-overview-grid > div { min-width: 0; padding: 12px 0; border-bottom: 1px solid var(--dash-line); }
+.pd-overview-grid dt { margin-bottom: 4px; color: var(--dash-muted); font-size: var(--np-type-small); }
+.pd-overview-grid dd { margin: 0; color: var(--dash-ink); font-size: var(--np-type-body); font-weight: 500; overflow-wrap: anywhere; }
+.pd-website-link { display: inline-flex; align-items: center; gap: 5px; color: var(--np-color-accent-hover); font-weight: 600; }
+.pd-website-link:hover { text-decoration: underline; }
 
 @media (max-width: 720px) {
-  .pd-header-action {
-    font-size: 11px;
-    padding: 0 10px;
-  }
-
-  .pd-status-bar {
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 14px;
-  }
-
-  .pd-overview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pd-overview-grid > div:nth-last-child(-n+2) {
-    border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
-  }
-
-  .pd-overview-grid > div:last-child {
-    border-bottom: 0;
-  }
+  .pd-missing-list, .pd-overview-grid { grid-template-columns: 1fr; }
+  .pd-status-bar { padding: 14px 16px; }
+  .pd-overview { padding-inline: 16px; }
 }
 
-@media (max-width: 420px) {
-  .pd-overview {
-    padding: 14px;
-  }
-}
+@media (max-width: 430px) { .pd-header-action { width: 100%; } }

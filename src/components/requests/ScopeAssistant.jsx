@@ -23,11 +23,12 @@ export default function ScopeAssistant({ value, onChange, legacyCertification, d
     finally { setBusy(false); }
   };
   return <div className="scope-assistant wide">
-    <span>AI Scope Assistant</span>
-    <input aria-label="Scope keywords" placeholder="Enter a few keywords..." maxLength={1000} value={keywords} disabled={busy || disabled} onChange={(event) => setKeywords(event.target.value)} />
-    <button type="button" disabled={busy || disabled || !keywords.trim()} onClick={generate}>{busy ? "Generating..." : "Generate Scope"}</button>
+    <div className="scope-assistant__heading"><h3>AI Scope Assistant</h3><p>Turn a few operational notes into an editable first draft.</p></div>
+    <div className="scope-assistant__controls"><label htmlFor="scope-keywords">Key details</label><input id="scope-keywords" placeholder="e.g. hull condition, cargo gear, report format" maxLength={1000} value={keywords} disabled={busy || disabled} onChange={(event) => setKeywords(event.target.value)} />
+    <button type="button" disabled={busy || disabled || !keywords.trim()} onClick={generate}>{busy ? "Generating..." : "Generate Draft"}</button></div>
     <small>Review and edit the generated scope before submitting.</small>
+    {busy && <span role="status">Preparing your draft…</span>}
     {error && <p role="alert">{error}</p>}
-    {legacyCertification && <button type="button" disabled={busy || disabled} onClick={() => onChange(includeLegacyCertification(value.scopeOfWork, legacyCertification))}>Include in Scope</button>}
+    {legacyCertification && <button className="scope-assistant__secondary" type="button" disabled={busy || disabled} onClick={() => onChange(includeLegacyCertification(value.scopeOfWork, legacyCertification))}>Include certification in scope</button>}
   </div>;
 }

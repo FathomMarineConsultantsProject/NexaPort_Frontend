@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Edit, Eye, Plus, Save, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPort, deletePort, getPortById, getPorts, updatePort } from "../api/portApi";
 import { buildPortPayload } from "../utils/portDirectory";
 import "./PortDirectory.css";
@@ -14,7 +14,6 @@ const emptyForm = {
 const jsonText = (value) => value && Object.keys(value).length ? JSON.stringify(value, null, 2) : "";
 
 export default function PortDirectory() {
-  const navigate = useNavigate();
   const [ports, setPorts] = useState([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -123,25 +122,25 @@ export default function PortDirectory() {
       )}
 
       <section className="ports-toolbar" aria-label="Port filters">
-        <label className="ports-search"><Search size={17} /><span className="sr-only">Search</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Port, country or UNLOCODE" /></label>
+        <label className="ports-search"><Search size={17} aria-hidden="true" /><span className="sr-only">Search ports</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Port, country or UNLOCODE" /></label>
         <label>Country<input value={country} onChange={setFilter(setCountry)} placeholder="All countries" /></label>
         <label>Region<select value={region} onChange={setFilter(setRegion)}>{regions.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label>Harbour type<input value={harbourType} onChange={setFilter(setHarbourType)} placeholder="All types" /></label>
         <label>Rows<select value={limit} onChange={(event) => { setLimit(Number(event.target.value)); setPage(1); }}><option>25</option><option>50</option><option>100</option></select></label>
       </section>
 
-      {error && <div className="ports-error">{error}</div>}
+      {error && <div className="ports-error" role="alert">{error} <button type="button" onClick={reloadCurrentPage}>Try again</button></div>}
       <section className="port-register" aria-busy={loading}>
-        <div className="port-register-meta"><span>{loading ? "Loading port register…" : `Showing ${start}–${end} of ${pagination.total} ports`}</span><span>Source records and Nexaport-managed ports</span></div>
+        <div className="port-register-meta" role="status"><span>{loading ? "Loading port register…" : `Showing ${start}–${end} of ${pagination.total} ports`}</span><span>Source records and Nexaport-managed ports</span></div>
         <div className="port-table-scroll"><table className="ports-table"><thead><tr><th>Port</th><th>Country</th><th>Region</th><th>Harbour</th><th>Max draft</th><th>PSC risk</th><th>Experts</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>{!loading && ports.map((port) => <tr key={port.id}>
-            <td><button className="port-name-link" onClick={() => navigate(`/ports/${port.id}`)}>{port.port_name}</button><span className="unlocode">{port.unlocode || "— — — — —"}</span></td>
+            <td><Link className="port-name-link" to={`/ports/${port.id}`}>{port.port_name}</Link><span className="unlocode">{port.unlocode || "— — — — —"}</span></td>
             <td>{port.country}<small>{port.country_iso || ""}</small></td><td>{port.region || "Not provided"}</td>
             <td>{port.harbour_type || "Not provided"}<small>{port.harbour_size || ""}</small></td><td>{port.max_draft_m == null ? "Not provided" : `${port.max_draft_m} m`}</td>
             <td><span className={riskClass(port.psc_risk_level)}>{port.psc_risk_level || "Not provided"}</span></td><td>{port.experts_available || 0}</td>
-            <td><div className="port-row-actions"><button onClick={() => navigate(`/ports/${port.id}`)} title="View port"><Eye size={15} /><span>View</span></button>{isSuperAdmin && <><button onClick={() => openEditForm(port)} title="Edit port"><Edit size={15} /><span>Edit</span></button><button className="danger" onClick={() => deactivatePort(port)} title="Deactivate port"><Trash2 size={15} /><span>Deactivate</span></button></>}</div></td>
+            <td><div className="port-row-actions"><Link to={`/ports/${port.id}`} aria-label={`View ${port.port_name}`}><Eye size={15} aria-hidden="true" /><span>View</span></Link>{isSuperAdmin && <><button onClick={() => openEditForm(port)} title="Edit port"><Edit size={15} /><span>Edit</span></button><button className="danger" onClick={() => deactivatePort(port)} title="Deactivate port"><Trash2 size={15} /><span>Deactivate</span></button></>}</div></td>
           </tr>)}</tbody></table></div>
-        {!loading && ports.length === 0 && <div className="ports-empty">No ports match these filters. Clear a filter or try another search.</div>}
+        {!loading && !error && ports.length === 0 && <div className="ports-empty">No ports match these filters. Clear a filter or try another search.</div>}
         <div className="port-pagination"><span>Page {pagination.page || 1} of {Math.max(1, pagination.totalPages || 1)}</span><div><button disabled={page <= 1 || loading} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={15} />Previous</button><button disabled={page >= pagination.totalPages || loading || !pagination.totalPages} onClick={() => setPage((current) => current + 1)}>Next<ChevronRight size={15} /></button></div></div>
       </section>
     </main>

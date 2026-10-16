@@ -44,6 +44,9 @@ export default function CompanyProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [errors, setErrors] = useState({});
   const [logo, setLogo] = useState(null);
 
@@ -51,6 +54,7 @@ export default function CompanyProfile() {
     let active = true;
     getCompanyProfile().then((response) => {
       if (!active) return;
+      setLoadError("");
       const detail = response.data;
       setCompany(Object.fromEntries(fields.map(([key]) => [key, detail.entity[snake(key)] ?? ""])));
       setDirectoryTypes(detail.directory_types || [detail.account.primary_type]);
@@ -61,9 +65,9 @@ export default function CompanyProfile() {
         loadedCollections[key] = rows.map((row) => ({ id: row.id, ...Object.fromEntries(config.fields.map(([fKey]) => [fKey, row[snake(fKey)] ?? ""])) }));
       }
       setCollections(loadedCollections);
-    }).catch((error) => active && setMessage(error.response?.data?.message || "Unable to load the company profile.")).finally(() => active && setLoading(false));
+    }).catch((error) => active && setLoadError(error.response?.data?.message || "Unable to load the company profile. Check your connection and try again.")).finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, []);
+  }, [retry]);
 
   const toggleType = (type) => {
     if (directoryTypes.includes(type)) {
@@ -79,7 +83,7 @@ export default function CompanyProfile() {
   };
 
   const save = async (event) => {
-    event.preventDefault(); setSaving(true); setMessage(""); setErrors({});
+    event.preventDefault(); setSaving(true); setMessage(""); setSaveError(false); setErrors({});
     if (!directoryTypes.length) {
       setErrors({ directoryTypes: "At least one company type must remain." });
       setSaving(false);
@@ -95,21 +99,22 @@ export default function CompanyProfile() {
         setLogo(null);
       }
       setStatus(response.data.entity.review_status); setMessage("Company profile saved.");
-    } catch (error) { setErrors(error.response?.data?.field_errors || {}); setMessage(error.response?.data?.message || "Unable to save the company profile."); }
+    } catch (error) { setSaveError(true); setErrors(error.response?.data?.field_errors || {}); setMessage(error.response?.data?.message || "Unable to save the company profile. Review the fields and try again."); }
     finally { setSaving(false); }
   };
 
-  if (loading) return <div className="company-workspace"><div className="company-workspace__loading">Loading company profile...</div></div>;
+  if (loading) return <main className="company-workspace"><div className="company-workspace__loading" role="status">Loading company profile…</div></main>;
+  if (loadError) return <main className="company-workspace"><div className="company-workspace__loading" role="alert"><h1>Company Profile Unavailable</h1><p>{loadError}</p><button type="button" onClick={() => { setLoading(true); setRetry((value) => value + 1); }}>Try again</button></div></main>;
   const approved = status === "approved";
 
-  return <div className="company-workspace">
+  return <main className="company-workspace">
     <header className="company-workspace__hero"><div><small>Company workspace</small><h1>{company.companyName || "Maritime Company"}</h1><p>Maintain the public directory information mariners use to find your business.</p></div><div className={`company-status ${approved ? "approved" : "pending"}`}>{approved ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}<span><small>Approval status</small><strong>{status}</strong></span></div></header>
     <nav className="company-workspace__nav" aria-label="Company profile sections">
       <a href="#company-overview">Overview</a>
       {Object.entries(SECTIONS).map(([name, config]) => <a key={name} href={`#company-${name}`}>{config.title}</a>)}
     </nav>
     {!approved && <div className="company-workspace__notice"><Clock3 size={18} /><span><strong>Your profile is under review.</strong> You can keep editing it. It will appear publicly after Super Admin approval.</span></div>}
-    {message && <div className="company-workspace__message" role="status">{message}</div>}
+    {message && <div className="company-workspace__message" role={saveError ? "alert" : "status"}>{message}</div>}
     <form onSubmit={save} className="company-workspace__form">
       <section id="company-overview">
         <div className="company-section-head">
@@ -133,7 +138,7 @@ export default function CompanyProfile() {
 
       {Object.entries(SECTIONS).map(([name, config]) => <RepeatableSection key={name} name={name} title={config.title} fields={config.fields} rows={collections[name] || []} errors={errors} onChange={(rows) => setCollections({ ...collections, [name]: rows })} />)}
 
-      <div className="company-workspace__actions"><button type="submit" disabled={saving}><Save size={17} /> {saving ? "Saving..." : "Save profile"}</button></div>
+      <div className="company-workspace__actions"><span>{approved ? "Approved directory profile" : "Profile changes remain subject to review"}</span><button type="submit" disabled={saving}><Save size={17} aria-hidden="true" /> {saving ? "Saving…" : "Save Profile"}</button></div>
     </form>
-  </div>;
+  </main>;
 }

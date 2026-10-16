@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { searchInspectorDirectory } from "../api/inspectorDirectoryApi";
 import "./InspectorSearch.css";
 
@@ -23,6 +23,7 @@ const detailPath = (item) => {
 
 export default function InspectorSearch({ humanOnly = false }) {
   const location = useLocation();
+  const [, setSearchParams] = useSearchParams();
   const categoryFromUrl = new URLSearchParams(location.search).get("category") || "";
   const [draft, setDraft] = useState({ q: "", country: "", port: "", type: "", category: categoryFromUrl,
     discipline: "", specialization: "", inspectionType: "", flagState: "", accreditation: "", capability: "" });
@@ -31,6 +32,7 @@ export default function InspectorSearch({ humanOnly = false }) {
   const [data, setData] = useState(emptyPage);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDraft((current) => ({ ...current, category: categoryFromUrl })), 0);
@@ -50,7 +52,7 @@ export default function InspectorSearch({ humanOnly = false }) {
       .catch((requestError) => { if (active) { setData(emptyPage); setError(requestError.response?.data?.message || "Inspector search is unavailable."); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; window.clearTimeout(timer); };
-  }, [filters, humanOnly, page]);
+  }, [filters, humanOnly, page, retry]);
 
   const update = (key) => (event) => setDraft((current) => ({ ...current, [key]: event.target.value }));
   return (
@@ -62,19 +64,23 @@ export default function InspectorSearch({ humanOnly = false }) {
         <label><span>Port</span><input value={draft.port} onChange={update("port")} placeholder="Registered base port" /></label>
         <label><span>Surveyor Category</span><select value={draft.category} onChange={update("category")}><option value="">All categories</option>{CATEGORIES.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <label><span>Record Source</span><select value={draft.type} onChange={update("type")}><option value="">All sources</option>{Object.entries(TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span>Discipline / Speciality</span><input value={draft.discipline} onChange={update("discipline")} placeholder="e.g. marine engineering" /></label>
-        <label><span>Specialization</span><input value={draft.specialization} onChange={update("specialization")} placeholder="Registered specialty or source scope" /></label>
-        <label><span>Inspection Type</span><input value={draft.inspectionType} onChange={update("inspectionType")} placeholder="Registered inspection method" /></label>
-        <label><span>Flag State</span><input value={draft.flagState} onChange={update("flagState")} placeholder="Explicit registry filter" /></label>
-        <label><span>Accreditation</span><input value={draft.accreditation} onChange={update("accreditation")} placeholder="Recorded accreditation" /></label>
-        <label><span>Capability</span><input value={draft.capability} onChange={update("capability")} placeholder="Registered capability" /></label>
+        <details className="inspector-advanced"><summary>More search fields</summary><div>
+          <label><span>Discipline / Speciality</span><input value={draft.discipline} onChange={update("discipline")} placeholder="e.g. marine engineering" /></label>
+          <label><span>Specialization</span><input value={draft.specialization} onChange={update("specialization")} placeholder="Registered specialty or source scope" /></label>
+          <label><span>Inspection Type</span><input value={draft.inspectionType} onChange={update("inspectionType")} placeholder="Registered inspection method" /></label>
+          <label><span>Flag State</span><input value={draft.flagState} onChange={update("flagState")} placeholder="Explicit registry filter" /></label>
+          <label><span>Accreditation</span><input value={draft.accreditation} onChange={update("accreditation")} placeholder="Recorded accreditation" /></label>
+          <label><span>Capability</span><input value={draft.capability} onChange={update("capability")} placeholder="Registered capability" /></label>
+        </div></details>
+        <button className="inspector-clear" type="button" onClick={() => { setSearchParams((current) => { const next = new URLSearchParams(current); next.delete("category"); return next; }); setDraft({ q: "", country: "", port: "", type: "", category: "", discipline: "", specialization: "", inspectionType: "", flagState: "", accreditation: "", capability: "" }); }}>Clear filters</button>
       </section>
 
       <section className="inspector-search-results" aria-live="polite">
         <div className="inspector-search-summary"><strong>{loading ? "Searching…" : `${data.total} result${data.total === 1 ? "" : "s"}`}</strong><span>Source records remain separate when identity is unconfirmed.</span></div>
-        {error && <div className="inspector-search-state" role="alert">{error}</div>}
+        {error && <div className="inspector-search-state" role="alert"><strong>Search unavailable</strong><p>{error}</p><button type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button></div>}
+        {!error && loading && <div className="inspector-search-state" role="status">Searching inspector records…</div>}
         {!error && !loading && !data.items.length && <div className="inspector-search-state">No inspectors match the current filters.</div>}
-        {!error && data.items.length > 0 && <div className="inspector-search-table-wrap"><table>
+        {!error && !loading && data.items.length > 0 && <div className="inspector-search-table-wrap"><table>
           <thead><tr><th>Surveyor / Inspector</th><th>Categories</th><th>Country / Location</th><th>Specialization / Capability</th><th>Flag / Accreditation</th><th>Source</th><th>Action</th></tr></thead>
           <tbody>{data.items.map((item) => <tr key={`${item.inspector_type}-${item.source_id}`}>
             <td data-label="Surveyor / Inspector"><div className="inspector-identity">{item.photo_url ? <img src={item.photo_url} alt=""/> : <span aria-hidden="true">{initials(item.name)}</span>}<div><strong>{item.name}</strong>{item.nexaport_id && <small className="nexaport-id">Nexaport ID: {item.nexaport_id}</small>}{item.organization && item.organization !== item.name && <small>{item.organization}</small>}</div></div></td>
@@ -85,7 +91,7 @@ export default function InspectorSearch({ humanOnly = false }) {
             <td data-label="Action"><Link to={detailPath(item)}>View profile</Link></td>
           </tr>)}</tbody>
         </table></div>}
-        {data.totalPages > 1 && <nav className="inspector-pagination" aria-label="Inspector search pages"><button disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {data.page} of {data.totalPages}</span><button disabled={page >= data.totalPages || loading} onClick={() => setPage((value) => value + 1)}>Next</button></nav>}
+        {!error && data.totalPages > 1 && <nav className="inspector-pagination" aria-label="Inspector search pages"><button disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {data.page} of {data.totalPages}</span><button disabled={page >= data.totalPages || loading} onClick={() => setPage((value) => value + 1)}>Next</button></nav>}
       </section>
     </main>
   );

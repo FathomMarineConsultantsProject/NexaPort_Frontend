@@ -1,13 +1,14 @@
 .np-footer {
-  height: 52px;
-  background: var(--np-navy-900);
-  border-top: 1px solid var(--np-navy-800);
-  color: var(--np-slate-400);
+  min-height: 64px;
+  background: var(--np-color-nav);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c3d1d4;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  font-size: 12px;
+  gap: 16px;
+  padding: 12px var(--np-page-gutter);
+  font-size: 13px;
   font-weight: 500;
   margin-top: auto;
 }
@@ -22,24 +23,29 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--np-slate-300);
+  color: #e7efef;
   font-weight: 600;
 }
 
 .np-footer-left small {
-  color: var(--np-slate-400);
-  font-size: 10px;
+  color: #c3d1d4;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .np-footer-left svg {
-  color: var(--np-teal-600);
+  color: #65c6b9;
 }
 
 .np-footer-right {
-  color: var(--np-slate-400);
-  font-size: 11px;
+  color: #c3d1d4;
+  font-size: 12px;
   letter-spacing: 0.2px;
+}
+
+@media (max-width: 720px) {
+  .np-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .np-footer-left span { flex-wrap: wrap; }
 }

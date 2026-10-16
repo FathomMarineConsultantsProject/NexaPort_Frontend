@@ -8,23 +8,21 @@ import {
   Grid2X2,
   LockKeyhole,
   LogOut,
-  MapPin,
   Route as RouteIcon,
   Menu,
-  Ship,
   User,
   Users,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { matchPath, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, matchPath, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   getAdminNotifications,
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
 } from "../../api/adminNotificationApi";
 import { getRoleId, isMaritimeCompany } from "../../utils/auth";
-import { getVisibleDirectoryGroups } from "../../config/adminDirectories";
+import { getNavigationDirectoryGroups } from "../../config/adminDirectories";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
   CONSULTANT_PHOTO_UPDATED_EVENT,
@@ -51,6 +49,8 @@ export default function Navbar() {
   const directoriesRef = useRef(null);
   const directoriesTriggerRef = useRef(null);
   const mobileTriggerRef = useRef(null);
+  const profileTriggerRef = useRef(null);
+  const notificationTriggerRef = useRef(null);
   const notificationsRef = useRef(null);
   const notificationRequestInFlight = useRef(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
@@ -61,12 +61,12 @@ export default function Navbar() {
   const [expertId, setExpertId] = useState(null);
 
   const roleId = getRoleId();
-  const isClient = roleId === 3;
   const isSuperAdmin = roleId === 1;
   const isCompany = isMaritimeCompany();
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
-  const visibleDirectoryGroups = getVisibleDirectoryGroups(roleId);
+  const visibleDirectoryGroups = getNavigationDirectoryGroups(roleId);
+  const avatarPhoto = photoUrl || user?.photo_url || user?.profile_photo_url || user?.avatar_url || null;
   const directoryActive = location.pathname.startsWith("/directories/") || visibleDirectoryGroups.flatMap((group) => group.items).some(({ path }) =>
     matchPath({ path: `${path.split("?")[0]}/*` }, location.pathname)
   );
@@ -155,12 +155,16 @@ export default function Navbar() {
       if (event.key !== "Escape") return;
       if (directoriesOpen) directoriesTriggerRef.current?.focus();
       if (mobileOpen) mobileTriggerRef.current?.focus();
+      if (menuOpen) profileTriggerRef.current?.focus();
+      if (notificationsOpen) notificationTriggerRef.current?.focus();
       setDirectoriesOpen(false);
       setMobileOpen(false);
+      setMenuOpen(false);
+      setNotificationsOpen(false);
     };
-    if (directoriesOpen || mobileOpen) document.addEventListener("keydown", handleEscape);
+    if (directoriesOpen || mobileOpen || menuOpen || notificationsOpen) document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [directoriesOpen, mobileOpen]);
+  }, [directoriesOpen, mobileOpen, menuOpen, notificationsOpen]);
 
   useEffect(() => {
     const handleOutside = (event) => {
@@ -258,40 +262,46 @@ export default function Navbar() {
     setMobileDirectoriesOpen(false);
   };
 
+  const handleDirectoryKeys = (event) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const links = [...directoriesRef.current?.querySelectorAll(".np-directories-popover a") || []];
+    if (!directoriesOpen) {
+      event.preventDefault();
+      setDirectoriesOpen(true);
+      window.requestAnimationFrame(() => directoriesRef.current?.querySelector(".np-directories-popover a")?.focus());
+      return;
+    }
+    if (!links.length) return;
+    event.preventDefault();
+    const current = links.indexOf(document.activeElement);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? links.length - 1
+      : event.key === "ArrowDown" ? (current + 1) % links.length : (current - 1 + links.length) % links.length;
+    links[next].focus();
+  };
+
   return (
     <header className="np-navbar">
-      <div className="np-brand" onClick={() => navigate("/")} role="button">
+      <Link className="np-brand" to="/" aria-label="NexaPort home">
         <div className="np-logo">
           <Anchor size={22} />
         </div>
         <div className="np-brand-text">
           Nexa<span>Port</span>
         </div>
-      </div>
+      </Link>
 
-      <nav className="np-navlinks">
-        {isCompany ? <NavLink to="/company-profile"><Building2 size={17} /> Company Profile</NavLink> : <>
+      <nav className="np-navlinks" aria-label="Primary navigation">
+        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink></> : <>
+        <NavLink to="/dashboard">
+          <Grid2X2 size={17} /> Dashboard
+        </NavLink>
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
 
-        {!isClient && (
-          <NavLink to="/templates">
-            <ClipboardList size={17} /> Templates
-          </NavLink>
-        )}
-
-        {isSuperAdmin && (
-          <>
-            <NavLink to="/admin/inspection-workflows">
-              <RouteIcon size={17} /> Inspection Workflow
-            </NavLink>
-            <NavLink to="/admin/client-registrations">
-              <Users size={17} /> Owners &amp; Managers
-            </NavLink>
-
-            </>
-          )}
+        {isSuperAdmin && <NavLink to="/admin/inspection-workflows">
+          <RouteIcon size={17} /> Inspection Workflow
+        </NavLink>}
           {visibleDirectoryGroups.length > 0 && (
             <div className="np-directories" ref={directoriesRef}>
               <button
@@ -300,6 +310,7 @@ export default function Navbar() {
                 className={`np-directories-trigger${directoryActive ? " active" : ""}`}
                 aria-expanded={directoriesOpen}
                 aria-controls="directories-popover"
+                onKeyDown={handleDirectoryKeys}
                 onClick={() => {
                   setDirectoriesOpen((open) => !open);
                   setNotificationsOpen(false);
@@ -310,13 +321,13 @@ export default function Navbar() {
               </button>
 
               {directoriesOpen && (
-                <div id="directories-popover" className="np-directories-popover" aria-label="Directories">
+                <div id="directories-popover" className={`np-directories-popover np-directories-popover--${visibleDirectoryGroups.length}`} aria-label="Directories" onKeyDown={handleDirectoryKeys}>
                   {visibleDirectoryGroups.map((group) => (
                     <section key={group.label}>
-                      <span>{group.label}</span>
-                      {group.items.map(({ label, path, icon: Icon }) => (
+                      <h2>{group.label}</h2>
+                      {group.items.map(({ label, path, icon: Icon, description }) => (
                         <NavLink key={path} to={path} onClick={() => setDirectoriesOpen(false)}>
-                          <Icon size={16} aria-hidden="true" /> {label}
+                          <Icon size={18} aria-hidden="true" /><span><strong>{label}</strong>{description && <small>{description}</small>}</span>
                         </NavLink>
                       ))}
                     </section>
@@ -326,17 +337,15 @@ export default function Navbar() {
             </div>
           )}
 
-        {(isSuperAdmin || isClient) && <NavLink to="/vessels">
-          <Ship size={17} /> Vessels
+        {(isSuperAdmin || roleId === 2) && (
+          <NavLink to="/templates">
+            <ClipboardList size={17} /> Templates
+          </NavLink>
+        )}
+
+        {isSuperAdmin && <NavLink to="/admin/client-registrations">
+          <Users size={17} /> Client approvals
         </NavLink>}
-
-        <NavLink to="/ports">
-          <MapPin size={17} /> Ports
-        </NavLink>
-
-        <NavLink to="/dashboard">
-          <Grid2X2 size={17} /> Dashboard
-        </NavLink>
         </>}
       </nav>
 
@@ -358,13 +367,15 @@ export default function Navbar() {
       </button>
 
       <div className="np-account-actions">
-        {isSuperAdmin && (
+        {canUseNotifications && (
           <div className="np-notifications-wrap" ref={notificationsRef}>
             <button
+              ref={notificationTriggerRef}
               type="button"
               className="np-notification-button"
               aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
               aria-expanded={notificationsOpen}
+              aria-controls="notifications-menu"
               onClick={() => {
                 setNotificationsOpen((open) => !open);
                 setMenuOpen(false);
@@ -373,15 +384,11 @@ export default function Navbar() {
               }}
             >
               <Bell size={20} />
-              {unreadCount > 0 && (
-                <span className="np-notification-badge">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
+              {unreadCount > 0 && <span className="np-notification-badge" aria-hidden="true" />}
             </button>
 
             {notificationsOpen && (
-              <div className="np-notification-menu">
+              <div id="notifications-menu" className="np-notification-menu">
                 <div className="np-notification-menu-head">
                   <strong>Notifications</strong>
                   {unreadCount > 0 && (
@@ -424,7 +431,12 @@ export default function Navbar() {
 
         <div className="np-profile-wrap" ref={menuRef}>
           <button
+            ref={profileTriggerRef}
+            type="button"
             className="np-avatar-btn"
+            aria-label={`Account menu for ${user?.full_name || "user"}`}
+            aria-expanded={menuOpen}
+            aria-controls="profile-menu"
             onClick={() => {
               setMenuOpen(!menuOpen);
               setNotificationsOpen(false);
@@ -434,27 +446,25 @@ export default function Navbar() {
           >
             <ConsultantAvatar
               className="np-avatar-initial"
-              photoUrl={photoUrl}
+              photoUrl={avatarPhoto}
               name={user?.full_name}
               fallback="U"
             />
-            <span className="np-avatar-name">
-              {user?.full_name?.split(" ")[0] || "Account"}
-            </span>
           </button>
 
           {menuOpen && (
-            <div className="np-profile-menu">
+            <div id="profile-menu" className="np-profile-menu">
               <div className="np-profile-menu-head">
                 <ConsultantAvatar
                   className="np-profile-menu-avatar"
-                  photoUrl={photoUrl}
+                  photoUrl={avatarPhoto}
                   name={user?.full_name}
                   fallback="U"
                 />
                 <div>
                   <div className="np-profile-menu-name">{user?.full_name || "User"}</div>
                   <div className="np-profile-menu-email">{user?.email || ""}</div>
+                  <div className="np-profile-menu-role">{WORKSPACE_LABELS[roleId] || "Account"}</div>
                 </div>
               </div>
 
@@ -506,28 +516,17 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
-          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} /> Company Profile</NavLink></> : <>
+          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink></> : <>
+          <NavLink to="/dashboard" onClick={closeMobileNavigation}>
+            <Grid2X2 size={18} /> Dashboard
+          </NavLink>
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>
 
-          {!isClient && (
-            <NavLink to="/templates" onClick={closeMobileNavigation}>
-              <ClipboardList size={18} /> Templates
-            </NavLink>
-          )}
-
-          {isSuperAdmin && (
-            <>
-              <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>
-                <RouteIcon size={18} /> Inspection Workflow
-              </NavLink>
-              <NavLink to="/admin/client-registrations" onClick={closeMobileNavigation}>
-                <Users size={18} /> Owners &amp; Managers
-              </NavLink>
-
-            </>
-          )}
+          {isSuperAdmin && <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>
+            <RouteIcon size={18} /> Inspection Workflow
+          </NavLink>}
           {visibleDirectoryGroups.length > 0 && (
               <div className="np-mobile-directories">
                 <button
@@ -558,15 +557,14 @@ export default function Navbar() {
               </div>
           )}
 
-          {(isSuperAdmin || isClient) && <NavLink to="/vessels" onClick={closeMobileNavigation}>
-            <Ship size={18} /> Vessels
+          {(isSuperAdmin || roleId === 2) && (
+            <NavLink to="/templates" onClick={closeMobileNavigation}>
+              <ClipboardList size={18} /> Templates
+            </NavLink>
+          )}
+          {isSuperAdmin && <NavLink to="/admin/client-registrations" onClick={closeMobileNavigation}>
+            <Users size={18} /> Client approvals
           </NavLink>}
-          <NavLink to="/ports" onClick={closeMobileNavigation}>
-            <MapPin size={18} /> Ports
-          </NavLink>
-          <NavLink to="/dashboard" onClick={closeMobileNavigation}>
-            <Grid2X2 size={18} /> Dashboard
-          </NavLink>
           </>}
         </nav>
       )}

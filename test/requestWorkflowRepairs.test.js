@@ -16,6 +16,7 @@ test("canonical multi-selection preserves same-named ports, prevents duplicate I
   assert.equal(selectionPatch([],1).portId,null);
   assert.deepEqual(requestPortPayload({portName:"Unresolved historic port",portId:null}),{});
   assert.deepEqual(requestPortPayload({...multiple,confirmPrimaryPortChange:true}).portIds,[1,2]);
+  assert.deepEqual(requestPortPayload({...multiple,manualPort:true}),{});
 });
 
 test("port keyboard cursor handles empty results, initial arrows and wraparound",()=>{

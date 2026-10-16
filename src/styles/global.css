@@ -1,27 +1,56 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
 
 :root {
+  /* Shared design foundation. Legacy palette names below remain for existing screens. */
+  --np-color-canvas: #e9edef;
+  --np-color-surface: #f9fafb;
+  --np-color-surface-muted: #f0f3f4;
+  --np-color-nav: #1d2930;
+  --np-color-text: #1b2931;
+  --np-color-text-muted: #566874;
+  --np-color-border: #cbd5d9;
+  --np-color-accent: #783446;
+  --np-color-accent-hover: #612836;
+  --np-color-focus: #295c83;
+  --np-page-gutter: clamp(16px, 3vw, 40px);
+  --np-container-form: 840px;
+  --np-container-detail: 1200px;
+  --np-container-operations: 1440px;
+  --np-container-data: 1600px;
+  --np-space-1: 4px;
+  --np-space-2: 8px;
+  --np-space-3: 12px;
+  --np-space-4: 16px;
+  --np-space-5: 24px;
+  --np-space-6: 32px;
+  --np-space-7: 48px;
+  --np-control-height: 40px;
+  --np-type-body: 15px;
+  --np-type-small: 13px;
+  --np-type-label: 12px;
+  --np-type-section: 19px;
+  --np-type-page: clamp(28px, 2.2vw, 32px);
   /* Maritime Primary Navy Palette */
-  --np-navy-950: #090d16;
-  --np-navy-900: #0f172a;
-  --np-navy-800: #1e293b;
-  --np-navy-700: #334155;
+  --np-navy-950: #131e24;
+  --np-navy-900: #1d2930;
+  --np-navy-800: #263842;
+  --np-navy-700: #40535e;
 
   /* Neutrals / Slates */
-  --np-slate-700: #334155;
-  --np-slate-600: #475569;
-  --np-slate-500: #64748b;
-  --np-slate-400: #94a3b8;
-  --np-slate-300: #cbd5e1;
-  --np-slate-200: #e2e8f0;
-  --np-slate-100: #f1f5f9;
-  --np-slate-50:  #f8fafc;
+  --np-slate-700: #3b4e59;
+  --np-slate-600: #566874;
+  --np-slate-500: #6a7c86;
+  --np-slate-400: #8999a2;
+  --np-slate-300: #cbd5d9;
+  --np-slate-200: #dbe2e5;
+  --np-slate-100: #edf1f3;
+  --np-slate-50:  #f9fafb;
 
-  /* Maritime Teals (Operational Accents) */
-  --np-teal-800: #115e59;
-  --np-teal-700: #0f766e;
-  --np-teal-600: #0d9488;
-  --np-teal-50:  #f0fdfa;
+  /* Legacy accent names remain for existing components. */
+  --np-teal-800: #612836;
+  --np-teal-700: #783446;
+  --np-teal-600: #965167;
+  --np-teal-50:  #f7edf0;
 
   /* Operational Blues (Links, Focus, Info) */
   --np-blue-700: #0369a1;
@@ -51,14 +80,14 @@
   --np-green-50:  #f0fdf4;
 
   /* Surfaces & Structural Borders */
-  --np-ground: #f1f5f9;
-  --np-surface: #ffffff;
-  --np-border: 1px solid #cbd5e1;
-  --np-border-subtle: 1px solid #e2e8f0;
+  --np-ground: var(--np-color-canvas);
+  --np-surface: var(--np-color-surface);
+  --np-border: 1px solid var(--np-color-border);
+  --np-border-subtle: 1px solid #e1e9e7;
   --np-border-strong: 1px solid #94a3b8;
-  --np-radius-sm: 3px;
-  --np-radius: 4px;
-  --np-radius-md: 6px;
+  --np-radius-sm: 4px;
+  --np-radius: 6px;
+  --np-radius-md: 8px;
 
   /* Restrained Operational Elevations */
   --np-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -82,12 +111,12 @@ body,
   min-height: 100%;
   font-family: var(--np-font-sans);
   background: var(--np-ground);
-  color: var(--np-navy-900);
+  color: var(--np-color-text);
 }
 
 body {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: var(--np-type-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -97,7 +126,7 @@ input,
 select,
 textarea {
   font-family: inherit;
-  font-size: 13px;
+  font-size: inherit;
 }
 
 a {
@@ -112,19 +141,51 @@ h1, h2, h3, h4, h5, h6, p {
 /* Numeric & Technical Formatting */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+.np-technical-id {
   font-family: var(--np-font-mono);
 }
+
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--np-color-focus);
+  outline-offset: 2px;
+}
+
+/* Page geometry can be shared without changing a page's own content layout. */
+.np-page-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--np-page-gutter);
+  min-width: 0;
+}
+.np-page-container--form { max-width: calc(var(--np-container-form) + var(--np-page-gutter) + var(--np-page-gutter)); }
+.np-page-container--detail { max-width: calc(var(--np-container-detail) + var(--np-page-gutter) + var(--np-page-gutter)); }
+.np-page-container--operations { max-width: calc(var(--np-container-operations) + var(--np-page-gutter) + var(--np-page-gutter)); }
+.np-page-container--data { max-width: calc(var(--np-container-data) + var(--np-page-gutter) + var(--np-page-gutter)); }
+
+.np-page-heading { font-size: var(--np-type-page); line-height: 1.15; letter-spacing: -0.025em; }
+.np-section-heading { font-size: var(--np-type-section); line-height: 1.3; }
+.np-muted { color: var(--np-color-text-muted); }
+.np-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--np-space-5); }
+.np-action-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--np-space-3); }
+.np-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--np-space-2); color: var(--np-color-text-muted); font-size: var(--np-type-small); }
+.np-breadcrumbs a:hover { color: var(--np-color-accent-hover); text-decoration: underline; }
+.np-feedback { padding: var(--np-space-4); border: 1px solid var(--np-color-border); border-radius: var(--np-radius); background: var(--np-color-surface); color: var(--np-color-text); }
+.np-feedback--error { border-color: var(--np-red-200); background: var(--np-red-50); color: var(--np-red-800); }
+.np-feedback--warning { border-color: var(--np-amber-200); background: var(--np-amber-50); color: var(--np-amber-800); }
+.np-feedback--success { border-color: var(--np-green-200); background: var(--np-green-50); color: var(--np-green-800); }
 
 /* Buttons Primitives */
 .np-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 14px;
+  gap: 8px;
+  min-height: var(--np-control-height);
+  padding: 0 16px;
   border-radius: var(--np-radius);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -132,25 +193,25 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 .np-btn:focus-visible {
-  outline: 2px solid var(--np-blue-600);
+  outline: 2px solid var(--np-color-focus);
   outline-offset: 2px;
 }
 
 .np-btn-primary {
-  background: var(--np-navy-900);
+  background: var(--np-color-accent);
   color: #ffffff;
-  border: 1px solid var(--np-navy-900);
+  border: 1px solid var(--np-color-accent);
 }
 
 .np-btn-primary:hover {
-  background: var(--np-navy-800);
-  border-color: var(--np-navy-800);
+  background: var(--np-color-accent-hover);
+  border-color: var(--np-color-accent-hover);
 }
 
 .np-btn-secondary {
   background: #ffffff;
-  color: var(--np-slate-700);
-  border: 1px solid var(--np-slate-300);
+  color: var(--np-color-text);
+  border: 1px solid var(--np-color-border);
 }
 
 .np-btn-secondary:hover {
@@ -161,7 +222,7 @@ h1, h2, h3, h4, h5, h6, p {
 
 .np-btn-quiet {
   background: transparent;
-  color: var(--np-slate-600);
+  color: var(--np-color-text-muted);
   border: 1px solid transparent;
 }
 
@@ -181,6 +242,12 @@ h1, h2, h3, h4, h5, h6, p {
   border-color: #fca5a5;
 }
 
+.np-btn:disabled,
+.np-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Form Controls */
 input[type="text"],
 input[type="number"],
@@ -190,28 +257,35 @@ input[type="password"],
 input[type="search"],
 select,
 textarea {
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--np-slate-300);
+  min-height: var(--np-control-height);
+  padding: 0 12px;
+  border: 1px solid var(--np-color-border);
   border-radius: var(--np-radius);
   background: #ffffff;
-  color: var(--np-navy-900);
-  outline: none;
+  color: var(--np-color-text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--np-type-body);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 textarea {
   height: auto;
-  padding: 8px 10px;
+  padding: 10px 12px;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--np-blue-600);
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--np-color-surface-muted);
+  color: var(--np-color-text-muted);
+  cursor: not-allowed;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--np-color-focus);
+  box-shadow: 0 0 0 3px rgba(7, 127, 155, 0.14);
 }
 
 /* Technical Status Badges (Sharp 3px radius, non-pill) */
@@ -219,12 +293,12 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 7px;
+  padding: 4px 8px;
   border-radius: var(--np-radius-sm);
-  font-size: 10px;
+  font-size: var(--np-type-label);
   font-weight: 700;
   letter-spacing: 0.03em;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
 }
 
@@ -272,7 +346,7 @@ textarea:focus {
 .np-table-wrap {
   width: 100%;
   overflow-x: auto;
-  border: 1px solid var(--np-slate-300);
+  border: 1px solid var(--np-color-border);
   border-radius: var(--np-radius);
   background: var(--np-surface);
 }
@@ -280,16 +354,16 @@ textarea:focus {
 .np-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
 }
 
 .np-table th {
-  padding: 8px 12px;
-  background: var(--np-slate-50);
-  border-bottom: 1px solid var(--np-slate-300);
-  color: var(--np-slate-600);
-  font-size: 11px;
+  padding: 11px 14px;
+  background: var(--np-color-surface-muted);
+  border-bottom: 1px solid var(--np-color-border);
+  color: var(--np-color-text-muted);
+  font-size: var(--np-type-label);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -297,9 +371,9 @@ textarea:focus {
 }
 
 .np-table td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--np-slate-200);
-  color: var(--np-navy-900);
+  color: var(--np-color-text);
   vertical-align: middle;
 }
 
@@ -314,12 +388,12 @@ textarea:focus {
 /* Operational Panels / Sections */
 .np-panel {
   background: var(--np-surface);
-  border: 1px solid var(--np-slate-300);
+  border: 1px solid var(--np-color-border);
   border-radius: var(--np-radius);
 }
 
 .np-panel-header {
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--np-slate-200);
   display: flex;
   align-items: center;
@@ -328,25 +402,25 @@ textarea:focus {
 
 .np-panel-header h2,
 .np-panel-header h3 {
-  font-size: 14px;
+  font-size: var(--np-type-section);
   font-weight: 700;
   color: var(--np-navy-900);
 }
 
 .np-panel-body {
-  padding: 16px;
+  padding: 20px;
 }
 
 /* Empty State Primitives */
 .np-empty-state {
-  padding: 36px 20px;
+  padding: 40px 24px;
   text-align: center;
   color: var(--np-slate-500);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .np-empty-state h3 {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--np-slate-700);
   margin-bottom: 6px;
@@ -369,4 +443,13 @@ textarea:focus {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+@media (max-width: 600px) {
+  :root { --np-control-height: 44px; }
+  body { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

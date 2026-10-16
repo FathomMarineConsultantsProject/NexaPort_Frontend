@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { scopeHtml, scopeMarkdown } from "./scopeFormatting";
 import "./RequestEnhancements.css";
 
-export default function ScopeEditor({ value = "", onChange, placeholder = "Write your scope of work...", disabled = false, required = false }) {
+export default function ScopeEditor({ value = "", onChange, placeholder = "Write your scope of work...", disabled = false, required = false, error = "" }) {
   const editor = useRef(null);
   const lastValue = useRef(null);
   useLayoutEffect(() => {
@@ -16,7 +16,7 @@ export default function ScopeEditor({ value = "", onChange, placeholder = "Write
     lastValue.current = text;
     onChange(text);
   };
-  return <div ref={editor} className="scope-editor" role="textbox" aria-label="Scope of Work" aria-multiline="true" aria-required={required} aria-disabled={disabled} contentEditable={!disabled} suppressContentEditableWarning data-placeholder={placeholder}
+  return <div ref={editor} className="scope-editor" role="textbox" aria-label="Scope of Work" aria-multiline="true" aria-required={required} aria-invalid={Boolean(error)} aria-describedby={error ? "request-scope-error" : undefined} aria-disabled={disabled} contentEditable={!disabled} suppressContentEditableWarning data-placeholder={placeholder}
     onInput={update}
     onBlur={() => { editor.current.innerHTML = scopeHtml(lastValue.current || ""); }}
     onPaste={(event) => {

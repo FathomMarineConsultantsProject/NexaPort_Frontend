@@ -324,9 +324,10 @@ test("directory typography is sans-serif and pages use a white background", () =
   assert.match(css, /\.md-page,[\s\S]*?\.md-detail-page,[\s\S]*?\.md-form\s*\{[^}]*background:\s*#fff/s);
 });
 
-test("detail navigation is a state-driven accessible tab system", () => {
+test("detail navigation is a URL-backed accessible tab system", () => {
   const source = readFileSync(join(projectRoot, "src", "pages", "MaritimeDirectoryDetails.jsx"), "utf8");
-  assert.match(source, /useState\(\{ entityId, section: "overview" \}\)/);
+  assert.match(source, /useSearchParams\(\)/);
+  assert.match(source, /searchParams\.get\("section"\)/);
   assert.match(source, /role="tablist"/);
   assert.match(source, /role="tab"/);
   assert.match(source, /aria-selected=\{selectedSection === section\}/);

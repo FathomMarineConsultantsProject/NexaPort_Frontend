@@ -105,6 +105,8 @@ export default function ExpertProfile() {
   const { id } = useParams();
 
   const [expert, setExpert] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState("");
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewError, setReviewError] = useState("");
@@ -135,6 +137,7 @@ export default function ExpertProfile() {
     base_location: "",
     country: "",
     years_experience: "",
+    day_rate_usd: "",
     availability: "available",
     is_premium: false,
 
@@ -159,6 +162,8 @@ export default function ExpertProfile() {
   });
 
   const loadPage = useCallback(async () => {
+    setProfileLoading(true);
+    setProfileError("");
     try {
       const [expertRes, reviewRes] = await Promise.all([
         getExpertById(id),
@@ -173,6 +178,7 @@ export default function ExpertProfile() {
         base_location: expertRes.data.base_location || "",
         country: expertRes.data.country || "",
         years_experience: expertRes.data.years_experience || "",
+        day_rate_usd: expertRes.data.day_rate_usd ?? "",
         availability: expertRes.data.availability || "available",
         is_premium: Boolean(expertRes.data.is_premium),
 
@@ -194,6 +200,9 @@ export default function ExpertProfile() {
     } catch (error) {
       console.error("Failed loading consultant profile:", error);
       setExpert(null);
+      setProfileError(error.response?.data?.message || "Consultant profile could not be loaded. Try again.");
+    } finally {
+      setProfileLoading(false);
     }
   }, [id]);
 
@@ -354,6 +363,7 @@ export default function ExpertProfile() {
             is_active: editForm.user_is_active,
           },
           flag_services: editForm.flag_services,
+          expert: { day_rate_usd: editForm.day_rate_usd === "" ? null : Number(editForm.day_rate_usd) },
         });
       }
       const profileResponse = await updateExpert(expert.id, profilePayload);
@@ -480,7 +490,7 @@ export default function ExpertProfile() {
   };
 
   if (!expert) {
-    return <div className="expert-profile-page">Loading...</div>;
+    return <main className="expert-profile-page"><div className="expert-profile-state" role={profileLoading ? "status" : "alert"}>{profileLoading ? "Loading consultant profile…" : <><strong>Profile unavailable</strong><p>{profileError}</p><button type="button" onClick={loadPage}>Try again</button></>}</div></main>;
   }
 
   const currentUser = getStoredUser();
@@ -931,6 +941,7 @@ export default function ExpertProfile() {
             </label>
 
             {isSuperAdmin() && <><label>Account Email<input type="email" value={editForm.user_email} onChange={(e) => setEditForm({...editForm,user_email:e.target.value})}/></label><label>Account Phone<input value={editForm.user_phone} onChange={(e) => setEditForm({...editForm,user_phone:e.target.value})}/></label><label className="profile-active-check"><input type="checkbox" checked={editForm.user_is_active} onChange={(e) => setEditForm({...editForm,user_is_active:e.target.checked})}/> Active account</label></>}
+            {isSuperAdmin() && <label>Profile day rate · USD per day<input type="number" min="0" max="9999999" step="0.01" value={editForm.day_rate_usd} onChange={(e) => setEditForm({ ...editForm, day_rate_usd: e.target.value })}/><small>Profile reference only. Existing quotations and invoices keep their submitted amounts.</small></label>}
 
             <label>
               Availability

@@ -19,8 +19,11 @@
   padding: 48px 0;
   text-align: center;
   color: var(--company-muted);
-  font-size: 13px;
+  font-size: 15px;
 }
+.company-workspace__loading h1 { margin: 0 0 10px; color: var(--company-ink); font-size: 24px; }
+.company-workspace__loading p { margin: 0 0 16px; }
+.company-workspace__loading button { min-height: 44px; border: 1px solid var(--company-teal); border-radius: var(--np-radius); padding: 0 16px; background: var(--np-surface); color: var(--company-teal); font: 600 14px var(--np-font-sans); cursor: pointer; }
 
 .company-workspace__hero {
   display: flex;
@@ -34,7 +37,7 @@
 
 .company-workspace__hero > div > small {
   color: var(--company-teal);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -51,7 +54,7 @@
 .company-workspace__hero p {
   margin: 4px 0 0;
   color: var(--company-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .company-status {
@@ -78,14 +81,14 @@
 }
 
 .company-status small {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 700;
 }
 
 .company-status strong {
-  font-size: 12px;
+  font-size: 14px;
   text-transform: capitalize;
   font-weight: 700;
 }
@@ -106,10 +109,13 @@
 
 .company-workspace__nav a {
   flex: 0 0 auto;
-  padding: 6px 10px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
   border-radius: var(--np-radius-sm, 3px);
   color: var(--np-slate-600, #475569);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.12s ease, color 0.12s ease;
@@ -133,7 +139,7 @@
   border-radius: var(--np-radius, 4px);
   background: var(--np-amber-50, #fffbeb);
   color: var(--np-amber-800, #92400e);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -144,7 +150,7 @@
   border-radius: var(--np-radius, 4px);
   background: var(--np-green-50, #f0fdf4);
   color: var(--np-green-800, #166534);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .company-workspace__form {
@@ -188,7 +194,7 @@
 .company-section-head p {
   margin: 0;
   color: var(--company-muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .company-type-select-row {
@@ -207,7 +213,7 @@
   border-radius: var(--np-radius, 4px);
   background: var(--np-surface, #ffffff);
   color: var(--np-slate-700, #334155);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.12s ease, background 0.12s ease;
@@ -238,7 +244,7 @@
 .company-workspace .company-form-grid label,
 .company-workspace .company-repeatable__fields label {
   color: var(--company-muted);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -250,7 +256,7 @@
   border: 1px solid var(--company-line);
   border-radius: var(--np-radius, 4px);
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .company-workspace .company-form-grid input:focus,
@@ -287,7 +293,7 @@
 
 .company-repeatable__empty {
   padding: 6px 0 2px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .company-repeatable__row {
@@ -299,27 +305,31 @@
   bottom: 0;
   z-index: 15;
   display: flex;
-  justify-content: flex-end;
-  padding: 10px 0;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
   border-top: 1px solid var(--company-line);
   background: rgba(241, 245, 249, 0.95);
 }
+.company-workspace__actions span { color: var(--company-muted); font-size: 14px; }
 
 .company-workspace__actions button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 16px;
   border: 1px solid var(--np-navy-900, #0f172a);
   border-radius: var(--np-radius, 4px);
   background: var(--np-navy-900, #0f172a);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease;
 }
+.company-workspace :is(button, input, textarea, select):focus-visible { outline: 2px solid var(--company-teal); outline-offset: 2px; }
 
 .company-workspace__actions button:hover:not(:disabled) {
   background: var(--np-navy-800, #1e293b);

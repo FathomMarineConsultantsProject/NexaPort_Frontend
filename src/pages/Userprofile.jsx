@@ -1,15 +1,4 @@
-import {
-  Anchor,
-  Briefcase,
-  Edit3,
-  LogOut,
-  Mail,
-  Phone,
-  Save,
-  Shield,
-  User,
-  X,
-} from "lucide-react";
+import { Anchor, Briefcase, Edit3, LogOut, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyProfile, updateMyProfile } from "../api/userApi";
@@ -17,190 +6,61 @@ import ConsultantAvatar from "../components/experts/ConsultantAvatar";
 import { cacheConsultantPhoto } from "../utils/consultantPhotoCache";
 import "./UserProfile.css";
 
+const editFields = [
+  ["full_name", "Full name", "text"],
+  ["username", "Username", "text"],
+  ["phone", "Phone", "tel"],
+  ["profile_image", "Profile image URL", "text"],
+];
+
 export default function UserProfile() {
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [edit, setEdit] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    full_name: "",
-    username: "",
-    phone: "",
-    profile_image: "",
-  });
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [form, setForm] = useState({ full_name: "", username: "", phone: "", profile_image: "" });
 
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const res = await getMyProfile();
-        const data = res.data;
-
-        setUser(data);
-        cacheConsultantPhoto(data);
-        localStorage.setItem("np_user", JSON.stringify(data));
-
-        setForm({
-          full_name: data.full_name || "",
-          username: data.username || "",
-          phone: data.phone || "",
-          profile_image: data.profile_image || "",
-        });
-      } catch {
-        navigate("/login");
-      }
-    };
-
-    loadProfile();
+    let active = true;
+    getMyProfile().then((response) => {
+      if (!active) return;
+      const data = response.data;
+      setUser(data);
+      cacheConsultantPhoto(data);
+      localStorage.setItem("np_user", JSON.stringify(data));
+      setForm({ full_name: data.full_name || "", username: data.username || "", phone: data.phone || "", profile_image: data.profile_image || "" });
+    }).catch(() => { if (active) navigate("/login"); });
+    return () => { active = false; };
   }, [navigate]);
 
-  const handleSave = async () => {
+  const handleSave = async (event) => {
+    event.preventDefault();
+    setSaving(true); setError(""); setNotice("");
     try {
-      setSaving(true);
-
-      const res = await updateMyProfile({
-        full_name: form.full_name,
-        username: form.username,
-        phone: form.phone,
-        profile_image: form.profile_image || null,
-      });
-
-      const updatedUser = {
-        ...res.data,
-        expert_id: user.expert_id,
-        photo_url: user.photo_url,
-        photo_expires_at: user.photo_expires_at,
-      };
-      setUser(updatedUser);
-      localStorage.setItem("np_user", JSON.stringify(updatedUser));
+      const response = await updateMyProfile({ full_name: form.full_name, username: form.username, phone: form.phone, profile_image: form.profile_image || null });
+      const updated = { ...response.data, expert_id: user.expert_id, photo_url: user.photo_url, photo_expires_at: user.photo_expires_at };
+      setUser(updated);
+      localStorage.setItem("np_user", JSON.stringify(updated));
       setEdit(false);
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to update profile");
-    } finally {
-      setSaving(false);
-    }
+      setNotice("Account details saved.");
+    } catch (requestError) { setError(requestError.response?.data?.message || "Account details could not be saved. Review the fields and try again."); }
+    finally { setSaving(false); }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("np_token");
-    localStorage.removeItem("np_user");
-    navigate("/login");
-  };
-
-  if (!user) return null;
+  const handleLogout = () => { localStorage.removeItem("np_token"); localStorage.removeItem("np_user"); navigate("/login"); };
+  if (!user) return <main className="profile-page-wrap"><div className="profile-page-inner" role="status">Loading profile…</div></main>;
 
   const roleLabel = user.role_name || (user.role_id === 2 ? "Expert" : "Client");
-  const roleIcon = user.role_id === 2 ? <Anchor size={16} /> : <Briefcase size={16} />;
+  const memberSince = user.created_at ? new Intl.DateTimeFormat(undefined, { day: "numeric", month: "long", year: "numeric" }).format(new Date(user.created_at)) : "Not provided";
+  const details = [["Full name", user.full_name], ["Email", user.email], ["Username", user.username ? `@${user.username}` : null], ["Phone", user.phone], ["Role", roleLabel], ["Member since", memberSince]];
 
-  return (
-    <div className="profile-page-wrap">
-      <div className="profile-page-inner">
-        <div className="uprofile-head">
-          <ConsultantAvatar
-            className="uprofile-avatar"
-            photoUrl={user.photo_url}
-            name={user.full_name}
-            fallback="U"
-          />
-
-          <div className="uprofile-head-main">
-            <h1 className="uprofile-name">{user.full_name}</h1>
-            <div className="uprofile-role">
-              {roleIcon}
-              {roleLabel}
-            </div>
-          </div>
-
-          <button className="uprofile-edit-btn" onClick={() => setEdit(!edit)}>
-            {edit ? <X size={16} /> : <Edit3 size={16} />}
-            {edit ? "Cancel" : "Edit"}
-          </button>
-        </div>
-
-        <div className="uprofile-card">
-          <h2 className="uprofile-card-title">
-            <User size={18} /> Account Details
-          </h2>
-
-          {edit ? (
-            <div className="uprofile-form">
-              <label>
-                Full Name
-                <input
-                  value={form.full_name}
-                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                />
-              </label>
-
-              <label>
-                Username
-                <input
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                />
-              </label>
-
-              <label>
-                Phone
-                <input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
-              </label>
-
-              <label>
-                Profile Image URL
-                <input
-                  value={form.profile_image}
-                  onChange={(e) => setForm({ ...form, profile_image: e.target.value })}
-                />
-              </label>
-
-              <button className="uprofile-save-btn" onClick={handleSave} disabled={saving}>
-                <Save size={16} />
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
-          ) : (
-            <div className="uprofile-rows">
-              <InfoRow icon={<User size={14} />} label="Full Name" value={user.full_name} />
-              <InfoRow icon={<Mail size={14} />} label="Email" value={user.email} />
-              <InfoRow icon={<User size={14} />} label="Username" value={`@${user.username}`} />
-              <InfoRow icon={<Phone size={14} />} label="Phone" value={user.phone || "—"} />
-              <InfoRow icon={<Shield size={14} />} label="Role" value={roleLabel} />
-              <InfoRow
-                icon={<Anchor size={14} />}
-                label="Member Since"
-                value={
-                  user.created_at
-                    ? new Date(user.created_at).toLocaleDateString("en-US", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
-                    : "—"
-                }
-              />
-            </div>
-          )}
-        </div>
-
-        <button className="uprofile-logout-btn" onClick={handleLogout}>
-          <LogOut size={17} />
-          Sign Out
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ icon, label, value }) {
-  return (
-    <div className="uprofile-row">
-      <span className="uprofile-row-label">
-        {icon} {label}
-      </span>
-      <span className="uprofile-row-value">{value}</span>
-    </div>
-  );
+  return <main className="profile-page-wrap"><div className="profile-page-inner">
+    <header className="uprofile-head"><ConsultantAvatar className="uprofile-avatar" photoUrl={user.photo_url} name={user.full_name} fallback="U" /><div className="uprofile-head-main"><span className="uprofile-kicker">Account / Profile</span><h1 className="uprofile-name">{user.full_name}</h1><span className="uprofile-role">{user.role_id === 2 ? <Anchor size={15} aria-hidden="true" /> : <Briefcase size={15} aria-hidden="true" />}{roleLabel}</span></div><button type="button" className="uprofile-edit-btn" onClick={() => { setEdit((current) => !current); setError(""); setNotice(""); }}><span aria-hidden="true">{edit ? <X size={17} /> : <Edit3 size={17} />}</span>{edit ? "Cancel Editing" : "Edit Profile"}</button></header>
+    {error && <div className="uprofile-message error" role="alert">{error}</div>}{notice && <div className="uprofile-message success" role="status">{notice}</div>}
+    <div className="uprofile-layout"><section className="uprofile-card"><div className="uprofile-card-heading"><h2>{edit ? "Edit Account Details" : "Account Details"}</h2><p>{edit ? "Update the details displayed on your Nexaport account." : "Your identity and contact information."}</p></div>
+      {edit ? <form className="uprofile-form" onSubmit={handleSave}><div className="uprofile-form-grid">{editFields.map(([key, label, type]) => <label key={key}>{label}<input type={type} value={form[key]} onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))} autoComplete={key === "full_name" ? "name" : key === "phone" ? "tel" : "off"} /></label>)}</div><div className="uprofile-form-actions"><button type="submit" className="uprofile-save-btn" disabled={saving}><Save size={16} aria-hidden="true" />{saving ? "Saving…" : "Save Changes"}</button><button type="button" className="uprofile-cancel-btn" onClick={() => setEdit(false)}>Cancel</button></div></form> : <dl className="uprofile-rows">{details.map(([label, value]) => <div className="uprofile-row" key={label}><dt>{label}</dt><dd>{value || "Not provided"}</dd></div>)}</dl>}
+    </section><aside className="uprofile-side"><h2>Account Access</h2><p>Signing out ends this session on this device.</p><button type="button" className="uprofile-logout-btn" onClick={handleLogout}><LogOut size={17} aria-hidden="true" /> Sign Out</button></aside></div>
+  </div></main>;
 }

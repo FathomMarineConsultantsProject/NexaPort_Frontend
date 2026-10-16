@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { flagLabel, flagMatches } from "../src/utils/vesselFlagSearch.js";
 
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -11,7 +12,8 @@ test("Vessels navigation retains legacy Fleet and directory routes", async () =>
   assert.match(app, /path="\/vessel-directory" element={<AdminOnly><LegacyVesselsRedirect view="directory"/);
   assert.match(app, /params\.set\("view", view\)/);
   assert.match(app, /path="\/vessel-directory\/:id" element={<AdminOnly><VesselDirectoryDetail/);
-  assert.match(nav, /to="\/vessels"[\s\S]*?Vessels/);
+  assert.match(nav, /getNavigationDirectoryGroups\(roleId\)/);
+  assert.match(directories, /path: "\/vessels\?view=fleet"/);
   assert.match(directories, /path: "\/vessels\?view=directory"/);
 });
 
@@ -29,7 +31,7 @@ test("global cards reuse Fleet grid and link only to global details", async () =
 
 test("flag suggestions and global search apply through paginated API with stale request protection", async () => {
   const page = await source("../src/pages/VesselDirectory.jsx");
-  assert.match(page, /normalize\(item\)\.startsWith\(term\)/);
+  assert.match(page, /flagMatches\(item, flagInput\)/);
   assert.match(page, /onClick=\{\(\) => selectFlag\(item\)\}/);
   assert.match(page, /ArrowDown/);
   assert.match(page, /Escape/);
@@ -40,4 +42,12 @@ test("flag suggestions and global search apply through paginated API with stale 
   assert.match(page, /Loading vessels\.\.\./);
   assert.match(page, /Clear flag/);
   assert.match(page, /Retry/);
+});
+
+test("flag code and country name suggestions retain the exact API filter value", () => {
+  assert.equal(flagLabel("IND"), "India (IND)");
+  assert.equal(flagMatches("IND", "ind"), true);
+  assert.equal(flagMatches("IND", "India"), true);
+  assert.equal(flagMatches("India", "IND"), true);
+  assert.equal(flagMatches("Panama", "IND"), false);
 });

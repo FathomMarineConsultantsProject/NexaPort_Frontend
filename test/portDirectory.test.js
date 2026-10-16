@@ -43,7 +43,7 @@ test("directory uses server pagination, debounced search and detail navigation",
   const directory = await source("../src/pages/PortDirectory.jsx");
   assert.match(directory, /setTimeout[\s\S]+350/);
   assert.match(directory, /getPorts\(\{ search: debouncedSearch[\s\S]+page, limit/);
-  assert.match(directory, /navigate\(`\/ports\/\$\{port\.id\}`\)/);
+  assert.match(directory, /<Link[^>]+to=\{`\/ports\/\$\{port\.id\}`\}/);
   assert.match(directory, /Showing \$\{start\}–\$\{end\} of \$\{pagination\.total\}/);
 });
 

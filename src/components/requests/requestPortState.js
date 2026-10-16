@@ -9,7 +9,7 @@ export const selectionPatch = (ports, requestedPrimary) => {
   return { ports: selected.map((p) => ({ ...p, isPrimary: p === primary })), portIds: selected.map(canonicalPortId),
     primaryPortId: primary ? canonicalPortId(primary) : null, portId: primary ? canonicalPortId(primary) : null, portName: primary?.port_name || "" };
 };
-export const requestPortPayload = (form) => Object.hasOwn(form, "portIds") || form.ports?.length
+export const requestPortPayload = (form) => !form.manualPort && (Array.isArray(form.portIds) || form.ports?.length)
   ? { portIds: form.portIds || form.ports.map(canonicalPortId), primaryPortId: form.primaryPortId ?? form.portId ?? form.ports?.find((p) => p.isPrimary)?.id ?? form.ports?.[0]?.id ?? null,
     confirmPrimaryPortChange: form.confirmPrimaryPortChange === true }
   : {};

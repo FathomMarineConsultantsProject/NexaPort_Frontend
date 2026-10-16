@@ -44,7 +44,7 @@
   max-width: 490px;
   margin: 0 auto 28px;
   color: var(--np-slate-500, #64748b);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -86,13 +86,13 @@
   color: var(--np-teal-700, #0f766e);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
 }
 
 .company-onboarding header h1 {
   margin: 4px 0 6px;
-  font-size: 22px;
+  font-size: clamp(27px, 2.8vw, 34px);
   font-weight: 700;
   color: var(--np-navy-900, #0f172a);
 }
@@ -100,7 +100,7 @@
 .company-onboarding header p {
   margin: 0 0 22px;
   color: var(--np-slate-600, #475569);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.5;
 }
 

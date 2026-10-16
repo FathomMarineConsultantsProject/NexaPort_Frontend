@@ -1,21 +1,24 @@
 import { Link } from "react-router-dom";
 
-export function DashboardKpiCard({ label, value, note, priority = false }) {
-  return (
-    <div className={`dashboard-kpi${priority ? " dashboard-kpi--priority" : ""}`}>
+export function DashboardKpiCard({ label, value, note, priority = false, href }) {
+  const className = `dashboard-kpi${priority ? " dashboard-kpi--priority" : ""}${href ? " dashboard-kpi--link" : ""}`;
+  const content = (
+    <>
       <span className="dashboard-kpi__label">{label}</span>
       <strong className="dashboard-kpi__value tabular-nums">{value ?? 0}</strong>
       {note && <span className="dashboard-kpi__note">{note}</span>}
-    </div>
+      {href && <span className="dashboard-kpi__destination">Open queue <span aria-hidden="true">→</span></span>}
+    </>
   );
+  return href ? <Link className={className} to={href}>{content}</Link> : <div className={className}>{content}</div>;
 }
 
-export function DashboardSection({ title, description, children, urgent = false, action }) {
+export function DashboardSection({ title, description, children, urgent = false, action, count }) {
   return (
     <section className={`dashboard-section${urgent ? " dashboard-section--urgent" : ""}`}>
       <header className="dashboard-section__header">
         <div>
-          <h2>{title}</h2>
+          <h2>{title}{count !== undefined && <span className="dashboard-section__count tabular-nums">{count}</span>}</h2>
           {description && <p>{description}</p>}
         </div>
         {action}
@@ -40,7 +43,7 @@ export function DashboardStatus({ value }) {
 }
 
 export function DashboardEmptyState({ children }) {
-  return <div className="dashboard-empty">{children}</div>;
+  return <div className="dashboard-empty"><strong>Nothing to show yet</strong><span>{children}</span></div>;
 }
 
 export function DashboardTable({ columns, rows, getRowHref, emptyMessage }) {
@@ -50,13 +53,13 @@ export function DashboardTable({ columns, rows, getRowHref, emptyMessage }) {
     <div className="dashboard-table-wrap">
       <table className="dashboard-table">
         <thead>
-          <tr>{columns.map((column) => <th key={column.key}>{column.label}</th>)}</tr>
+          <tr>{columns.map((column) => <th key={column.key} scope="col" className={column.className || ""}>{column.label}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((row) => {
             const href = getRowHref?.(row);
             return (
-              <tr key={row.id}>
+              <tr key={row.id || row.service_request_id}>
                 {columns.map((column) => (
                   <td key={column.key} data-label={column.label} className={column.className || ""}>
                     {href && column.primary
@@ -75,7 +78,7 @@ export function DashboardTable({ columns, rows, getRowHref, emptyMessage }) {
 
 export function DashboardError({ onRetry }) {
   return (
-    <div className="dashboard-error" role="alert">
+    <div className="dashboard-error np-feedback np-feedback--error" role="alert">
       <strong>Dashboard data is unavailable.</strong>
       <span>Check your connection and try again.</span>
       <button type="button" onClick={onRetry}>Retry</button>
@@ -84,15 +87,5 @@ export function DashboardError({ onRetry }) {
 }
 
 export function DashboardLoading() {
-  return (
-    <div className="dashboard-loading" aria-live="polite" aria-label="Loading operational data">
-      <div className="dashboard-loading__header" />
-      <div className="dashboard-loading__metrics">
-        <span /><span /><span /><span />
-      </div>
-      <div className="dashboard-loading__rows">
-        <span /><span /><span />
-      </div>
-    </div>
-  );
+  return <div className="dashboard-loading" role="status">Loading operational data…</div>;
 }

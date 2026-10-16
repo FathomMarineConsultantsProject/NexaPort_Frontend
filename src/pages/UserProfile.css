@@ -1,272 +1,38 @@
-/* ============================================================
-   USER PROFILE — NexaPort
-   Professional maritime personnel record
-============================================================ */
-
-.profile-page-wrap {
-  min-height: calc(100vh - 110px);
-  background: var(--np-ground, #f1f5f9);
-  padding: 28px 20px 48px;
-  display: flex;
-  justify-content: center;
-  font-family: var(--np-font-sans);
-}
-
-.profile-page-inner {
-  width: 100%;
-  max-width: 720px;
-}
-
-/* Header */
-.uprofile-head {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.uprofile-head-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.uprofile-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--np-radius, 4px);
-  background: var(--np-navy-900, #0f172a);
-  color: var(--np-teal-700, #0f766e);
-  font-size: 22px;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  border: 1px solid var(--np-slate-300, #cbd5e1);
-  overflow: hidden;
-}
-
-.uprofile-name {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--np-navy-900, #0f172a);
-  margin: 0 0 6px;
-  letter-spacing: -0.4px;
-  line-height: 1.2;
-}
-
-.uprofile-role {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 8px;
-  background: var(--np-teal-50, #f0fdfa);
-  border: 1px solid var(--np-teal-200, #99f6e4);
-  border-radius: var(--np-radius-sm, 3px);
-  color: var(--np-teal-700, #0f766e);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.uprofile-edit-btn {
-  min-height: 36px;
-  border: 1px solid var(--np-slate-300, #cbd5e1);
-  border-radius: var(--np-radius, 4px);
-  background: var(--np-surface, #ffffff);
-  color: var(--np-navy-900, #0f172a);
-  padding: 0 14px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-
-.uprofile-edit-btn:hover {
-  background: var(--np-slate-50, #f8fafc);
-  border-color: var(--np-slate-400, #94a3b8);
-}
-
-/* Card */
-.uprofile-card {
-  background: var(--np-surface, #ffffff);
-  border: 1px solid var(--np-slate-300, #cbd5e1);
-  border-radius: var(--np-radius, 4px);
-  padding: 20px 24px;
-  box-shadow: var(--np-shadow-card, 0 1px 3px rgba(15, 23, 42, 0.08));
-  margin-bottom: 18px;
-}
-
-.uprofile-card-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--np-navy-900, #0f172a);
-  margin: 0 0 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--np-slate-200, #e2e8f0);
-}
-
-.uprofile-card-title svg {
-  color: var(--np-teal-700, #0f766e);
-}
-
-.uprofile-rows {
-  display: flex;
-  flex-direction: column;
-}
-
-.uprofile-row {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 16px;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--np-slate-100, #f1f5f9);
-}
-
-.uprofile-row:last-child {
-  border-bottom: none;
-}
-
-.uprofile-row-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--np-slate-500, #64748b);
-}
-
-.uprofile-row-label svg {
-  color: var(--np-slate-400, #94a3b8);
-}
-
-.uprofile-row-value {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--np-navy-900, #0f172a);
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-
-/* Edit form */
-.uprofile-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.uprofile-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  color: var(--np-slate-600, #475569);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.uprofile-form input {
-  height: 38px;
-  border: 1px solid var(--np-slate-300, #cbd5e1);
-  border-radius: var(--np-radius, 4px);
-  background: var(--np-surface, #ffffff);
-  color: var(--np-navy-900, #0f172a);
-  padding: 0 12px;
-  font-family: inherit;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.uprofile-form input:focus {
-  border-color: var(--np-blue-600, #0284c7);
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
-}
-
-.uprofile-save-btn {
-  min-height: 38px;
-  border: 1px solid var(--np-navy-900, #0f172a);
-  border-radius: var(--np-radius, 4px);
-  background: var(--np-navy-900, #0f172a);
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.uprofile-save-btn:hover {
-  background: var(--np-navy-800, #1e293b);
-}
-
-/* Logout button */
-.uprofile-logout-btn {
-  width: 100%;
-  min-height: 38px;
-  border: 1px solid var(--np-red-200, #fecaca);
-  border-radius: var(--np-radius, 4px);
-  background: var(--np-red-50, #fef2f2);
-  color: var(--np-red-800, #991b1b);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.uprofile-logout-btn:hover {
-  background: #fee2e2;
-}
-
-@media (max-width: 640px) {
-  .uprofile-head {
-    align-items: flex-start;
-  }
-
-  .uprofile-row {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .uprofile-row-value {
-    text-align: left;
-  }
-}
-
-.uprofile-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.uprofile-save-btn {
-  width: 100%;
-}
-
-@media (max-width: 640px) {
-  .uprofile-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
+.profile-page-wrap { min-height: calc(100vh - 110px); padding: clamp(20px, 3vw, 44px); background: var(--np-ground); color: var(--np-color-text); font-family: var(--np-font-sans); }
+.profile-page-inner { max-width: 1120px; margin: 0 auto; }
+.uprofile-head { display: flex; align-items: center; gap: 20px; margin-bottom: 28px; padding-bottom: 24px; border-bottom: var(--np-border); }
+.uprofile-avatar { display: grid; place-items: center; flex: 0 0 72px; width: 72px; height: 72px; overflow: hidden; border-radius: var(--np-radius-md); background: var(--np-navy-900); color: #fff; font-size: 26px; font-weight: 700; }
+.uprofile-head-main { flex: 1; min-width: 0; }
+.uprofile-kicker { display: block; margin-bottom: 4px; color: var(--np-teal-700); font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.uprofile-name { margin: 0 0 8px; color: var(--np-navy-900); font-size: clamp(27px, 3vw, 36px); line-height: 1.2; overflow-wrap: anywhere; text-wrap: balance; }
+.uprofile-role { display: inline-flex; align-items: center; gap: 7px; color: var(--np-teal-800); font-size: 14px; font-weight: 600; }
+.uprofile-edit-btn, .uprofile-cancel-btn, .uprofile-save-btn, .uprofile-logout-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: var(--np-radius); padding: 0 16px; font: 600 14px var(--np-font-sans); cursor: pointer; }
+.uprofile-edit-btn, .uprofile-cancel-btn { border: var(--np-border); background: var(--np-surface); color: var(--np-navy-900); }
+.uprofile-edit-btn:hover, .uprofile-cancel-btn:hover { border-color: var(--np-teal-700); color: var(--np-teal-800); }
+.uprofile-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; align-items: start; gap: 20px; }
+.uprofile-card, .uprofile-side { border: var(--np-border); border-radius: var(--np-radius-md); background: var(--np-surface); }
+.uprofile-card { min-width: 0; padding: clamp(20px, 2.5vw, 30px); }
+.uprofile-card-heading { margin-bottom: 20px; padding-bottom: 18px; border-bottom: var(--np-border-subtle); }
+.uprofile-card-heading h2, .uprofile-side h2 { margin: 0 0 6px; color: var(--np-navy-900); font-size: 20px; }
+.uprofile-card-heading p, .uprofile-side p { margin: 0; color: var(--np-color-text-muted); font-size: 14px; line-height: 1.5; }
+.uprofile-rows { margin: 0; }
+.uprofile-row { display: grid; grid-template-columns: minmax(130px, .4fr) minmax(0, 1fr); gap: 18px; padding: 14px 0; border-bottom: var(--np-border-subtle); }
+.uprofile-row:last-child { border-bottom: 0; }
+.uprofile-row dt { color: var(--np-color-text-muted); font-size: 14px; }
+.uprofile-row dd { margin: 0; color: var(--np-navy-900); font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.uprofile-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.uprofile-form label { display: grid; gap: 7px; color: var(--np-navy-800); font-size: 14px; font-weight: 600; }
+.uprofile-form input { width: 100%; min-height: 44px; border: var(--np-border); border-radius: var(--np-radius); padding: 10px 12px; background: var(--np-surface); color: var(--np-navy-900); font: 400 15px var(--np-font-sans); }
+.uprofile-form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: var(--np-border-subtle); }
+.uprofile-save-btn { border: 1px solid var(--np-navy-900); background: var(--np-navy-900); color: #fff; }
+.uprofile-save-btn:hover { background: var(--np-navy-800); }
+.uprofile-save-btn:disabled { opacity: .6; cursor: wait; }
+.uprofile-side { display: grid; gap: 12px; padding: 22px; }
+.uprofile-logout-btn { justify-self: start; border: 1px solid var(--np-red-200); background: var(--np-red-50); color: var(--np-red-800); }
+.uprofile-logout-btn:hover { border-color: var(--np-red-800); }
+.uprofile-message { margin-bottom: 18px; border: var(--np-border); border-radius: var(--np-radius); padding: 12px 16px; font-size: 14px; }
+.uprofile-message.error { border-color: var(--np-red-200); background: var(--np-red-50); color: var(--np-red-800); }
+.uprofile-message.success { background: var(--np-teal-50); color: var(--np-teal-800); }
+.profile-page-wrap :is(button, input):focus-visible { outline: 2px solid var(--np-teal-700); outline-offset: 2px; }
+@media (max-width: 760px) { .uprofile-layout { grid-template-columns: 1fr; } .uprofile-side { order: 2; } }
+@media (max-width: 540px) { .uprofile-head { flex-wrap: wrap; } .uprofile-edit-btn { width: 100%; } .uprofile-form-grid, .uprofile-row { grid-template-columns: 1fr; } .uprofile-row { gap: 4px; } .uprofile-form-actions > button { flex: 1; } }

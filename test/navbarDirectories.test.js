@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   ADMIN_DIRECTORIES,
   ADMIN_DIRECTORY_GROUPS,
+  getNavigationDirectoryGroups,
 } from "../src/config/adminDirectories.js";
 
 const expectedDirectories = [
@@ -16,6 +17,7 @@ const expectedDirectories = [
   ["Accredited Inspectors", "/surveyors?category=Accredited%20Inspectors"],
   ["Appointed Surveyors", "/surveyors?category=Appointed%20Surveyors"],
   ["Owners & Managers", "/owners-managers"],
+  ["Vessels", "/vessels?view=directory"],
   ["Service Providers", "/service-providers"],
   ["Ship Agents", "/ship-agents"],
   ["Suppliers", "/suppliers"],
@@ -32,6 +34,16 @@ test("groups human directory discovery under Surveyors and leaves company direct
     ADMIN_DIRECTORIES.map(({ label, path }) => [label, path]),
     expectedDirectories
   );
+});
+
+test("navigation groups contain only role-authorized destinations", () => {
+  const paths = (role) => getNavigationDirectoryGroups(role).flatMap((group) => group.items.map((item) => item.path));
+  assert.ok(paths(1).includes("/vessels?view=directory"));
+  assert.ok(paths(3).includes("/vessels?view=fleet"));
+  assert.ok(paths(3).includes("/ports"));
+  assert.ok(paths(3).every((path) => !path.startsWith("/surveyors") && !path.startsWith("/experts")));
+  assert.deepEqual(paths(2).filter((path) => path.startsWith("/experts")), ["/experts"]);
+  assert.ok(paths(2).every((path) => !path.startsWith("/vessels") && !path.startsWith("/surveyors")));
 });
 
 test("keeps desktop and mobile directory menus closed initially", async () => {

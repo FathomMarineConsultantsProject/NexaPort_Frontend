@@ -82,10 +82,9 @@ export default function Auth() {
         {/* Card */}
         <div className={`auth-card ${tab === "register" ? "auth-card--register" : ""}`}>
           {/* Tab switcher */}
-          <div className="auth-tabs" role="tablist" aria-label="Authentication">
+          <div className="auth-tabs" role="group" aria-label="Account access">
             <button
-              role="tab"
-              aria-selected={tab === "login"}
+              aria-pressed={tab === "login"}
               className={`auth-tab${tab === "login" ? " auth-tab--active" : ""}`}
               onClick={() => { setTab("login"); setError(""); }}
               type="button"
@@ -93,8 +92,7 @@ export default function Auth() {
               Sign In
             </button>
             <button
-              role="tab"
-              aria-selected={tab === "register"}
+              aria-pressed={tab === "register"}
               className={`auth-tab${tab === "register" ? " auth-tab--active" : ""}`}
               onClick={() => { setTab("register"); setError(""); }}
               type="button"
@@ -122,7 +120,6 @@ export default function Auth() {
                     value={loginForm.identifier}
                     onChange={(e) => setLoginForm({ ...loginForm, identifier: e.target.value })}
                     autoComplete="username"
-                    autoFocus
                     placeholder="you@company.com"
                   />
                 </div>
@@ -144,7 +141,6 @@ export default function Auth() {
                       className="auth-password-toggle"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                       onClick={() => setShowPassword((v) => !v)}
-                      tabIndex={-1}
                     >
                       {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>

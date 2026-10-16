@@ -1,8 +1,8 @@
 .appointed-page {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 30px 36px 48px;
-  color: #10233f;
+  padding: clamp(20px, 3vw, 44px);
+  color: var(--np-color-text);
 }
 
 .appointed-heading {
@@ -11,8 +11,8 @@
 
 .appointed-eyebrow,
 .appointed-results-heading > span {
-  color: #0f766e;
-  font-size: 11px;
+  color: var(--np-teal-700);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -36,7 +36,7 @@
   display: block;
   margin-top: 7px;
   color: #718096;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -56,19 +56,19 @@
   display: block;
   margin-bottom: 7px;
   color: #52647a;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .appointed-controls select,
 .appointed-search > div {
   width: 100%;
-  height: 43px;
-  border: 1px solid #cfd9e4;
-  border-radius: 7px;
-  background: #fff;
-  color: #24364e;
-  font: 500 13px inherit;
+  min-height: 44px;
+  border: var(--np-border);
+  border-radius: var(--np-radius);
+  background: var(--np-surface);
+  color: var(--np-navy-900);
+  font: 400 14px var(--np-font-sans);
 }
 
 .appointed-controls select {
@@ -91,10 +91,11 @@
   min-width: 0;
   flex: 1;
   border: 0;
-  outline: 0;
+  background: transparent;
   color: #24364e;
-  font: 500 13px inherit;
+  font: 400 14px var(--np-font-sans);
 }
+.appointed-search > div:focus-within, .appointed-controls select:focus-visible { outline: 2px solid var(--np-teal-700); outline-offset: 2px; }
 
 .appointed-search input::placeholder {
   color: #8a98aa;
@@ -129,7 +130,7 @@
 .appointed-summary span {
   margin-top: 2px;
   color: #64748b;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -154,16 +155,15 @@
 
 .appointed-table-wrap { overflow-x: auto; border: 1px solid #dce4ed; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(15,35,64,.04); }
 .appointed-table { width: 100%; min-width: 1160px; border-collapse: collapse; }
-.appointed-table th { padding: 11px 13px; border-bottom: 1px solid #dce4ed; background: #f6f9fb; color: #617086; font-size: 10px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
-.appointed-table td { padding: 12px 13px; border-bottom: 1px solid #edf1f5; color: #40536b; font-size: 12px; vertical-align: middle; }
-.appointed-table tbody tr { cursor: pointer; }
+.appointed-table th { padding: 13px; border-bottom: var(--np-border); background: var(--np-ground); color: var(--np-color-text-muted); font-size: 12px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+.appointed-table td { padding: 13px; border-bottom: var(--np-border-subtle); color: var(--np-navy-800); font-size: 14px; vertical-align: middle; }
 .appointed-table tbody tr:last-child td { border-bottom: 0; }
-.appointed-table tbody tr:hover, .appointed-table tbody tr:focus-visible { background: #f1faf8; outline: none; }
+.appointed-table tbody tr:hover { background: var(--np-teal-50); }
 .appointed-table td strong { color: #10233f; }
 .appointed-table td .copyable-contact { max-width: 190px; }
 .appointed-table td.capitalize { text-transform: capitalize; }
 .appointed-table td:last-child { text-align: right; }
-.appointed-table td:last-child button { border: 1px solid #bcd9d4; border-radius: 7px; background: #fff; padding: 7px 9px; color: #0f766e; font: 700 11px inherit; cursor: pointer; }
+.appointed-table td:last-child button { min-height: 40px; border: 1px solid var(--np-teal-700); border-radius: var(--np-radius); background: var(--np-surface); padding: 7px 12px; color: var(--np-teal-800); font: 600 13px var(--np-font-sans); cursor: pointer; }
 
 .appointed-grid {
   display: grid;
@@ -223,7 +223,7 @@
   background: #f1faf8;
   padding: 3px 7px;
   color: #0f766e;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -253,7 +253,7 @@
   gap: 6px;
   margin: 5px 0 0;
   color: #65758b;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -274,7 +274,7 @@
   background: #fafcfd;
   padding: 10px 18px;
   color: #52647a;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .appointed-scope svg {
@@ -316,7 +316,7 @@
   display: block;
   margin-bottom: 2px;
   color: #7b899c;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -326,7 +326,7 @@
   display: block;
   margin: 0;
   color: #33465e;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -343,14 +343,20 @@
 }
 
 .appointed-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border-top: 1px solid #edf1f5;
   background: #fafcfd;
   padding: 10px 18px;
   color: #718096;
-  font-size: 9px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
+.appointed-card-foot button { flex: 0 0 auto; min-height: 40px; border: 1px solid var(--np-teal-700); border-radius: var(--np-radius); padding: 0 12px; background: var(--np-surface); color: var(--np-teal-800); font: 600 13px var(--np-font-sans); cursor: pointer; }
+.appointed-page button:focus-visible { outline: 2px solid var(--np-teal-700); outline-offset: 2px; }
 
 .appointed-state {
   min-height: 210px;
@@ -380,7 +386,7 @@
 
 .appointed-state p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .appointed-state button {
@@ -391,9 +397,10 @@
   border: 1px solid #0f766e;
   border-radius: 7px;
   background: #fff;
+  min-height: 40px;
   padding: 8px 13px;
   color: #0f766e;
-  font: 700 12px inherit;
+  font: 600 14px var(--np-font-sans);
   cursor: pointer;
 }
 
@@ -408,19 +415,6 @@
   color: #9b2c2c;
 }
 
-.appointed-skeleton {
-  min-height: 340px;
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-  background: #eef2f6;
-  animation: appointed-pulse 1.3s ease infinite;
-}
-
-@keyframes appointed-pulse {
-  0%,
-  100% { opacity: 0.55; }
-  50% { opacity: 1; }
-}
 
 @media (max-width: 1120px) {
   .appointed-controls { grid-template-columns: 1.4fr 1fr; }
@@ -434,8 +428,4 @@
   .appointed-grid { grid-template-columns: 1fr; }
   .appointed-scope span { width: 100%; margin-left: 21px; }
   .appointed-results-heading { align-items: flex-start; gap: 10px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .appointed-skeleton { animation: none; }
 }

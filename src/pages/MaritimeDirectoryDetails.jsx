@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   activateMaritimeDirectoryEntity,
   approveMaritimeDirectoryEntity,
@@ -61,21 +61,23 @@ export default function MaritimeDirectoryDetails() {
   const { directoryType, entityId } = useParams();
   const directory = DIRECTORY_BY_TYPE[directoryType];
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState("");
-  const [tabState, setTabState] = useState({ entityId, section: "overview" });
+  const [retry, setRetry] = useState(0);
   const tabRefs = useRef([]);
 
   useEffect(() => {
     let active = true;
+    Promise.resolve().then(() => { if (active) { setLoading(true); setError(""); setRecord(null); } });
     getMaritimeDirectoryEntity(entityId)
       .then((response) => { if (active) setRecord(response.data); })
       .catch((requestError) => { if (active) setError(requestError.response?.data?.message || "Unable to load this company."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [entityId]);
+  }, [entityId, retry]);
 
   const view = useMemo(() => directoryView(record || {}, directoryType), [record, directoryType]);
   const isDossier = DOSSIER_TYPES.has(directoryType);
@@ -84,14 +86,14 @@ export default function MaritimeDirectoryDetails() {
     () => directory?.sections.filter((section) => sectionExists(section, view, directoryType)) || [],
     [directory, directoryType, view],
   );
-  const activeSection = tabState.entityId === entityId ? tabState.section : "overview";
+  const activeSection = searchParams.get("section") || "overview";
   const selectedSection = visibleSections.includes(activeSection)
     ? activeSection
     : visibleSections.includes("overview") ? "overview" : visibleSections[0];
 
   if (!directory) return <main className="md-detail-page"><div className="md-empty-state">Unsupported directory type.</div></main>;
-  if (loading) return <main className="md-detail-page"><div className="md-empty-state">Loading company dossier…</div></main>;
-  if (!record) return <main className="md-detail-page"><Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link><div className="md-alert" role="alert">{error || "Company not found."}</div></main>;
+  if (loading) return <main className="md-detail-page"><div className="md-empty-state" role="status">Loading company dossier…</div></main>;
+  if (!record) return <main className="md-detail-page"><Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link><div className="md-alert" role="alert">{error || "Company not found."} <button type="button" onClick={() => { setLoading(true); setError(""); setRetry((value) => value + 1); }}>Try again</button></div></main>;
 
   const runAction = async (work) => {
     setActing(true);
@@ -151,7 +153,7 @@ export default function MaritimeDirectoryDetails() {
     if (event.key === "End") nextIndex = visibleSections.length - 1;
     if (nextIndex === null) return;
     event.preventDefault();
-    setTabState({ entityId, section: visibleSections[nextIndex] });
+    setSearchParams((current) => { const next = new URLSearchParams(current); next.set("section", visibleSections[nextIndex]); return next; });
     tabRefs.current[nextIndex]?.focus();
   };
 
@@ -160,6 +162,15 @@ export default function MaritimeDirectoryDetails() {
       <Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link>
       <DirectoryDetailHeader view={view} directory={directory} onEdit={directoryType === "owners_managers" ? null : () => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
       {error && <div className="md-alert" role="alert">{error}</div>}
+
+      <section className="md-admin-actions" aria-label="Administrative actions">
+        <strong>Directory review · {view.reviewStatus || "Not reviewed"}</strong>
+        <div>
+          {view.entity.data_source !== "manual_admin" && view.reviewStatus !== "approved" && <button type="button" disabled={acting} onClick={() => runAction(() => approveMaritimeDirectoryEntity(entityId))}>Approve</button>}
+          {view.entity.data_source !== "manual_admin" && view.reviewStatus !== "rejected" && <button type="button" disabled={acting} onClick={reject}>Reject</button>}
+          {view.isActive ? <button type="button" disabled={acting} onClick={deactivate}>Deactivate</button> : <button type="button" disabled={acting} onClick={() => runAction(() => activateMaritimeDirectoryEntity(entityId))}>Activate</button>}
+        </div>
+      </section>
 
       {isShipyard ? (
         <ShipyardProfile view={view} />
@@ -177,7 +188,7 @@ export default function MaritimeDirectoryDetails() {
                   aria-selected={selectedSection === section}
                   aria-controls={`${section}-panel`}
                   tabIndex={selectedSection === section ? 0 : -1}
-                  onClick={() => setTabState({ entityId, section })}
+                  onClick={() => setSearchParams((current) => { const next = new URLSearchParams(current); next.set("section", section); return next; })}
                   onKeyDown={(event) => handleTabKeyDown(event, index)}
                 >
                   {tabLabel(section)}
@@ -198,14 +209,6 @@ export default function MaritimeDirectoryDetails() {
         </>
       )}
 
-      <section className="md-admin-actions" aria-label="Administrative actions">
-        <strong>Directory review</strong>
-        <div>
-          {view.entity.data_source !== "manual_admin" && view.reviewStatus !== "approved" && <button type="button" disabled={acting} onClick={() => runAction(() => approveMaritimeDirectoryEntity(entityId))}>Approve</button>}
-          {view.entity.data_source !== "manual_admin" && view.reviewStatus !== "rejected" && <button type="button" disabled={acting} onClick={reject}>Reject</button>}
-          {view.isActive ? <button type="button" disabled={acting} onClick={deactivate}>Deactivate</button> : <button type="button" disabled={acting} onClick={() => runAction(() => activateMaritimeDirectoryEntity(entityId))}>Activate</button>}
-        </div>
-      </section>
     </main>
   );
 }

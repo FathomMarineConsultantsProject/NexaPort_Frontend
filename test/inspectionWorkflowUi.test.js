@@ -92,12 +92,12 @@ test("workflow queue exposes all thirteen stages and keeps completed history acc
   assert.match(rail,/terminal.*invoice_paid/);
 });
 
-test("Admin dashboard contains grouped workflow actions and an operational handoff list",async()=>{
+test("Admin dashboard retains workflow navigation and withholds incomplete stage distribution",async()=>{
   const dashboard=await source("../src/pages/AdminDashboard.jsx");
-  assert.match(dashboard,/Inspections Requiring Action/);
-  for(const group of ["Commercial","Inspection","Reporting","Finance"])assert.match(dashboard,new RegExp(group));
+  assert.match(dashboard,/Inspection Workflows/);
   assert.match(dashboard,/Open Workflow/);
   assert.match(dashboard,/inspection_workflow/);
+  assert.doesNotMatch(dashboard,/Active stage distribution|admin-operations-overview/);
 });
 
 test("finance layout uses a responsive ledger without celebratory effects",async()=>{

@@ -75,7 +75,7 @@ export default function ProviderDashboard() {
       <header className="dashboard-page__header">
         <div>
           <span className="dashboard-eyebrow">Provider operations</span>
-          <h1>Company dashboard</h1>
+          <h1>Company workspace</h1>
           <p>{company.company_name || "Untitled Company"}{company.types?.length > 0 ? ` · ${formatTypes(company.types)}` : ""}</p>
         </div>
         <Link to="/company-profile" className="pd-header-action">
@@ -89,22 +89,6 @@ export default function ProviderDashboard() {
         {company.review_status === "rejected" && company.rejection_reason && (
           <span className="pd-rejection-reason">{company.rejection_reason}</span>
         )}
-      </div>
-
-      <div className="dashboard-kpi-grid dashboard-kpi-grid--provider">
-        <DashboardKpiCard label="Services listed" value={summary.services} />
-        <DashboardKpiCard label="Ports covered" value={summary.ports} />
-        <DashboardKpiCard label="Branches" value={summary.branches} />
-        {hasProducts ? (
-          <DashboardKpiCard label="Products" value={summary.products} />
-        ) : credentialTotal > 0 ? (
-          <DashboardKpiCard label="Credentials" value={credentialTotal} note={[
-            summary.certifications && `${summary.certifications} cert`,
-            summary.class_approvals && `${summary.class_approvals} class`,
-            summary.memberships && `${summary.memberships} membership`,
-          ].filter(Boolean).join(", ")} />
-        ) : null}
-        <DashboardKpiCard label="Profile setup" value={`${setup.completed_sections} / ${setup.total_sections}`} note="sections complete" priority={setup.missing.length > 0} />
       </div>
 
       {setup.missing.length > 0 && (
@@ -126,6 +110,25 @@ export default function ProviderDashboard() {
           </ul>
         </div>
       )}
+
+      <section className="dashboard-metrics" aria-labelledby="provider-metrics-title">
+        <div className="dashboard-metrics__header"><div><span className="dashboard-eyebrow">Directory presence</span><h2 id="provider-metrics-title">Company capabilities</h2></div></div>
+        <div className="dashboard-kpi-grid dashboard-kpi-grid--provider">
+          <DashboardKpiCard label="Services listed" value={summary.services} />
+          <DashboardKpiCard label="Ports covered" value={summary.ports} />
+          <DashboardKpiCard label="Branches" value={summary.branches} />
+          {hasProducts ? (
+            <DashboardKpiCard label="Products" value={summary.products} />
+          ) : credentialTotal > 0 ? (
+            <DashboardKpiCard label="Credentials" value={credentialTotal} note={[
+              summary.certifications && `${summary.certifications} cert`,
+              summary.class_approvals && `${summary.class_approvals} class`,
+              summary.memberships && `${summary.memberships} membership`,
+            ].filter(Boolean).join(", ")} />
+          ) : null}
+          <DashboardKpiCard label="Profile setup" value={`${setup.completed_sections} / ${setup.total_sections}`} note="sections complete" priority={setup.missing.length > 0} />
+        </div>
+      </section>
 
       <div className="dashboard-section">
         <div className="dashboard-section__header">

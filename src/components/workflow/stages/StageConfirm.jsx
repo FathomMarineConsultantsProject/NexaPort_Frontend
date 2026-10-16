@@ -48,10 +48,10 @@ export default function StageConfirm({ data, onSendProposal, onSaveDraft, onSupe
     estimatedAttendanceDays: attendanceDays ? Number(attendanceDays) : null });
 
   return <section className="workflow-stage commercial-confirm">
-    <header className="stage-heading"><div><span>Stage 03 · Commercial</span>
+    <header className="stage-heading"><div><span>Stage 03 · Commercial decision</span>
       <h2>Commercial proposal &amp; Client decision</h2>
       <p>Approved Consultant costs form the supplier basis. Nexaport sets the Client proposal fee.</p>
-    </div></header>
+    </div><strong className={`attention-pill ${isApproved ? "active" : ""}`}>{isApproved ? "Client agreement accepted" : isSent ? "Awaiting Client decision" : draftProposal ? "Draft proposal saved" : "Proposal preparation"}</strong></header>
 
     {!quoteApproved && <div className="workflow-alert warning">The latest Consultant revision requires fresh internal approval before preparing or sending terms. Existing offers and Client approvals remain preserved. <button type="button" className="workflow-secondary" onClick={onSelectOtherQuote}>Return to quotation review</button></div>}
     {(data?.invoice || data?.inspectionCompletion?.completed) && <div className="workflow-alert warning">Financial amendments are unavailable after invoicing or inspection completion. An explicit financial adjustment workflow is required.</div>}
