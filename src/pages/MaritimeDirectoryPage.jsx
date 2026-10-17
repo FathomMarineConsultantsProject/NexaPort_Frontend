@@ -125,6 +125,7 @@ export default function MaritimeDirectoryPage({ directory }) {
                       <td className="dashboard-table__link">
                         <Link to={`/directories/${directory.type}/${row.id}`}>
                           <strong>{row.company_name || row.companyName}</strong>
+                          {row.public_id && <small className="nexaport-id">Reference: {row.public_id}</small>}
                         </Link>
                       </td>
                       {directory.type === "owners_managers" && <><td>{(row.directory_types || []).map((type) => DIRECTORY_TYPE_LABELS[type] || type).join(", ")}</td><td>{directoryFleetCount(row) ?? "—"}</td><td>{row.public_email || row.website || "—"}</td></>}

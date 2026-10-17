@@ -145,6 +145,7 @@ export default function AccreditedInspectorDirectory() {
         <div>
           <span className="accredited-eyebrow">Professional directory</span>
           <h1>Accredited Inspectors</h1>
+          {scheme?.public_id && <small className="nexaport-id">Scheme reference: {scheme.public_id}</small>}
           <p>
             Browse inspectors accredited under recognized maritime and terminal
             inspection schemes.
@@ -271,6 +272,7 @@ export default function AccreditedInspectorDirectory() {
                   <div>
                     <span>External directory record</span>
                     <h3>{inspector.full_name}</h3>
+                    {inspector.public_id && <small className="nexaport-id">Reference: {inspector.public_id}</small>}
                     <p>{scheme.code} Accredited Inspector</p>
                   </div>
                 </div>
@@ -308,7 +310,7 @@ export default function AccreditedInspectorDirectory() {
                 <tbody>
                   {inspectors.map((inspector) => (
                     <tr key={inspector.id}>
-                      <td><strong>{inspector.full_name}</strong></td>
+                      <td><strong>{inspector.full_name}</strong>{inspector.public_id && <small className="nexaport-id">Reference: {inspector.public_id}</small>}</td>
                       <td>{scheme.code} — {scheme.name}</td>
                       <td>{inspector.email ? <CopyableContact value={inspector.email} href={`mailto:${inspector.email}`} type="email" /> : "—"}</td>
                       <td>{inspector.telephone ? <CopyableContact value={inspector.telephone} href={`tel:${inspector.telephone}`} type="phone" /> : "—"}</td>

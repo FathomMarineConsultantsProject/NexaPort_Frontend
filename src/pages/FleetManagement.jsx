@@ -263,6 +263,7 @@ export default function FleetManagement() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <h3 className="vessel-name">{vessel.vessel_name}</h3>
+                  {vessel.public_id && <small className="nexaport-id">Reference: {vessel.public_id}</small>}
                   <div className="vessel-imo">
                     <Anchor size={14} />
                     {vessel.imo_number ? `IMO ${vessel.imo_number}` : "IMO not recorded · provisional"}

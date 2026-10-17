@@ -134,7 +134,7 @@ export default function PortDirectory() {
         <div className="port-register-meta" role="status"><span>{loading ? "Loading port register…" : `Showing ${start}–${end} of ${pagination.total} ports`}</span><span>Source records and Nexaport-managed ports</span></div>
         <div className="port-table-scroll"><table className="ports-table"><thead><tr><th>Port</th><th>Country</th><th>Region</th><th>Harbour</th><th>Max draft</th><th>PSC risk</th><th>Experts</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>{!loading && ports.map((port) => <tr key={port.id}>
-            <td><Link className="port-name-link" to={`/ports/${port.id}`}>{port.port_name}</Link><span className="unlocode">{port.unlocode || "— — — — —"}</span></td>
+            <td><Link className="port-name-link" to={`/ports/${port.id}`}>{port.port_name}</Link>{port.public_id && <small className="nexaport-id">Reference: {port.public_id}</small>}<span className="unlocode">{port.unlocode || "— — — — —"}</span></td>
             <td>{port.country}<small>{port.country_iso || ""}</small></td><td>{port.region || "Not provided"}</td>
             <td>{port.harbour_type || "Not provided"}<small>{port.harbour_size || ""}</small></td><td>{port.max_draft_m == null ? "Not provided" : `${port.max_draft_m} m`}</td>
             <td><span className={riskClass(port.psc_risk_level)}>{port.psc_risk_level || "Not provided"}</span></td><td>{port.experts_available || 0}</td>

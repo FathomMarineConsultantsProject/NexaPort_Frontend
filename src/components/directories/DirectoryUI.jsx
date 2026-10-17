@@ -181,6 +181,7 @@ export function DirectoryResultCard({ row, directory }) {
       <div className="md-result-card__body">
         <div className="md-result-card__title">
           <h2>{row.company_name || row.companyName}</h2>
+          {row.public_id && <small className="nexaport-id">Reference: {row.public_id}</small>}
           <StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} />
         </div>
         <div className="md-result-card__types" aria-label="Directory classifications">

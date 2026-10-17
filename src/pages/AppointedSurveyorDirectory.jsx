@@ -252,6 +252,7 @@ export default function AppointedSurveyorDirectory() {
                           .filter(Boolean)
                           .join(" ")}
                       </h2>
+                      {surveyor.public_id && <small className="nexaport-id">Reference: {surveyor.public_id}</small>}
                       {surveyor.organization_name && (
                         <p><Building2 size={14} /> {surveyor.organization_name}</p>
                       )}
@@ -287,7 +288,7 @@ export default function AppointedSurveyorDirectory() {
                     const phone = splitValues(surveyor.mobile_numbers || surveyor.telephone_numbers)[0];
                     return (
                       <tr key={surveyor.id}>
-                        <td><strong>{[surveyor.professional_title, surveyor.full_name].filter(Boolean).join(" ")}</strong></td>
+                        <td><strong>{[surveyor.professional_title, surveyor.full_name].filter(Boolean).join(" ")}</strong>{surveyor.public_id && <small className="nexaport-id">Reference: {surveyor.public_id}</small>}</td>
                         <td>{surveyor.organization_name || "—"}</td>
                         <td className="capitalize">{surveyor.appointment_scope || "—"}</td>
                         <td>{email ? <CopyableContact value={email} href={`mailto:${email}`} type="email" /> : "—"}</td>

@@ -22,6 +22,7 @@ function DirectoryCard({ vessel }) {
       <div className="vessel-icon"><Ship size={24} /></div>
       <div className="vessel-card-identity">
         <h2 className="vessel-name">{vessel.name || "Unnamed vessel"}</h2>
+        {vessel.public_id && <small className="nexaport-id">Reference: {vessel.public_id}</small>}
         {vessel.imo && <div className="vessel-imo"><Anchor size={14} /> IMO {vessel.imo}</div>}
       </div>
       {vessel.vessel_type && <span className="vessel-type-badge">{vessel.vessel_type}</span>}

@@ -109,6 +109,7 @@ export default function FlagInspectorProfile() {
         <div>
           <span>{flag?.name || "Flag"} {companyOnly ? "Flag Inspection Company" : "Flag Inspector"}</span>
           <h1>{displayName}</h1>
+          {inspector.public_id && <small className="nexaport-id">Reference: {inspector.public_id}</small>}
           <p>
             <MapPin size={16} />
             {[inspector.location, inspector.region, inspector.country]

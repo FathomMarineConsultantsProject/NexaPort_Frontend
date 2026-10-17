@@ -161,6 +161,7 @@ export default function MaritimeDirectoryDetails() {
     <main className={`md-detail-page md-detail-page--${directory.type}`}>
       <Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link>
       <DirectoryDetailHeader view={view} directory={directory} onEdit={directoryType === "owners_managers" ? null : () => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
+      {view.entity.public_id && <small className="nexaport-id">Reference: {view.entity.public_id}</small>}
       {error && <div className="md-alert" role="alert">{error}</div>}
 
       <section className="md-admin-actions" aria-label="Administrative actions">
