@@ -22,6 +22,7 @@ export default function PostServiceRequest() {
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const submitInFlight = useRef(false);
+  const submission = useRef(null);
 
   const [dropdownData, setDropdownData] = useState({
     serviceTypes: [],
@@ -49,6 +50,7 @@ export default function PostServiceRequest() {
     vesselType: "",
     flagState: "",
     selectedVessel: null,
+    ports: [],
     portName: "",
     portId: null,
     country: "",
@@ -119,7 +121,7 @@ export default function PostServiceRequest() {
     }
     if (!formData.title.trim()) nextFieldErrors.title = "Enter a request title.";
     if (!formData.scopeOfWork.trim()) nextFieldErrors.scopeOfWork = "Describe the scope of work.";
-    if (formData.manualPort && !formData.country.trim()) nextFieldErrors.country = "Enter the country for the new port.";
+    if (formData.ports?.some((port) => port.manual && (!port.port_name?.trim() || !port.country?.trim()))) nextFieldErrors.country = "Enter a name and country for every new port.";
 
     if (
       Object.keys(nextFieldErrors).length
@@ -164,10 +166,15 @@ export default function PostServiceRequest() {
 
       };
 
+      const fingerprint = JSON.stringify(payload);
+      if (!submission.current || submission.current.fingerprint !== fingerprint)
+        submission.current = { fingerprint, key: crypto.randomUUID() };
+      payload.submissionKey = submission.current.key;
       const response = await createServiceRequest(payload);
 
       if (response.success) {
         setSuccess("Submitted for Admin review.");
+        submission.current = null;
         setTimeout(() => {
           navigate(`/requests/${response.data.id}`);
         }, 1000);
@@ -350,6 +357,7 @@ export default function PostServiceRequest() {
               onChange={(patch) => setFormData((current) => ({ ...current, ...patch }))} /> :
               <div className="psr-row"><div className="psr-group"><label htmlFor="request-vessel-name">Vessel Name <span className="opt">(opt.)</span></label><input id="request-vessel-name" name="vesselName" value={formData.vesselName} onChange={handleInputChange} className="psr-control" /></div><div className="psr-group"><label htmlFor="request-imo-number">IMO Number <span className="opt">(opt.)</span></label><input id="request-imo-number" name="imoNumber" value={formData.imoNumber} onChange={handleInputChange} className="psr-control" /></div></div>}
             {fieldErrors.imoNumber && <small role="alert">{fieldErrors.imoNumber}</small>}
+            {formData.selectedVessel && <small className="psr-field-help">Vessel Type and Flag below are particulars for this request. Editing them does not change the selected vessel's directory record.</small>}
 
             <div className="psr-row">
               <div className="psr-group">

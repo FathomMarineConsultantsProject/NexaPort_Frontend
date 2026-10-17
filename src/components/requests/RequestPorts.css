@@ -5,8 +5,10 @@
 .request-port-token { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; padding: 5px 7px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; }
 .request-port-token > span { overflow-wrap: anywhere; }.request-port-token strong { color: #0f766e; }
 .request-port-token button { border: 0; background: transparent; color: #0f766e; cursor: pointer; font: inherit; min-height: 26px; }
-.request-port-suggestions { max-height: 260px; overflow-y: auto; border: 1px solid #cbd5e1; background: #fff; }
+.request-port-suggestions { position: absolute; z-index: 12; top: 100%; left: 0; width: 100%; box-sizing: border-box; max-height: min(260px, 45vh); overflow-y: auto; border: 1px solid #cbd5e1; background: #fff; }
+.request-port-manual { display: grid; gap: 4px; width: 100%; min-width: min(200px, 100%); }
 .request-port-suggestions ul { list-style: none; padding: 0; margin: 0; }.request-port-suggestions button { width: 100%; text-align: left; padding: 10px; border: 0; border-bottom: 1px solid #e2e8f0; background: transparent; color: #172b4d; font: inherit; cursor: pointer; }
+.request-port-suggestions li button { display: grid; gap: 2px; }.request-port-suggestions li button span { color: #64748b; font-size: 11px; }
 .request-port-suggestions [aria-selected=true], .request-port-suggestions button:hover { background: #f0fdfa; }
 .request-port-suggestions p, .request-port-help, .request-port-confirm p { margin: 0; padding: 6px; font-size: 11px; line-height: 1.5; }
 .request-port-confirm { padding: 8px; border: 1px solid #cbd5e1; background: #f8fafc; }.request-port-confirm button { margin: 4px; padding: 7px; border: 1px solid #cbd5e1; border-radius: 3px; background: #fff; color: #172b4d; }

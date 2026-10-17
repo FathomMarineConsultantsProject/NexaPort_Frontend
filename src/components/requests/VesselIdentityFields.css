@@ -1,5 +1,6 @@
 .request-vessel-identity { position: relative; }
-.request-vessel-suggestions { position: absolute; z-index: 12; top: calc(100% - 1px); left: 0; width: min(100%, 580px); max-height: 300px; overflow-y: auto; padding: 5px; border: 1px solid var(--np-color-border); border-radius: var(--np-radius); background: var(--np-surface); box-shadow: var(--np-shadow-dropdown); }
+.request-vessel-field { position: relative; min-width: 0; }
+.request-vessel-suggestions { position: absolute; z-index: 12; top: 100%; left: 0; width: 100%; box-sizing: border-box; max-height: min(300px, 45vh); overflow-y: auto; padding: 5px; border: 1px solid var(--np-color-border); border-radius: var(--np-radius); background: var(--np-surface); box-shadow: var(--np-shadow-dropdown); }
 .request-vessel-suggestions [role="option"] { display: grid; gap: 2px; width: 100%; padding: 9px 11px; border: 0; border-radius: var(--np-radius); background: transparent; color: var(--np-color-text); font: inherit; text-align: left; cursor: pointer; }
 .request-vessel-suggestions [role="option"] span { color: var(--np-color-text-muted); font-size: var(--np-type-small); }
 .request-vessel-suggestions [role="option"].active, .request-vessel-suggestions [role="option"]:hover { background: var(--np-color-surface-muted); }
