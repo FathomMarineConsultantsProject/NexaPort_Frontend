@@ -13,7 +13,7 @@ import "../styles/maritimeDirectory.css";
 import { DIRECTORY_TYPE_LABELS } from "../config/maritimeDirectories";
 import { directoryFleetCount } from "../utils/directoryData";
 
-const initialFilters = { search: "", country: "", companyType: "all", reviewStatus: "", isActive: "", sort: "name-asc" };
+const initialFilters = { search: "", country: "", port: "", category: "", source: "", membershipTier: "", companyType: "all", reviewStatus: "", isActive: "", sort: "name-asc" };
 const readFilters = (params) => Object.fromEntries(Object.entries(initialFilters).map(([key, fallback]) => [key, params.get(key) || fallback]));
 
 export default function MaritimeDirectoryPage({ directory }) {
@@ -36,6 +36,10 @@ export default function MaritimeDirectoryPage({ directory }) {
       type: directory.type,
       search: applied.search,
       country: applied.country,
+      port: applied.port,
+      category: applied.category,
+      source: applied.source,
+      membershipTier: applied.membershipTier,
       companyType: applied.companyType,
       reviewStatus: applied.reviewStatus,
       isActive: applied.isActive,
@@ -59,24 +63,24 @@ export default function MaritimeDirectoryPage({ directory }) {
 
   const sortedRows = useMemo(() => rows, [rows]);
 
-  const applyFilters = (event) => {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setRefresh((value) => value + 1);
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
       for (const [key, value] of Object.entries(filters)) value && value !== initialFilters[key] ? next.set(key, value) : next.delete(key);
+      if (next.toString() === searchParams.toString()) return;
       next.delete("page");
-      return next;
-    });
-  };
+      setLoading(true);
+      setError("");
+      setSearchParams(next, { replace: true });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [filters, searchParams, setSearchParams]);
 
   return (
     <main className={`md-page md-page--${directory.type}`}>
       <DirectoryPageHeader directory={directory} total={pagination.total} canAdd={isSuperAdmin() && directory.type !== "owners_managers"} />
 
-      <form className="md-filters" onSubmit={applyFilters}>
+      <section className="md-filters" aria-label="Filter directory">
         <div className="md-filters__label">
           <SlidersHorizontal size={17} aria-hidden="true" />
           <span>Filter directory</span>
@@ -87,13 +91,16 @@ export default function MaritimeDirectoryPage({ directory }) {
           <div><Search size={16} aria-hidden="true" /><input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Company, service, port or product" /></div>
         </label>
         <label><span>Country</span><input value={filters.country} onChange={(event) => setFilters({ ...filters, country: event.target.value })} placeholder="All countries" /></label>
+        {directory.type === "supplier" && <label><span>Port</span><input value={filters.port} onChange={(event) => setFilters({ ...filters, port: event.target.value })} placeholder="Port or UN/LOCODE" /></label>}
+        {directory.type === "supplier" && <label><span>Category</span><select value={filters.category} onChange={(event) => setFilters({ ...filters, category: event.target.value })}><option value="">All suppliers</option><option value="bunker">Bunker suppliers</option></select></label>}
+        {directory.type === "supplier" && <label><span>Source</span><select value={filters.source} onChange={(event) => setFilters({ ...filters, source: event.target.value })}><option value="">All sources</option><option value="IMPA">IMPA members</option></select></label>}
+        {directory.type === "supplier" && <label><span>Membership tier</span><select value={filters.membershipTier} onChange={(event) => setFilters({ ...filters, membershipTier: event.target.value })}><option value="">All tiers</option><option value="impa-premium">IMPA Premium</option></select></label>}
         {directory.type === "owners_managers" && <label><span>Company type</span><select value={filters.companyType} onChange={(event) => setFilters({ ...filters, companyType: event.target.value })}><option value="all">All</option><option value="owner">Owners</option><option value="manager">Managers</option><option value="both">Owner & Manager</option></select></label>}
         <label><span>Review status</span><select value={filters.reviewStatus} onChange={(event) => setFilters({ ...filters, reviewStatus: event.target.value })}><option value="">All statuses</option><option value="pending">Pending review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></label>
         <label><span>Activity</span><select value={filters.isActive} onChange={(event) => setFilters({ ...filters, isActive: event.target.value })}><option value="">Active and inactive</option><option value="true">Active</option><option value="false">Inactive</option></select></label>
         <label><span>Sort</span><select value={filters.sort} onChange={(event) => setFilters({ ...filters, sort: event.target.value })}><option value="name-asc">Company name A–Z</option><option value="name-desc">Company name Z–A</option></select></label>
-        <button type="submit">Apply filters</button>
         <button type="button" className="md-filter-clear" onClick={() => { setFilters(initialFilters); setLoading(true); setError(""); setRefresh((value) => value + 1); setSearchParams((current) => { const next = new URLSearchParams(current); for (const key of Object.keys(initialFilters)) next.delete(key); next.delete("page"); return next; }); }}>Clear filters</button>
-      </form>
+      </section>
 
       {loading ? (
         <div className="md-empty-state" role="status">Loading {directory.label.toLowerCase()}…</div>
@@ -125,7 +132,7 @@ export default function MaritimeDirectoryPage({ directory }) {
                       <td className="dashboard-table__link">
                         <Link to={`/directories/${directory.type}/${row.id}`}>
                           <strong>{row.company_name || row.companyName}</strong>
-                          {row.public_id && <small className="nexaport-id">Reference: {row.public_id}</small>}
+                          {row.public_id && <small className="nexaport-id">NexaPort ID: {row.public_id}</small>}
                         </Link>
                       </td>
                       {directory.type === "owners_managers" && <><td>{(row.directory_types || []).map((type) => DIRECTORY_TYPE_LABELS[type] || type).join(", ")}</td><td>{directoryFleetCount(row) ?? "—"}</td><td>{row.public_email || row.website || "—"}</td></>}

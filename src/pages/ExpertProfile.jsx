@@ -769,7 +769,7 @@ export default function ExpertProfile() {
 
           <div className="expert-profile-info">
             <h1>{expert.full_name}</h1>
-            {(expert.directory_public_id || expert.nexaport_id) && <p className="expert-nexaport-id">Nexaport ID: <strong>{expert.directory_public_id || expert.nexaport_id}</strong></p>}
+            {(expert.nexaport_id || expert.directory_public_id) && <p className="expert-nexaport-id">Nexaport ID: <strong>{expert.nexaport_id || expert.directory_public_id}</strong></p>}
 
             <div className="expert-profile-meta">
               <div className="rating-row">

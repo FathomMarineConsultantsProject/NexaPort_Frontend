@@ -40,6 +40,7 @@ export default function CompanyProfile() {
   const [company, setCompany] = useState(blankCompany);
   const [directoryTypes, setDirectoryTypes] = useState([]);
   const [status, setStatus] = useState("pending");
+  const [publicId, setPublicId] = useState("");
   const [collections, setCollections] = useState(Object.fromEntries(Object.keys(SECTIONS).map((key) => [key, []])));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,6 +60,7 @@ export default function CompanyProfile() {
       setCompany(Object.fromEntries(fields.map(([key]) => [key, detail.entity[snake(key)] ?? ""])));
       setDirectoryTypes(detail.directory_types || [detail.account.primary_type]);
       setStatus(detail.entity.review_status || detail.account.review_status);
+      setPublicId(detail.entity.public_id || "");
       const loadedCollections = {};
       for (const [key, config] of Object.entries(SECTIONS)) {
         const rows = detail[snake(key)] || [];
@@ -98,7 +100,7 @@ export default function CompanyProfile() {
         await confirmCompanyLogoUpload({ key: upload.data.key, contentType: logo.type, size: logo.size });
         setLogo(null);
       }
-      setStatus(response.data.entity.review_status); setMessage("Company profile saved.");
+      setStatus(response.data.entity.review_status); setPublicId(response.data.entity.public_id || publicId); setMessage("Company profile saved.");
     } catch (error) { setSaveError(true); setErrors(error.response?.data?.field_errors || {}); setMessage(error.response?.data?.message || "Unable to save the company profile. Review the fields and try again."); }
     finally { setSaving(false); }
   };
@@ -108,7 +110,7 @@ export default function CompanyProfile() {
   const approved = status === "approved";
 
   return <main className="company-workspace">
-    <header className="company-workspace__hero"><div><small>Company workspace</small><h1>{company.companyName || "Maritime Company"}</h1><p>Maintain the public directory information mariners use to find your business.</p></div><div className={`company-status ${approved ? "approved" : "pending"}`}>{approved ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}<span><small>Approval status</small><strong>{status}</strong></span></div></header>
+    <header className="company-workspace__hero"><div><small>Company workspace</small><h1>{company.companyName || "Maritime Company"}</h1>{publicId && <small className="nexaport-id">Reference: {publicId}</small>}<p>Maintain the public directory information mariners use to find your business.</p></div><div className={`company-status ${approved ? "approved" : "pending"}`}>{approved ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}<span><small>Approval status</small><strong>{status}</strong></span></div></header>
     <nav className="company-workspace__nav" aria-label="Company profile sections">
       <a href="#company-overview">Overview</a>
       {Object.entries(SECTIONS).map(([name, config]) => <a key={name} href={`#company-${name}`}>{config.title}</a>)}

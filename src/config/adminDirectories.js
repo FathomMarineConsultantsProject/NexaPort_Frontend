@@ -55,6 +55,12 @@ export const ADMIN_DIRECTORY_GROUPS = [
         description: "Marine suppliers and chandlers providing provisions, equipment, spare parts and vessel stores.",
       },
       {
+        label: "Bunker Suppliers",
+        path: "/suppliers?category=bunker",
+        icon: PackageOpen,
+        description: "Fuel and bunker suppliers serving vessels and ports.",
+      },
+      {
         label: "Shipyards",
         singular: "Shipyard",
         type: "shipyard",
@@ -110,6 +116,7 @@ export function getNavigationDirectoryGroups(roleId) {
         "/service-providers": "Technical and marine support",
         "/ship-agents": "Vessel call coordination",
         "/suppliers": "Equipment and vessel stores",
+        "/suppliers?category=bunker": "Fuel and bunker suppliers",
         "/shipyards": "Building and repair facilities",
         "/tug-boats": "Towage and tug fleets",
       })[item.path] || item.description })) },

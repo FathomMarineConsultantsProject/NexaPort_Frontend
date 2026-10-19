@@ -229,9 +229,16 @@ export const directoryView = (record = {}, directoryType = "") => {
   const contacts = object(extra.authenticated_contacts || extra.authenticatedContacts);
   const normalizedContact = object(record.contact);
   const tug = object(extra.tug_boat || extra.tugBoat);
+  const sources = list(record.sources);
+  const isBunkerSupplier = directoryType === "supplier" && sources.some((source) =>
+    source.source_name === "MagicPort" && (String(source.source_external_id || "").startsWith("bunker:") ||
+      String(source.source_url || "").includes("/bunker-suppliers/")));
+  const contactMethods = list(record.contact_methods);
+  const preferredContacts = [...contactMethods.filter((contact) => !contact.branch_id), ...contactMethods.filter((contact) => contact.branch_id)];
+  const methodValue = (type) => preferredContacts.find((contact) => contact.contact_type === type)?.contact_value;
   const branchesAndOffices = normalizeBranches(normalizeRowList(record, "branches", "branches", [
     "branch_name", "branchName", "public_address", "publicAddress", "city", "country",
-  ]));
+  ])).map((branch) => ({ ...branch, contactMethods: contactMethods.filter((contact) => contact.branch_id === branch.id) }));
   const offices = branchesAndOffices.filter((row) =>
     /office/i.test(first(row.branchType, row.branchName) || ""),
   );
@@ -241,6 +248,7 @@ export const directoryView = (record = {}, directoryType = "") => {
 
   return {
     entity,
+    isBunkerSupplier,
     name: first(entity.company_name, entity.companyName) || "Unnamed company",
     description: first(entity.description, entity.description_excerpt, entity.descriptionExcerpt),
     logo: first(entity.logo_url, entity.logoUrl),
@@ -248,8 +256,8 @@ export const directoryView = (record = {}, directoryType = "") => {
     country: first(entity.country, shipyardLocation.country),
     coordinates: coordinates(shipyardLocation),
     address: first(normalizedContact.address, entity.public_address, entity.publicAddress, shipyardLocation.public_address, shipyardLocation.publicAddress, contacts.public_address, contacts.publicAddress),
-    phone: first(normalizedContact.phone, entity.public_phone, entity.publicPhone, shipyardLocation.public_phone, shipyardLocation.publicPhone, contacts.public_business_phone, contacts.publicBusinessPhone),
-    email: first(normalizedContact.email, entity.public_email, entity.publicEmail, contacts.public_email, contacts.publicEmail),
+    phone: first(normalizedContact.phone, entity.public_phone, entity.publicPhone, isBunkerSupplier ? methodValue("phone") : null, shipyardLocation.public_phone, shipyardLocation.publicPhone, contacts.public_business_phone, contacts.publicBusinessPhone),
+    email: first(normalizedContact.email, entity.public_email, entity.publicEmail, isBunkerSupplier ? methodValue("email") : null, contacts.public_email, contacts.publicEmail),
     website: first(normalizedContact.website, entity.website, entity.website_url, entity.websiteUrl),
     yearsExperience: positiveCount(field(entity, "years_experience", "yearsExperience")),
     vesselsHandled: positiveCount(field(entity, "vessels_handled", "vesselsHandled")),
@@ -267,6 +275,8 @@ export const directoryView = (record = {}, directoryType = "") => {
     ports: normalizePorts(normalizeRowList(record, "ports", "ports", ["port_name", "portName", "name"])),
     branches,
     offices,
+    contactMethods: contactMethods.filter((contact) => !contact.branch_id),
+    sources,
     certifications: deduplicateByFields(normalizeRowList(record, "certifications", "certifications", ["certification_name", "certificationName", "name"]), ["certification_name", "certificationName", "name"]),
     classApprovals: deduplicateByFields(normalizeRowList(record, "class_approvals", "classApprovals", ["society_name", "societyName", "name"]), ["society_name", "societyName", "name"]),
     memberships: deduplicateByFields(normalizeRowList(record, "memberships", "memberships", ["organization_name", "organizationName", "name"]), ["organization_name", "organizationName", "name"]),

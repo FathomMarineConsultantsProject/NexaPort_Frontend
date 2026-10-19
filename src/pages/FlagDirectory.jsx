@@ -105,7 +105,7 @@ export default function FlagDirectory() {
     const displayName = fullName || organizationName || "Flag inspector";
     const location = [record.location || record.base_location, record.region, record.country].map(cleanText).filter(Boolean).join(", ");
     const card = <article className={`flag-record-card ${record.record_type}`}>
-      <div className="flag-record-identity"><div className="flag-record-avatar">{companyOnly ? <Building2 size={22} /> : external ? <UserRound size={22} /> : <ConsultantAvatar className="flag-consultant-avatar" photoUrl={record.photo_url} name={record.full_name} />}</div><div className="flag-record-heading"><span className="flag-source-badge">{external ? "External Directory" : "NexaPort Consultant"}</span><h4>{displayName}</h4>{record.public_id && <small className="nexaport-id">Reference: {record.public_id}</small>}</div></div>
+      <div className="flag-record-identity"><div className="flag-record-avatar">{companyOnly ? <Building2 size={22} /> : external ? <UserRound size={22} /> : <ConsultantAvatar className="flag-consultant-avatar" photoUrl={record.photo_url} name={record.full_name} />}</div><div className="flag-record-heading"><span className="flag-source-badge">{external ? "External Directory" : "NexaPort Consultant"}</span><h4>{displayName}</h4>{record.public_id && <small className="nexaport-id">{external ? "Reference" : "NexaPort ID"}: {record.public_id}</small>}</div></div>
       <div className="flag-record-details">
         {organizationName && !companyOnly && <p className="flag-record-line"><Building2 size={15} /><span>{organizationName}</span></p>}
         {location && <p className="flag-record-line"><MapPin size={15} /><span>{location}</span></p>}

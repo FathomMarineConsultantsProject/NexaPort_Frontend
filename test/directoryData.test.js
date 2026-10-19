@@ -38,6 +38,21 @@ test("MagicPort detail displays normalized contact and fleet values with safe fa
   assert.equal(normalizeFleetSummary(null).vesselCount, null);
 });
 
+test("bunker suppliers show imported contact methods in the overview", () => {
+  const view = directoryView({
+    entity: { company_name: "Bunker Co", public_phone: null, public_email: null, public_id: "COM-123E4567E89B42D3A456426614174000" },
+    sources: [{ source_name: "MagicPort", source_external_id: "bunker:example" }],
+    contact_methods: [
+      { id: "phone", branch_id: null, contact_type: "phone", contact_value: "+65 1234 5678" },
+      { id: "email", branch_id: null, contact_type: "email", contact_value: "ops@example.com" },
+    ],
+  }, "supplier");
+  assert.equal(view.isBunkerSupplier, true);
+  assert.equal(view.phone, "+65 1234 5678");
+  assert.equal(view.email, "ops@example.com");
+  assert.equal(view.contactMethods.length, 2);
+});
+
 test("owners and managers fleet section renders normalized operational fields", () => {
   const source = readFileSync(join(projectRoot, "src/pages/MaritimeDirectoryDetails.jsx"), "utf8");
   for (const key of ["vesselCount", "totalDwt", "activePortCount", "vesselTypeMix", "ageBands", "topVisitedPorts"]) {
@@ -195,6 +210,19 @@ test("office rows are separated from branches", () => {
   }, "ship_agent");
   assert.equal(view.branches.length, 1);
   assert.equal(view.offices.length, 1);
+});
+
+test("supplier contact methods stay associated with their branch", () => {
+  const view = directoryView({
+    entity: { company_name: "Bunker Example" },
+    branches: [{ id: "branch-1", branch_name: "Fujairah Branch" }],
+    contact_methods: [
+      { id: "c1", branch_id: "branch-1", contact_type: "phone", contact_value: "+971123456" },
+      { id: "c2", branch_id: null, contact_type: "email", contact_value: "hello@example.com" },
+    ],
+  }, "supplier");
+  assert.equal(view.branches[0].contactMethods[0].contact_value, "+971123456");
+  assert.equal(view.contactMethods[0].contact_value, "hello@example.com");
 });
 
 test("visually identical branches render once", () => {

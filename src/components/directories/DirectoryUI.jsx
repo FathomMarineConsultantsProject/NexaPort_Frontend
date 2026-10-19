@@ -181,11 +181,12 @@ export function DirectoryResultCard({ row, directory }) {
       <div className="md-result-card__body">
         <div className="md-result-card__title">
           <h2>{row.company_name || row.companyName}</h2>
-          {row.public_id && <small className="nexaport-id">Reference: {row.public_id}</small>}
+          {row.public_id && <small className="nexaport-id">NexaPort ID: {row.public_id}</small>}
           <StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} />
         </div>
         <div className="md-result-card__types" aria-label="Directory classifications">
           {directoryTypes.map((type) => <span key={type}>{DIRECTORY_TYPE_LABELS[type]}</span>)}
+          {directory.type === "supplier" && row.extra_data?.impa && <span className="md-source-label">IMPA member{row.extra_data.impa.premium ? " · Premium" : ""}</span>}
         </div>
         {location && <p className="md-result-card__location"><MapPin size={14} aria-hidden="true" />{location}</p>}
         {cleanText(row.description_excerpt || row.descriptionExcerpt || row.description) && (
@@ -233,6 +234,7 @@ export function DirectoryDetailHeader({ view, directory, onEdit }) {
         <div className="md-detail-header__meta">
           <StatusBadge status={view.reviewStatus} active={view.isActive} />
           {location && <span><MapPin size={14} aria-hidden="true" />{location}</span>}
+          {view.entity.public_id && <span className="md-nexaport-id">NexaPort ID <strong>{view.entity.public_id}</strong></span>}
         </div>
         {!isShipyard && view.description && <p className="md-detail-header__description">{view.description}</p>}
       </div>
@@ -303,10 +305,12 @@ const telephoneLink = (value) => {
   return (target.match(/\d/g) || []).length >= 3 ? `tel:${target}` : null;
 };
 
-export function CompanyOverview({ view }) {
+export function CompanyOverview({ view, showContactMethods = false }) {
   const email = validEmail(view.email);
   const website = safeWebsite(view.website);
   const phoneHref = telephoneLink(view.phone);
+  const additionalContacts = showContactMethods ? view.contactMethods.filter((contact) =>
+    (contact.contact_value !== view.phone && contact.contact_value !== view.email) || contact.person_name || contact.role_name) : [];
   const location = [view.city, view.country].filter(Boolean).join(", ");
   const facts = [
     ["Review status", view.reviewStatus === "pending" ? "Pending review" : view.reviewStatus],
@@ -321,14 +325,15 @@ export function CompanyOverview({ view }) {
         <dl className="md-contact-list">
           <div><dt><MapPin size={16} aria-hidden="true" />Location</dt><dd>{location || <span className="md-not-listed">Not listed</span>}</dd></div>
           <div><dt><MapPin size={16} aria-hidden="true" />Address</dt><dd>{view.address ? <address>{view.address}</address> : <span className="md-not-listed">Not listed</span>}</dd></div>
-          <div><dt><Mail size={16} aria-hidden="true" />Email</dt><dd>{email ? <span className="md-contact-value"><a href={`mailto:${email}`}>{email}</a><CopyButton value={email} label="Copy email" /></span> : <span className="md-not-listed">Not listed</span>}</dd></div>
-          <div><dt><Phone size={16} aria-hidden="true" />Phone</dt><dd>{view.phone ? <span className="md-contact-value">{phoneHref ? <a href={phoneHref}>{view.phone}</a> : view.phone}{phoneHref && <CopyButton value={view.phone} label="Copy phone number" />}</span> : <span className="md-not-listed">Not listed</span>}</dd></div>
+          {(!showContactMethods || email) && <div><dt><Mail size={16} aria-hidden="true" />Email</dt><dd>{email ? <span className="md-contact-value"><a href={`mailto:${email}`}>{email}</a><CopyButton value={email} label="Copy email" /></span> : <span className="md-not-listed">Not listed</span>}</dd></div>}
+          {(!showContactMethods || view.phone) && <div><dt><Phone size={16} aria-hidden="true" />Phone</dt><dd>{view.phone ? <span className="md-contact-value">{phoneHref ? <a href={phoneHref}>{view.phone}</a> : view.phone}{phoneHref && <CopyButton value={view.phone} label="Copy phone number" />}</span> : <span className="md-not-listed">Not listed</span>}</dd></div>}
           <div><dt><Globe2 size={16} aria-hidden="true" />Website</dt><dd>{website ? <a href={website} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${view.name} website (opens in a new tab)`}>Visit website<ExternalLink size={13} aria-hidden="true" /></a> : <span className="md-not-listed">Not listed</span>}</dd></div>
         </dl>
         {facts.length > 0 && <dl className="md-company-facts">
           {facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
         </dl>}
       </div>
+      {additionalContacts.length > 0 && <div className="md-overview-contacts"><h3>More direct contacts</h3><ContactMethodList rows={additionalContacts} /></div>}
     </DirectorySection>
   );
 }
@@ -428,8 +433,22 @@ export function BranchList({ rows }) {
         {email && <a href={`mailto:${email}`}>{email}</a>}
         {branch.phone && (phoneHref ? <a href={phoneHref}>{branch.phone}</a> : <span>{branch.phone}</span>)}
       </div>}
+      {branch.contactMethods?.length > 0 && <ContactMethodList rows={branch.contactMethods} />}
     </article>;
   })}</div>;
+}
+
+export function ContactMethodList({ rows }) {
+  if (!rows?.length) return <p>No public contact methods listed.</p>;
+  return <ul className="md-contact-methods">{rows.map((contact) => {
+    const value = contact.contact_value;
+    const href = contact.contact_type === "email" ? (validEmail(value) ? `mailto:${value}` : null) : telephoneLink(value);
+    return <li key={contact.id || `${contact.contact_type}-${value}`}>
+      {href ? <a href={href}>{value}</a> : <span>{value}</span>}
+      {contact.person_name && <span> · {contact.person_name}</span>}
+      {contact.role_name && <span> · {contact.role_name}</span>}
+    </li>;
+  })}</ul>;
 }
 
 export function RecordGrid({ rows, kind }) {

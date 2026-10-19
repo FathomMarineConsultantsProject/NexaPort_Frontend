@@ -29,7 +29,7 @@ export const MARITIME_DIRECTORIES = [
     icon: PackageOpen,
     description: "Verified marine suppliers providing provisions, equipment, spares and vessel stores.",
     serviceLabel: "Services",
-    sections: ["overview", "products", "services", "ports", "branches", "offices", "certifications", "class_approvals", "memberships", "faqs"],
+    sections: ["overview", "contact", "products", "services", "ports", "branches", "offices", "certifications", "class_approvals", "memberships", "faqs"],
   },
   {
     type: "shipyard",

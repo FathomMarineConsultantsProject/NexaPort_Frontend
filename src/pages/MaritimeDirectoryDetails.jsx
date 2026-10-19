@@ -12,6 +12,7 @@ import {
   BranchList,
   CompanyOverview,
   ContactDetails,
+  ContactMethodList,
   DirectoryDetailHeader,
   DirectorySection,
   FaqAccordion,
@@ -116,8 +117,10 @@ export default function MaritimeDirectoryDetails() {
   };
 
   const renderSection = (section) => {
-    if (section === "overview") return isDossier ? <CompanyOverview key={section} view={view} /> : <Overview key={section} view={view} />;
-    if (section === "contact") return <ContactDetails key={section} view={view} />;
+    if (section === "overview") return isDossier ? <CompanyOverview key={section} view={view} showContactMethods={directoryType === "supplier"} /> : <Overview key={section} view={view} />;
+    if (section === "contact") return directoryType === "supplier" && view.contactMethods.length
+      ? <DirectorySection key={section} id="contact" title="Company contacts"><ContactMethodList rows={view.contactMethods} /></DirectorySection>
+      : <ContactDetails key={section} view={view} />;
     if (section === "dimensions") return <ShipyardDimensions key={section} dimensions={view.dimensions} />;
     if (section === "fleet_summary") {
       const fleet = view.fleetSummary;
@@ -161,7 +164,14 @@ export default function MaritimeDirectoryDetails() {
     <main className={`md-detail-page md-detail-page--${directory.type}`}>
       <Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link>
       <DirectoryDetailHeader view={view} directory={directory} onEdit={directoryType === "owners_managers" ? null : () => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
-      {view.entity.public_id && <small className="nexaport-id">Reference: {view.entity.public_id}</small>}
+      {!view.isBunkerSupplier && view.sources.length > 0 && <p className="md-source-note">Source: {view.sources.map((source, index) => <span key={`${source.source_url}-${index}`}>{index > 0 ? ", " : ""}<a href={source.source_url} target="_blank" rel="noreferrer">{source.source_name}</a></span>)}</p>}
+      {directoryType === "supplier" && view.entity.extra_data?.impa && <section className="md-impa-panel" aria-label="IMPA listing information">
+        <div className="md-impa-panel__heading"><div><span className="md-impa-panel__eyebrow">Directory source</span><h2>IMPA member listing</h2></div>{view.entity.extra_data.impa.premium && <span className="md-impa-chip">Premium</span>}</div>
+        {Object.entries(view.entity.extra_data.impa.programmes || {}).some(([, value]) => value.status === "confirmed_yes") ?
+          <ul>{Object.entries(view.entity.extra_data.impa.programmes || {}).filter(([, value]) => value.status === "confirmed_yes").map(([name, value]) => <li key={name}><strong>{name}</strong><span>{value.statement}</span></li>)}</ul> :
+          <p>No additional IMPA programme participation is confirmed in the public listing.</p>}
+        <p className="md-impa-panel__footnote">Programme information is based on the public IMPA listing. Contact details are shown only when independently available.</p>
+      </section>}
       {error && <div className="md-alert" role="alert">{error}</div>}
 
       <section className="md-admin-actions" aria-label="Administrative actions">
@@ -173,7 +183,11 @@ export default function MaritimeDirectoryDetails() {
         </div>
       </section>
 
-      {isShipyard ? (
+      {directoryType === "supplier" ? (
+        <div className="md-detail-layout md-detail-layout--stacked">
+          {visibleSections.filter((section) => section !== "contact").map(renderSection)}
+        </div>
+      ) : isShipyard ? (
         <ShipyardProfile view={view} />
       ) : (
         <>

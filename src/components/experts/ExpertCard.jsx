@@ -54,7 +54,7 @@ export default function ExpertCard({ expert }) {
                 </div>
 
                 <div className="expert-badges">
-                    {(expert.directory_public_id || expert.nexaport_id) && <span className="expert-nexaport-id">Nexaport ID: {expert.directory_public_id || expert.nexaport_id}</span>}
+                    {(expert.nexaport_id || expert.directory_public_id) && <span className="expert-nexaport-id">Nexaport ID: {expert.nexaport_id || expert.directory_public_id}</span>}
                     {expert.is_premium && <span className="premium-badge">◎ Premium Consultant</span>}
                     <span className="available-badge">
                         <Clock3 size={14} />

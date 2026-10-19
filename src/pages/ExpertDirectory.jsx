@@ -63,7 +63,7 @@ export default function ExpertDirectory() {
     return experts.filter((expert) => {
       const nameMatch = (expert.full_name || "")
         .toLowerCase()
-        .includes(search.toLowerCase()) || String(expert.directory_public_id || expert.nexaport_id || "").toLowerCase() === search.trim().toLowerCase();
+        .includes(search.toLowerCase()) || [expert.nexaport_id, expert.public_id, expert.directory_public_id].some((id) => String(id || "").toLowerCase() === search.trim().toLowerCase());
 
       const availabilityMatch =
         availability === "All Availability" ||
