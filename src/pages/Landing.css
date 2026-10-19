@@ -42,6 +42,9 @@
 .landing-join-options a { padding: 10px 12px; }
 .landing-join-options a:hover, .landing-join-options a:focus-visible { background: #e9edef; }
 .landing-nav-login { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 17px; border: 1px solid #91a8b1; white-space: nowrap; }
+.landing-auth-state { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--landing-ink); font-size: 13px; white-space: nowrap; }
+.landing-auth-state button { border: 0; padding: 0; background: none; color: var(--landing-teal); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.landing-auth-state button:focus-visible { outline: 2px solid var(--landing-teal); outline-offset: 3px; }
 .landing-menu-toggle { display: none; width: 44px; height: 44px; border: 0; background: transparent; color: var(--landing-ink); place-items: center; cursor: pointer; }
 
 /* Immersive photographic opening */
@@ -214,6 +217,7 @@ html:has(.landing-page) { scroll-behavior: smooth; }
   .landing-join-trigger { width: 100%; justify-content: space-between; }
   .landing-join-options { position: static; width: 100%; padding: 0 0 0 12px; border: 0; border-left: 2px solid var(--landing-line); }
   .landing-navigation .landing-nav-login { margin-top: 10px; }
+  .landing-navigation .landing-auth-state { flex-wrap: wrap; white-space: normal; }
   .landing-hero h1 { font-size: clamp(48px, 5vw, 64px); }
   .landing-stat strong { font-size: clamp(26px, 2.65vw, 39px); }
   .landing-audience-client { grid-template-columns: minmax(0, 1.2fr) minmax(190px, .8fr); }

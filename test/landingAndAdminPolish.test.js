@@ -4,14 +4,17 @@ import test from "node:test";
 
 const source = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("landing keeps section anchors, registration routes, and the approved photograph", async () => {
-  const landing = await source("src/pages/Landing.jsx");
+test("landing keeps section anchors, registration choices, and the approved photograph", async () => {
+  const [landing, auth] = await Promise.all([source("src/pages/Landing.jsx"), source("src/pages/Auth.jsx")]);
   for (const anchor of ["how-it-works", "platform", "directories", "for-you"]) {
     assert.match(landing, new RegExp(`id="${anchor}"`));
   }
   for (const route of ["/register-client", "/register-consultant", "/register-maritime-company"]) {
-    assert.ok(landing.includes(route));
+    assert.ok(auth.includes(route));
   }
+  assert.match(landing, /to="\/login\?mode=register"/);
+  assert.match(landing, /to="\/dashboard"/);
+  assert.doesNotMatch(auth, /\/register-admin/);
   assert.match(landing, /landing-cargo-vessel\.jpg/);
   assert.doesNotMatch(landing, /Photo: Reco Alleyne/);
 });

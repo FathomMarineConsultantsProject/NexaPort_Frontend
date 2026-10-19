@@ -1,6 +1,6 @@
 import { Anchor, Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { loginUser } from "../api/Auth";
 import { loginDestination } from "../utils/workspaceRoles.js";
 import { safeReturnPath } from "../utils/safeReturnPath.js";
@@ -12,8 +12,15 @@ const REMEMBERED_KEY = "np_remembered_identifier";
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const returnTo = safeReturnPath(new URLSearchParams(location.search).get("returnTo"));
-  const [tab, setTab] = useState("login");
+  const tab = searchParams.get("mode") === "register" ? "register" : "login";
+  const setTab = (nextTab) => setSearchParams((current) => {
+    const next = new URLSearchParams(current);
+    if (nextTab === "register") next.set("mode", "register");
+    else next.delete("mode");
+    return next;
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

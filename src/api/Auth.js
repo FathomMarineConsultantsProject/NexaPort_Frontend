@@ -10,8 +10,8 @@ export const loginUser = async (payload) => {
   return res.data;
 };
 
-export const getMe = async () => {
-  const res = await axiosClient.get("/auth/me");
+export const getMe = async (config) => {
+  const res = await axiosClient.get("/auth/me", config);
   return res.data;
 };
 

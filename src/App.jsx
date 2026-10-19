@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Footer from "./components/layout/Footer";
 import Navbar from "./components/layout/Navbar";
 import ApprovedClientRoute from "./components/auth/ApprovedClientRoute";
+import useValidatedSession from "./components/auth/useValidatedSession";
 import Auth from "./pages/Auth";
 import ChooseWorkspace from "./pages/ChooseWorkspace";
 import Landing from "./pages/Landing";
@@ -42,7 +43,8 @@ import FillReportPage from "./pages/FillReportPage";
 import ReportDetailPage from "./pages/ReportDetailPage";
 import InspectionWorkflowQueue from "./pages/InspectionWorkflowQueue";
 import InspectionWorkflowWorkspace from "./pages/InspectionWorkflowWorkspace";
-import { getRoleId, getStoredUser, isMaritimeCompany } from "./utils/auth";
+import { getRoleId, isMaritimeCompany } from "./utils/auth";
+import { workspaceDestination } from "./utils/workspaceRoles.js";
 import "./App.css";
 
 function RequireAuth({ children }) {
@@ -51,10 +53,14 @@ function RequireAuth({ children }) {
 }
 
 function GuestOnly({ children }) {
-  if (!localStorage.getItem("np_token")) return children;
-  const user = getStoredUser();
+  const session = useValidatedSession();
+  if (session.status === "checking") return <div className="route-loading" role="status">Checking your session...</div>;
+  if (session.status === "indeterminate") return <div className="route-loading" role="alert">Unable to check your session. <button type="button" onClick={session.retry}>Try again</button> <button type="button" onClick={session.signOut}>Sign in again</button></div>;
+  if (session.status === "unauthenticated") return children;
+  const user = session.user;
   const requested = safeReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
-  const destination = Number(user.role_id) === 3 && user.verification_status !== "approved" ? "/client-verification-status" : requested || "/dashboard";
+  const workspace = workspaceDestination(user);
+  const destination = workspace === "/client-verification-status" ? workspace : requested || workspace;
   return <Navigate to={destination} replace />;
 }
 

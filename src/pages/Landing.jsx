@@ -1,6 +1,7 @@
-import { Anchor, ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import { Anchor, ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import useValidatedSession from "../components/auth/useValidatedSession";
 import { getPlatformStats } from "../api/publicStatsApi";
 import { getServiceRequestDropdowns } from "../api/masterApi";
 import { landingMetrics, metricText } from "./landingData";
@@ -30,6 +31,7 @@ const capabilities = [
 ];
 
 export default function Landing() {
+  const session = useValidatedSession();
   const isLoggedIn = Boolean(localStorage.getItem("np_token"));
   const [stats, setStats] = useState(null);
   const [verticals, setVerticals] = useState(null);
@@ -37,7 +39,6 @@ export default function Landing() {
   const [category, setCategory] = useState(0);
   const [preview, setPreview] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [joinOpen, setJoinOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -52,13 +53,13 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
-    if (!menuOpen && !joinOpen) return undefined;
+    if (!menuOpen) return undefined;
     const onEscape = (event) => {
-      if (event.key === "Escape") { setMenuOpen(false); setJoinOpen(false); }
+      if (event.key === "Escape") setMenuOpen(false);
     };
     document.addEventListener("keydown", onEscape);
     return () => document.removeEventListener("keydown", onEscape);
-  }, [menuOpen, joinOpen]);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
@@ -87,8 +88,10 @@ export default function Landing() {
       <button className="landing-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="landing-navigation" aria-label={menuOpen ? "Close navigation" : "Open navigation"} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={24} aria-hidden="true"/> : <Menu size={24} aria-hidden="true"/>}</button>
       <nav id="landing-navigation" className={menuOpen ? "landing-navigation open" : "landing-navigation"} aria-label="Main navigation">
         <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a><a href="#services" onClick={() => setMenuOpen(false)}>Inspection services</a><a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a><a href="#directories" onClick={() => setMenuOpen(false)}>Directories</a>
-        <div className="landing-join"><button type="button" className="landing-join-trigger" aria-expanded={joinOpen} aria-controls="landing-join-options" onClick={() => setJoinOpen((open) => !open)}>Join NexaPort <ChevronDown size={16} aria-hidden="true"/></button>{joinOpen && <div id="landing-join-options" className="landing-join-options"><Link to="/register-client" onClick={() => { setJoinOpen(false); setMenuOpen(false); }}>As a client</Link><Link to="/register-consultant" onClick={() => { setJoinOpen(false); setMenuOpen(false); }}>As a consultant or surveyor</Link><Link to="/register-maritime-company" onClick={() => { setJoinOpen(false); setMenuOpen(false); }}>As a maritime company</Link></div>}</div>
-        <Link className="landing-nav-login" to={workspacePath}>{isLoggedIn ? "Open workspace" : "Sign in"}</Link>
+        {session.status === "unauthenticated" && <><Link to="/login" onClick={() => setMenuOpen(false)}>Sign In</Link><Link className="landing-nav-login" to="/login?mode=register" onClick={() => setMenuOpen(false)}>Sign Up</Link></>}
+        {session.status === "authenticated" && <Link className="landing-nav-login" to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>}
+        {session.status === "checking" && <span className="landing-auth-state" role="status">Checking session…</span>}
+        {session.status === "indeterminate" && <span className="landing-auth-state" role="alert">Session unavailable <button type="button" onClick={session.retry}>Retry</button><button type="button" onClick={session.signOut}>Sign in again</button></span>}
       </nav>
     </div></header>
 

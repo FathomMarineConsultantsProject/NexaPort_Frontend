@@ -31,7 +31,8 @@ axiosClient.interceptors.response.use(
 
     if (
       err.response?.status === 401 &&
-      !isPasswordResetRequest
+      !isPasswordResetRequest &&
+      !err.config?.skipAuthRedirect
     ) {
       localStorage.removeItem("np_token");
       localStorage.removeItem("np_user");
