@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getExpertDashboard } from "../api/Dashboardapi";
+import { getManagedProfessionals } from "../api/professionalClaimsApi";
 import {
   DashboardError,
   DashboardKpiCard,
@@ -18,12 +19,14 @@ export default function ExpertDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [linkedProfiles, setLinkedProfiles] = useState([]);
   const load = useCallback(async () => {
     setLoading(true); setFailed(false);
     try {
-      const response = await getExpertDashboard();
+      const [response, profiles] = await Promise.all([getExpertDashboard(),getManagedProfessionals()]);
       if (!response.success) throw new Error("Dashboard request failed");
       setData(response.data);
+      setLinkedProfiles(profiles);
     } catch (error) {
       console.error("Expert dashboard load error:", error);
       setFailed(true);
@@ -40,6 +43,10 @@ export default function ExpertDashboard() {
   return (
     <main className="dashboard-page">
       <header className="dashboard-page__header"><div><span className="dashboard-eyebrow">Consultant workspace</span><h1>Opportunities & assignments</h1><p>Find suitable inspections, respond to revisions and follow active work.</p></div><Link className="dashboard-primary-action" to="/requests">Browse requests</Link></header>
+      {linkedProfiles.length > 0 && <DashboardSection title="Verified professional profiles" description="Original imported listings linked to your account.">
+        <div className="claim-results">{linkedProfiles.map(row=><article key={`${row.source_type}:${row.source_id}`}><div><strong>{row.profile.name}</strong><small>{row.profile.public_id} · {row.source_type.replaceAll("_"," ")}</small></div><Link to={`/professional-profile/${row.source_type}/${row.source_id}`}>Manage profile</Link></article>)}</div>
+      </DashboardSection>}
+      <p><Link to="/professional-claims">View professional claims and profiles</Link></p>
 
       <DashboardSection title="Matching requests" description="Available work matched to your ports, vessel types and discipline." count={data.matching_requests?.length || 0} urgent>
         <DashboardTable

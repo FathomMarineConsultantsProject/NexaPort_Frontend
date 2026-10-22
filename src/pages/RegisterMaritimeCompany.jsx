@@ -1,7 +1,10 @@
-import { Anchor, ArrowLeft, ArrowRight, Building2, Check, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import NexaportBrand from "../components/branding/NexaportBrand";
+import { ArrowLeft, ArrowRight, Building2, Check, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { confirmCompanyLogoUpload, createCompanyLogoUpload, registerMaritimeCompany } from "../api/maritimeCompanyApi";
+import { redeemClaimInvitation } from "../api/claimInvitationsApi";
+import { getPublicCompany, searchCompanies } from "../api/companyClaimsApi";
 import "./MaritimeCompany.css";
 
 const TYPES = [
@@ -37,6 +40,13 @@ function RepeatableSection({ name, title, fields, rows, errors, onChange }) {
 
 export default function RegisterMaritimeCompany() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetId = /^\/companies\/([0-9a-f-]{36})\/claim$/i.exec(searchParams.get("returnTo") || "")?.[1];
+  const inviteToken = /^[0-9a-f]{64}$/.test(searchParams.get("inviteToken") || "") ? searchParams.get("inviteToken") : null;
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [matches, setMatches] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [confirmDistinctCompany, setConfirmDistinctCompany] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initial);
   const [collections, setCollections] = useState(Object.fromEntries(Object.keys(SECTIONS).map((key) => [key, []])));
@@ -48,6 +58,19 @@ export default function RegisterMaritimeCompany() {
   const setCompany = (key, value) => setForm((current) => ({ ...current, company: { ...current.company, [key]: value } }));
   const toggleType = (type) => setForm((current) => ({ ...current, directoryTypes: current.directoryTypes.includes(type) ? current.directoryTypes.filter((t) => t !== type) : [...current.directoryTypes, type] }));
   const relevantSections = Object.entries(SECTIONS).filter(([, config]) => form.directoryTypes.some((t) => config.types.has(t)));
+  useEffect(() => {
+    if (!targetId) return;
+    let active = true;
+    getPublicCompany(targetId).then(company => { if (active) setSelectedCompany(company); }).catch(() => { if (active) setMessage("The selected company is unavailable. Search for your company below."); });
+    return () => { active = false; };
+  }, [targetId]);
+  const findCompany = async () => {
+    if (form.company.companyName.trim().length < 2) return;
+    setSearching(true); setMessage("");
+    try { setMatches((await searchCompanies({ q: form.company.companyName })).data); }
+    catch { setMessage("Company search is unavailable. Please try again before creating a new record."); }
+    finally { setSearching(false); }
+  };
 
   const next = () => {
     const nextErrors = {};
@@ -56,8 +79,8 @@ export default function RegisterMaritimeCompany() {
     if (!form.account.username.trim()) nextErrors["account.username"] = "Username is required.";
     if (form.account.password.length < 8 || !/[A-Za-z]/.test(form.account.password) || !/\d/.test(form.account.password)) nextErrors["account.password"] = "Use 8+ characters with letters and numbers.";
     if (form.account.confirmPassword !== form.account.password) nextErrors["account.confirmPassword"] = "Passwords do not match.";
-    if (!form.company.companyName.trim()) nextErrors["company.companyName"] = "Company name is required.";
-    if (!form.directoryTypes.length) nextErrors.directoryTypes = "Select at least one company type.";
+    if (!selectedCompany && !form.company.companyName.trim()) nextErrors["company.companyName"] = "Company name is required.";
+    if (!selectedCompany && !form.directoryTypes.length) nextErrors.directoryTypes = "Select at least one company type.";
     setErrors(nextErrors);
     if (!Object.keys(nextErrors).length) setStep(2);
   };
@@ -67,37 +90,42 @@ export default function RegisterMaritimeCompany() {
       setErrors({ logo: "Use a JPEG, PNG, or WebP image up to 5 MB." }); setSaving(false); return;
     }
     try {
-      const response = await registerMaritimeCompany({ ...form, ...collections });
+      const response = await registerMaritimeCompany(selectedCompany ? { account: form.account, existingEntityId: selectedCompany.id } : { ...form, ...collections, confirmDistinctCompany });
       localStorage.setItem("np_token", response.token); localStorage.setItem("np_user", JSON.stringify(response.user));
-      if (logo) {
+      if (inviteToken && selectedCompany) {
+        try { await redeemClaimInvitation(inviteToken); }
+        catch { navigate(`/claim-invitations/${inviteToken}`, { replace: true }); return; }
+      }
+      if (logo && !selectedCompany) {
         try {
           const upload = await createCompanyLogoUpload({ contentType: logo.type, size: logo.size });
           const put = await fetch(upload.data.uploadUrl, { method: "PUT", headers: { "content-type": logo.type }, body: logo });
           if (put.ok) await confirmCompanyLogoUpload({ key: upload.data.key, contentType: logo.type, size: logo.size });
         } catch { /* Logo is optional and can be retried from the company workspace. */ }
       }
-      navigate("/company-profile", { replace: true });
-    } catch (error) { setErrors(error.response?.data?.field_errors || {}); setMessage(error.response?.data?.message || "Unable to submit the company registration."); }
+      navigate(selectedCompany ? `/companies/${selectedCompany.id}/claim` : "/company-profile", { replace: true });
+    } catch (error) { setErrors(error.response?.data?.field_errors || {}); setMatches(error.response?.data?.candidates || []); setMessage(error.response?.data?.message || "Unable to submit the company registration."); }
     finally { setSaving(false); }
   };
   return <main className="company-onboarding">
-    <Link className="company-brand" to="/"><Anchor size={20} /> Nexa<span>Port</span></Link>
+    <NexaportBrand className="company-brand" />
     <section className="company-onboarding__card">
       <div className="company-progress"><span className="active"><b>{step > 1 ? <Check size={14} /> : "1"}</b> Account</span><i /><span className={step === 2 ? "active" : ""}><b>2</b> Company profile</span></div>
       {step === 1 ? <>
         <header><small>Maritime company registration</small><h1>What type of maritime company are you registering?</h1><p>Choose one or more directory categories, then add your account and company identity.</p></header>
-        <div className="company-type-grid">{TYPES.map(([value, title, description]) => <label key={value} className={form.directoryTypes.includes(value) ? "selected" : ""} tabIndex="0" onKeyDown={(event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); toggleType(value); } }}><input type="checkbox" checked={form.directoryTypes.includes(value)} onChange={() => toggleType(value)} aria-label={title} /><Building2 size={20} /><strong>{title}</strong><small>{description}</small><span className="company-type-check" aria-hidden="true">{form.directoryTypes.includes(value) && <Check size={14} />}</span></label>)}</div>
+        {!selectedCompany && <div className="company-type-grid">{TYPES.map(([value, title, description]) => <label key={value} className={form.directoryTypes.includes(value) ? "selected" : ""} tabIndex="0" onKeyDown={(event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); toggleType(value); } }}><input type="checkbox" checked={form.directoryTypes.includes(value)} onChange={() => toggleType(value)} aria-label={title} /><Building2 size={20} /><strong>{title}</strong><small>{description}</small><span className="company-type-check" aria-hidden="true">{form.directoryTypes.includes(value) && <Check size={14} />}</span></label>)}</div>}
         {errors.directoryTypes && <p className="company-field-error">{errors.directoryTypes}</p>}
         <div className="company-form-grid">{[["fullName","Contact name"],["email","Business email","email"],["username","Username"],["phone","Phone (optional)"],["password","Password","password"],["confirmPassword","Confirm password","password"]].map(([key,label,type]) => <label key={key}><span>{label}</span><input type={type || "text"} value={form.account[key]} onChange={(event) => setAccount(key,event.target.value)} />{errors[`account.${key}`] && <small>{errors[`account.${key}`]}</small>}</label>)}</div>
-        <div className="company-form-grid company-identity-grid">{[["companyName","Company name *"],["country","Country"],["city","City"]].map(([key,label]) => <label key={key}><span>{label}</span><input value={form.company[key]} onChange={(event) => setCompany(key,event.target.value)} />{errors[`company.${key}`] && <small>{errors[`company.${key}`]}</small>}</label>)}</div>
+        {selectedCompany ? <div className="company-review-note"><strong>Existing company selected: {selectedCompany.company_name}</strong><p>{selectedCompany.nexaport_company_id || "ID pending"} · {[selectedCompany.city,selectedCompany.country].filter(Boolean).join(", ")}. Account creation will lead to a claim request; access requires Super Admin approval.</p><button type="button" onClick={() => setSelectedCompany(null)}>Choose another company</button></div> : <><div className="company-form-grid company-identity-grid">{[["companyName","Company name *"],["country","Country"],["city","City"]].map(([key,label]) => <label key={key}><span>{label}</span><input value={form.company[key]} onChange={(event) => { setCompany(key,event.target.value); setConfirmDistinctCompany(false); }} />{errors[`company.${key}`] && <small>{errors[`company.${key}`]}</small>}</label>)}</div><button type="button" onClick={findCompany} disabled={searching}>{searching ? "Searching…" : "Check existing companies"}</button>{matches.length > 0 && <div className="company-existing-results"><strong>Possible existing companies</strong>{matches.map(match => <button key={match.id} type="button" onClick={() => { setSelectedCompany(match); setMatches([]); }}>{match.company_name} · {match.nexaport_company_id || "ID pending"} · {[match.city,match.country].filter(Boolean).join(", ")}</button>)}{!matches.some(match => match.exact_match) && <label><input type="checkbox" checked={confirmDistinctCompany} onChange={event => setConfirmDistinctCompany(event.target.checked)} /> My company is different from these listings; submit a new record for Super Admin review.</label>}</div>}</>}
         <div className="company-actions"><Link to="/login"><ArrowLeft size={16} /> Back</Link><button type="button" onClick={next}>Continue <ArrowRight size={16} /></button></div>
       </> : <form onSubmit={submit}>
         <header><small>Profile and review</small><h1>Tell mariners what you do</h1><p>Only the company name is required. Add useful directory details now or update them after signing in.</p></header>
         {message && <div className="company-message" role="alert">{message}</div>}
-        <div className="company-form-grid">{[["publicAddress","Public address"],["publicEmail","Public email","email"],["publicPhone","Public phone"],["website","Website"],["description","Company description","textarea"]].map(([key,label,type]) => <label key={key} className={type === "textarea" ? "wide" : ""}><span>{label}</span>{type === "textarea" ? <textarea value={form.company[key]} onChange={(event) => setCompany(key,event.target.value)} /> : <input type={type || "text"} value={form.company[key]} onChange={(event) => setCompany(key,event.target.value)} />}{errors[`company.${key}`] && <small>{errors[`company.${key}`]}</small>}</label>)}</div>
+        {!selectedCompany && <><div className="company-form-grid">{[["publicAddress","Public address"],["publicEmail","Public email","email"],["publicPhone","Public phone"],["website","Website"],["description","Company description","textarea"]].map(([key,label,type]) => <label key={key} className={type === "textarea" ? "wide" : ""}><span>{label}</span>{type === "textarea" ? <textarea value={form.company[key]} onChange={(event) => setCompany(key,event.target.value)} /> : <input type={type || "text"} value={form.company[key]} onChange={(event) => setCompany(key,event.target.value)} />}{errors[`company.${key}`] && <small>{errors[`company.${key}`]}</small>}</label>)}</div>
         {relevantSections.map(([name, config]) => <RepeatableSection key={name} name={name} title={config.title} fields={config.fields} rows={collections[name]} errors={errors} onChange={(rows) => setCollections({ ...collections, [name]: rows })} />)}
         <div className="company-form-grid company-logo-field"><label className="wide"><span>Company logo <small>optional · JPEG, PNG, or WebP · max 5 MB</small></span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setLogo(event.target.files?.[0] || null)} />{errors.logo && <small>{errors.logo}</small>}</label></div>
-        <div className="company-review-note"><strong>What happens next?</strong><p>Your profile will be marked Pending review. You may sign in and edit it immediately; it becomes visible in the directory after Super Admin approval.</p></div>
+        <div className="company-review-note"><strong>What happens next?</strong><p>Your profile will be marked Pending review. You may sign in and edit it immediately; it becomes visible in the directory after Super Admin approval.</p></div></>}
+        {selectedCompany && <div className="company-review-note"><strong>Next: claim {selectedCompany.company_name}</strong><p>Your account will be created without another company record. You will then provide verification information for Super Admin review.</p></div>}
         <div className="company-actions"><button className="secondary" type="button" onClick={() => setStep(1)}><ArrowLeft size={16} /> Back</button><button type="submit" disabled={saving}>{saving ? "Submitting..." : "Submit for review"}</button></div>
       </form>}
     </section>

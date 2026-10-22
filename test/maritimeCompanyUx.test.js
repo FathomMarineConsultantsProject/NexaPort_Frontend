@@ -23,6 +23,7 @@ test("company onboarding is two-step and supports multi-type selection", async (
 test("company accounts are routed to their isolated profile workspace", async () => {
   const [app, navbar] = await Promise.all([source("../src/App.jsx"), source("../src/components/layout/Navbar.jsx")]);
   assert.match(app, /function CompanyBoundary/);
-  assert.match(app, /location\.pathname !== "\/company-profile"/);
-  assert.match(navbar, /isCompany \? <NavLink to="\/company-profile"/);
+  assert.match(app, /location\.pathname\.startsWith\(p\)/);
+  assert.match(app, /path="\/company-profile\/:entityId"/);
+  assert.match(navbar, /NavLink to="\/company-profile"/);
 });

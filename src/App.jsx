@@ -10,6 +10,12 @@ import RegisterConsultant from "./pages/RegisterConsultant";
 import RegisterClient from "./pages/RegisterClient";
 import RegisterMaritimeCompany from "./pages/RegisterMaritimeCompany";
 import CompanyProfile from "./pages/CompanyProfile";
+import CompanyClaim, { CompanySearch, MyCompanyClaims } from "./pages/CompanyClaim";
+import AdminCompanyClaims from "./pages/AdminCompanyClaims";
+import ProfessionalClaim, { ProfessionalSearch, RegisterProfessionalClaim, MyProfessionalClaims, ManagedProfessionalProfile } from "./pages/ProfessionalClaim";
+import AdminProfessionalClaims from "./pages/AdminProfessionalClaims";
+import AdminProfileClaims from "./pages/AdminProfileClaims";
+import ClaimInvitation from "./pages/ClaimInvitation";
 import ClientVerificationStatus from "./pages/ClientVerificationStatus";
 import AdminClientRegistrations from "./pages/AdminClientRegistrations";
 import AdminClientRegistrationDetails from "./pages/AdminClientRegistrationDetails";
@@ -60,13 +66,13 @@ function GuestOnly({ children }) {
   const user = session.user;
   const requested = safeReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
   const workspace = workspaceDestination(user);
-  const destination = workspace === "/client-verification-status" ? workspace : requested || workspace;
+  const destination = requested?.startsWith("/companies/") || requested?.startsWith("/professionals/") || requested?.startsWith("/claim-invitations/") ? requested : workspace === "/client-verification-status" ? workspace : requested || workspace;
   return <Navigate to={destination} replace />;
 }
 
 function CompanyBoundary({ children }) {
   const location = useLocation();
-  if (isMaritimeCompany() && location.pathname !== "/company-profile" && !["/dashboard", "/profile"].some((p) => location.pathname.startsWith(p))) {
+  if (isMaritimeCompany() && !["/company-profile", "/dashboard", "/profile"].some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -154,6 +160,13 @@ const Shell = () => (
         <Route path="/ports/:id" element={<PortDetailPage />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/company-profile" element={<CompanyProfile />} />
+        <Route path="/company-profile/:entityId" element={<CompanyProfile />} />
+        <Route path="/admin/company-claims" element={<AdminOnly><Navigate to="/admin/profile-claims?type=companies" replace /></AdminOnly>} />
+        <Route path="/admin/profile-claims" element={<AdminOnly><AdminProfileClaims /></AdminOnly>} />
+        <Route path="/admin/company-claims/:id" element={<AdminOnly><AdminCompanyClaims /></AdminOnly>} />
+        <Route path="/admin/professional-claims" element={<AdminOnly><Navigate to="/admin/profile-claims?type=professionals" replace /></AdminOnly>} />
+        <Route path="/admin/professional-claims/:id" element={<AdminOnly><AdminProfessionalClaims /></AdminOnly>} />
+        <Route path="/professional-profile/:type/:id" element={<ManagedProfessionalProfile />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </main>
@@ -168,6 +181,14 @@ export default function App() {
       <Route path="/register-consultant" element={<RegisterConsultant />} />
       <Route path="/register-client" element={<GuestOnly><RegisterClient /></GuestOnly>} />
       <Route path="/register-maritime-company" element={<GuestOnly><RegisterMaritimeCompany /></GuestOnly>} />
+      <Route path="/register-professional-claim" element={<GuestOnly><RegisterProfessionalClaim /></GuestOnly>} />
+      <Route path="/companies" element={<CompanySearch />} />
+      <Route path="/companies/:id/claim" element={<CompanyClaim />} />
+      <Route path="/company-claims" element={<RequireAuth><MyCompanyClaims /></RequireAuth>} />
+      <Route path="/professionals" element={<ProfessionalSearch />} />
+      <Route path="/professionals/:type/:id/claim" element={<ProfessionalClaim />} />
+      <Route path="/professional-claims" element={<RequireAuth><MyProfessionalClaims /></RequireAuth>} />
+      <Route path="/claim-invitations/:token" element={<ClaimInvitation />} />
       <Route path="/login" element={<GuestOnly><Auth /></GuestOnly>} />
       <Route path="/s/:opaqueIdentifier" element={<SharedRequest />} />
       <Route path="/choose-workspace" element={<RequireAuth><ChooseWorkspace /></RequireAuth>} />

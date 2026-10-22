@@ -6,7 +6,8 @@ import {
   Star,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
+import AdminClaimStatus from "../components/directories/AdminClaimStatus";
 
 import {
   createExpertMediaUploadUrl,
@@ -770,6 +771,7 @@ export default function ExpertProfile() {
           <div className="expert-profile-info">
             <h1>{expert.full_name}</h1>
             {(expert.nexaport_id || expert.directory_public_id) && <p className="expert-nexaport-id">Nexaport ID: <strong>{expert.nexaport_id || expert.directory_public_id}</strong></p>}
+            {!expert.user_id && <><AdminClaimStatus professionalType="expert" professionalId={String(expert.id)} /><p><Link to={`/professionals/expert/${expert.id}/claim`}>Open profile claim</Link></p></>}
 
             <div className="expert-profile-meta">
               <div className="rating-row">

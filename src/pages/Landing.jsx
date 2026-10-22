@@ -1,4 +1,5 @@
-import { Anchor, ArrowRight, Menu, X } from "lucide-react";
+import NexaportBrand from "../components/branding/NexaportBrand";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useValidatedSession from "../components/auth/useValidatedSession";
@@ -84,7 +85,7 @@ export default function Landing() {
   return <div className="landing-page">
     <a className="landing-skip" href="#landing-main">Skip to content</a>
     <header className="landing-header"><div className="landing-container landing-header-inner">
-      <Link className="landing-brand" to="/" aria-label="NexaPort home"><span className="landing-brand-mark"><Anchor size={21} aria-hidden="true"/></span><span>Nexa<strong>Port</strong></span></Link>
+      <NexaportBrand className="landing-brand" />
       <button className="landing-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="landing-navigation" aria-label={menuOpen ? "Close navigation" : "Open navigation"} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={24} aria-hidden="true"/> : <Menu size={24} aria-hidden="true"/>}</button>
       <nav id="landing-navigation" className={menuOpen ? "landing-navigation open" : "landing-navigation"} aria-label="Main navigation">
         <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a><a href="#services" onClick={() => setMenuOpen(false)}>Inspection services</a><a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a><a href="#directories" onClick={() => setMenuOpen(false)}>Directories</a>
@@ -120,6 +121,6 @@ export default function Landing() {
       <section className="landing-closing landing-reveal" aria-labelledby="landing-closing-title"><div className="landing-container landing-closing-layout"><div><p className="landing-kicker">Begin with a clear brief</p><h2 id="landing-closing-title">Start your next inspection with a clear brief.</h2><p>Bring the vessel, port and scope into one managed request.</p></div><div className="landing-closing-actions"><Link className="landing-button landing-button-light" to={requestPath}>Request a service <ArrowRight size={18} aria-hidden="true"/></Link><Link className="landing-text-link" to="/register-consultant">Register as a consultant</Link></div></div></section>
     </main>
 
-    <footer className="landing-footer"><div className="landing-container"><div className="landing-footer-main"><div><Link className="landing-brand" to="/" aria-label="NexaPort home"><span className="landing-brand-mark"><Anchor size={21} aria-hidden="true"/></span><span>Nexa<strong>Port</strong></span></Link><p>Marine inspections, managed end to end.</p></div><nav aria-label="Footer navigation"><div><strong>Explore</strong><a href="#how-it-works">How it works</a><a href="#services">Inspection services</a><a href="#platform">Platform</a><a href="#directories">Maritime directories</a></div><div><strong>Get started</strong><Link to="/register-client">Client registration</Link><Link to="/register-consultant">Consultant registration</Link><Link to="/register-maritime-company">Maritime company registration</Link></div><div><strong>Account</strong><Link to={workspacePath}>{isLoggedIn ? "Open workspace" : "Sign in"}</Link></div></nav></div><div className="landing-footer-bottom"><span>© {new Date().getFullYear()} NexaPort</span></div></div></footer>
+    <footer className="landing-footer"><div className="landing-container"><div className="landing-footer-main"><div><NexaportBrand className="landing-brand" surface="dark" /><p>Marine inspections, managed end to end.</p></div><nav aria-label="Footer navigation"><div><strong>Explore</strong><a href="#how-it-works">How it works</a><a href="#services">Inspection services</a><a href="#platform">Platform</a><a href="#directories">Maritime directories</a></div><div><strong>Get started</strong><Link to="/register-client">Client registration</Link><Link to="/register-consultant">Consultant registration</Link><Link to="/register-maritime-company">Maritime company registration</Link></div><div><strong>Account</strong><Link to={workspacePath}>{isLoggedIn ? "Open workspace" : "Sign in"}</Link></div></nav></div><div className="landing-footer-bottom"><span>© {new Date().getFullYear()} NexaPort</span></div></div></footer>
   </div>;
 }

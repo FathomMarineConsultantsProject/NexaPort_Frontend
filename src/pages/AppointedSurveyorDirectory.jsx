@@ -10,10 +10,11 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getAppointedSurveyors } from "../api/appointedSurveyorApi";
 import CopyableContact from "../components/common/CopyableContact";
 import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
+import AdminClaimStatus from "../components/directories/AdminClaimStatus";
 import ViewToggle from "../components/common/ViewToggle";
 import "./AppointedSurveyorDirectory.css";
 
@@ -274,7 +275,7 @@ export default function AppointedSurveyorDirectory() {
                     <ContactRow icon={MapPin} label="Address" value={surveyor.address_text} />
                   </div>
 
-                  <div className="appointed-card-foot"><span>Source: {surveyor.source_document_title}</span><button type="button" onClick={() => setSelectedSurveyor(surveyor)}>View details</button></div>
+                  <div className="appointed-card-foot"><span>Source: {surveyor.source_document_title}</span><button type="button" onClick={() => setSelectedSurveyor(surveyor)}>View details</button>{surveyor.full_name && <Link to={`/professionals/appointed_surveyor/${surveyor.id}/claim`}>Claim options</Link>}</div>
                 </article>
               );
             })}
@@ -295,7 +296,7 @@ export default function AppointedSurveyorDirectory() {
                         <td>{phone ? <CopyableContact value={phone} href={phoneHref(phone)} type="phone" /> : "—"}</td>
                         <td>{surveyor.country || "—"}</td>
                         <td>{surveyor.mlc_under_500gt_authorized ? "Authorized" : "Not authorized"}</td>
-                        <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedSurveyor(surveyor); }}>View details</button></td>
+                        <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedSurveyor(surveyor); }}>View details</button>{surveyor.full_name && <> · <Link to={`/professionals/appointed_surveyor/${surveyor.id}/claim`}>Claim options</Link></>}</td>
                       </tr>
                     );
                   })}
@@ -312,6 +313,7 @@ export default function AppointedSurveyorDirectory() {
           title={[selectedSurveyor.professional_title, selectedSurveyor.full_name].filter(Boolean).join(" ")}
           onClose={() => setSelectedSurveyor(null)}
         >
+          {selectedSurveyor.full_name && <AdminClaimStatus professionalType="appointed_surveyor" professionalId={String(selectedSurveyor.id)} />}
           <DirectoryDetailGrid entries={[
             ["Organization", selectedSurveyor.organization_name],
             ["Appointment scope", selectedSurveyor.appointment_scope],

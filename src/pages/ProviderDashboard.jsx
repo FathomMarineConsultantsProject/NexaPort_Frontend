@@ -31,7 +31,7 @@ export default function ProviderDashboard() {
     } catch (err) {
       setError(
         err.response?.status === 404
-          ? "No company profile is linked to this account. Please contact support."
+          ? "No approved company is linked to this account yet. Track your claim or find your company below."
           : err.response?.data?.message || "Unable to load dashboard. Please try again.",
       );
     } finally {
@@ -57,6 +57,8 @@ export default function ProviderDashboard() {
           <strong>Dashboard unavailable</strong>
           <span>{error}</span>
           <button type="button" onClick={load}>Retry</button>
+          <Link to="/companies">Find a company</Link>
+          <Link to="/company-claims">Track claims</Link>
         </div>
       </div>
     );
@@ -81,6 +83,7 @@ export default function ProviderDashboard() {
         <Link to="/company-profile" className="pd-header-action">
           <Building2 size={14} /> Edit Company Profile
         </Link>
+        <Link to="/company-claims">My company claims</Link>
       </header>
 
       <div className="pd-status-bar">

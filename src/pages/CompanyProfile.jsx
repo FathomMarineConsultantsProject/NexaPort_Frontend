@@ -1,5 +1,6 @@
 import { Building2, CheckCircle2, Clock3, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { confirmCompanyLogoUpload, createCompanyLogoUpload, getCompanyProfile, updateCompanyProfile } from "../api/maritimeCompanyApi";
 import "./CompanyProfile.css";
 
@@ -37,6 +38,7 @@ function RepeatableSection({ name, title, fields, rows, errors, onChange }) {
 }
 
 export default function CompanyProfile() {
+  const { entityId } = useParams();
   const [company, setCompany] = useState(blankCompany);
   const [directoryTypes, setDirectoryTypes] = useState([]);
   const [status, setStatus] = useState("pending");
@@ -50,17 +52,19 @@ export default function CompanyProfile() {
   const [retry, setRetry] = useState(0);
   const [errors, setErrors] = useState({});
   const [logo, setLogo] = useState(null);
+  const [imported, setImported] = useState(false);
 
   useEffect(() => {
     let active = true;
-    getCompanyProfile().then((response) => {
+    getCompanyProfile(entityId).then((response) => {
       if (!active) return;
       setLoadError("");
       const detail = response.data;
       setCompany(Object.fromEntries(fields.map(([key]) => [key, detail.entity[snake(key)] ?? ""])));
       setDirectoryTypes(detail.directory_types || [detail.account.primary_type]);
       setStatus(detail.entity.review_status || detail.account.review_status);
-      setPublicId(detail.entity.public_id || "");
+      setPublicId(detail.entity.nexaport_company_id || "");
+      setImported(Boolean(detail.account.imported_protected));
       const loadedCollections = {};
       for (const [key, config] of Object.entries(SECTIONS)) {
         const rows = detail[snake(key)] || [];
@@ -69,7 +73,7 @@ export default function CompanyProfile() {
       setCollections(loadedCollections);
     }).catch((error) => active && setLoadError(error.response?.data?.message || "Unable to load the company profile. Check your connection and try again.")).finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [retry]);
+  }, [retry, entityId]);
 
   const toggleType = (type) => {
     if (directoryTypes.includes(type)) {
@@ -92,15 +96,15 @@ export default function CompanyProfile() {
       return;
     }
     try {
-      const response = await updateCompanyProfile({ company, directoryTypes, ...collections });
-      if (logo) {
-        const upload = await createCompanyLogoUpload({ contentType: logo.type, size: logo.size });
+      const response = await updateCompanyProfile(imported ? { company: Object.fromEntries(["description", "website", "publicEmail", "publicPhone", "publicAddress"].map(key => [key, company[key]])) } : { company, directoryTypes, ...collections }, entityId);
+      if (logo && !imported) {
+        const upload = await createCompanyLogoUpload({ contentType: logo.type, size: logo.size }, entityId);
         const put = await fetch(upload.data.uploadUrl, { method: "PUT", headers: { "content-type": logo.type }, body: logo });
         if (!put.ok) throw new Error("Logo upload failed.");
-        await confirmCompanyLogoUpload({ key: upload.data.key, contentType: logo.type, size: logo.size });
+        await confirmCompanyLogoUpload({ key: upload.data.key, contentType: logo.type, size: logo.size }, entityId);
         setLogo(null);
       }
-      setStatus(response.data.entity.review_status); setPublicId(response.data.entity.public_id || publicId); setMessage("Company profile saved.");
+      setStatus(response.data.entity.review_status); setPublicId(response.data.entity.nexaport_company_id || publicId); setMessage("Company profile saved.");
     } catch (error) { setSaveError(true); setErrors(error.response?.data?.field_errors || {}); setMessage(error.response?.data?.message || "Unable to save the company profile. Review the fields and try again."); }
     finally { setSaving(false); }
   };
@@ -110,10 +114,12 @@ export default function CompanyProfile() {
   const approved = status === "approved";
 
   return <main className="company-workspace">
-    <header className="company-workspace__hero"><div><small>Company workspace</small><h1>{company.companyName || "Maritime Company"}</h1>{publicId && <small className="nexaport-id">Reference: {publicId}</small>}<p>Maintain the public directory information mariners use to find your business.</p></div><div className={`company-status ${approved ? "approved" : "pending"}`}>{approved ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}<span><small>Approval status</small><strong>{status}</strong></span></div></header>
+    <header className="company-workspace__hero"><div><small>Company workspace</small><h1>{company.companyName || "Maritime Company"}</h1>{publicId && <small className="nexaport-id">NexaPort ID: {publicId}</small>}<p>Maintain the public directory information mariners use to find your business.</p></div><div className={`company-status ${approved ? "approved" : "pending"}`}>{approved ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}<span><small>Approval status</small><strong>{status}</strong></span></div></header>
+    {imported && <div className="company-workspace__notice"><span><strong>Imported company record</strong> · Contact and description edits are available. Classifications, source records, services and certifications require Super Admin review.</span></div>}
+    <Link to="/companies">Find another company to claim</Link>
     <nav className="company-workspace__nav" aria-label="Company profile sections">
       <a href="#company-overview">Overview</a>
-      {Object.entries(SECTIONS).map(([name, config]) => <a key={name} href={`#company-${name}`}>{config.title}</a>)}
+      {!imported && Object.entries(SECTIONS).map(([name, config]) => <a key={name} href={`#company-${name}`}>{config.title}</a>)}
     </nav>
     {!approved && <div className="company-workspace__notice"><Clock3 size={18} /><span><strong>Your profile is under review.</strong> You can keep editing it. It will appear publicly after Super Admin approval.</span></div>}
     {message && <div className="company-workspace__message" role={saveError ? "alert" : "status"}>{message}</div>}
@@ -123,24 +129,24 @@ export default function CompanyProfile() {
           <span><Building2 size={18} /></span>
           <div><h2>Company profile</h2><p>Select all categories that describe your company's operations.</p></div>
         </div>
-        <div className="company-type-select-row" aria-label="Company categories">
+        {!imported && <div className="company-type-select-row" aria-label="Company categories">
           {TYPES.map(([typeValue, label]) => (
             <label key={typeValue} className={`company-type-chip ${directoryTypes.includes(typeValue) ? "selected" : ""}`}>
               <input type="checkbox" checked={directoryTypes.includes(typeValue)} onChange={() => toggleType(typeValue)} />
               <span>{label}</span>
             </label>
           ))}
-        </div>
+        </div>}
         {errors.directoryTypes && <p className="company-field-error">{errors.directoryTypes}</p>}
         <div className="company-form-grid">
-          {fields.map(([key,label,inputType]) => <label key={key} className={inputType === "textarea" ? "wide" : ""}><span>{label}{key === "companyName" ? " *" : ""}</span>{inputType === "textarea" ? <textarea value={company[key]} onChange={(event) => setCompany({ ...company, [key]: event.target.value })} /> : <input type={inputType || "text"} value={company[key]} onChange={(event) => setCompany({ ...company, [key]: event.target.value })} />}{errors[`company.${key}`] && <small>{errors[`company.${key}`]}</small>}</label>)}
-          <label className="wide"><span>Company logo <small>JPEG, PNG, or WebP · max 5 MB</small></span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setLogo(event.target.files?.[0] || null)} />{errors.logo && <small>{errors.logo}</small>}</label>
+          {fields.filter(([key]) => !imported || ["description", "website", "publicEmail", "publicPhone", "publicAddress"].includes(key)).map(([key,label,inputType]) => <label key={key} className={inputType === "textarea" ? "wide" : ""}><span>{label}{key === "companyName" ? " *" : ""}</span>{inputType === "textarea" ? <textarea value={company[key]} onChange={(event) => setCompany({ ...company, [key]: event.target.value })} /> : <input type={inputType || "text"} value={company[key]} onChange={(event) => setCompany({ ...company, [key]: event.target.value })} />}{errors[`company.${key}`] && <small>{errors[`company.${key}`]}</small>}</label>)}
+          {!imported && <label className="wide"><span>Company logo <small>JPEG, PNG, or WebP · max 5 MB</small></span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setLogo(event.target.files?.[0] || null)} />{errors.logo && <small>{errors.logo}</small>}</label>}
         </div>
       </section>
 
-      {Object.entries(SECTIONS).map(([name, config]) => <RepeatableSection key={name} name={name} title={config.title} fields={config.fields} rows={collections[name] || []} errors={errors} onChange={(rows) => setCollections({ ...collections, [name]: rows })} />)}
+      {!imported && Object.entries(SECTIONS).map(([name, config]) => <RepeatableSection key={name} name={name} title={config.title} fields={config.fields} rows={collections[name] || []} errors={errors} onChange={(rows) => setCollections({ ...collections, [name]: rows })} />)}
 
-      <div className="company-workspace__actions"><span>{approved ? "Approved directory profile" : "Profile changes remain subject to review"}</span><button type="submit" disabled={saving}><Save size={17} aria-hidden="true" /> {saving ? "Saving…" : "Save Profile"}</button></div>
+      <div className="company-workspace__actions"><span>{imported ? "Contact details update immediately" : approved ? "Approved directory profile" : "Profile changes update immediately; directory approval is separate"}</span><button type="submit" disabled={saving}><Save size={17} aria-hidden="true" /> {saving ? "Saving…" : "Save Profile"}</button></div>
     </form>
   </main>;
 }

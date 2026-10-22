@@ -1,6 +1,7 @@
 import { ArrowLeft, Building2, ExternalLink, MapPin, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import AdminClaimStatus from "../components/directories/AdminClaimStatus";
 import { getFlagInspector } from "../api/flagApi";
 import CopyableContact from "../components/common/CopyableContact";
 import "./FlagInspectorProfile.css";
@@ -110,6 +111,7 @@ export default function FlagInspectorProfile() {
           <span>{flag?.name || "Flag"} {companyOnly ? "Flag Inspection Company" : "Flag Inspector"}</span>
           <h1>{displayName}</h1>
           {inspector.public_id && <small className="nexaport-id">Reference: {inspector.public_id}</small>}
+          {!companyOnly && <><AdminClaimStatus professionalType="flag_inspector" professionalId={String(inspector.id)} /><p><Link to={`/professionals/flag_inspector/${inspector.id}/claim`}>Open profile claim</Link></p></>}
           <p>
             <MapPin size={16} />
             {[inspector.location, inspector.region, inspector.country]

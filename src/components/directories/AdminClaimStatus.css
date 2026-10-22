@@ -1,0 +1,27 @@
+.account-ownership { margin:16px 0 24px; padding:16px 20px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; }
+.account-ownership__head { display:flex; justify-content:space-between; align-items:start; gap:16px; }
+.account-ownership h2 { margin:0; font-size:1.05rem; }
+.account-ownership p { margin:4px 0 0; color:#475569; font-size:.86rem; }
+.account-ownership__status { padding:4px 8px; border:1px solid #94a3b8; font-size:.8rem; white-space:nowrap; }
+.account-ownership__facts { display:flex; flex-wrap:wrap; gap:28px; margin:14px 0; }
+.account-ownership__facts div { display:flex; gap:8px; align-items:baseline; }
+.account-ownership__facts dt { color:#475569; font-size:.85rem; }
+.account-ownership__facts dd { margin:0; font-weight:700; }
+.account-ownership__actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.account-ownership__actions button,.account-ownership__actions a { border:1px solid #0f766e; border-radius:3px; padding:7px 12px; background:#0f766e; color:#fff; font:inherit; font-size:.85rem; font-weight:700; text-decoration:none; cursor:pointer; }
+.account-ownership__actions a,.account-ownership__actions button+button { background:#fff; color:#0f766e; }
+.account-ownership__actions button:disabled { opacity:.55; cursor:default; }
+.account-ownership__invite { display:grid; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid #cbd5e1; }
+.account-ownership__invite label { display:grid; gap:5px; font-size:.84rem; font-weight:700; }
+.account-ownership__invite input { width:min(100%,560px); box-sizing:border-box; padding:8px; border:1px solid #94a3b8; border-radius:3px; font:inherit; }
+.account-ownership__link { display:grid; gap:8px; }
+.account-ownership__link input { width:100%; }
+.account-ownership__link small { color:#475569; }
+.account-ownership__history { display:grid; gap:7px; padding-top:10px; border-top:1px solid #cbd5e1; font-size:.82rem; }
+.account-ownership__history>div { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.account-ownership__history button { border:0; background:none; color:#0f766e; font:inherit; font-weight:700; cursor:pointer; }
+.account-ownership__pending { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 12px; }
+.account-ownership__pending a { color:#0f766e; font-size:.84rem; font-weight:700; }
+.account-ownership__error { color:#9f1239 !important; }
+.account-ownership :is(button,a,input):focus-visible { outline:2px solid #0f766e; outline-offset:2px; }
+@media(max-width:600px) { .account-ownership { padding:14px; } .account-ownership__head { flex-wrap:wrap; } }

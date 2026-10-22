@@ -1,0 +1,7 @@
+.nexaport-brand { display:inline-flex; align-items:center; gap:8px; flex:none; line-height:0; text-decoration:none; }
+.nexaport-brand__symbol { display:block; width:34px; height:34px; object-fit:contain; }
+.nexaport-brand__wordmark { display:block; width:auto; height:29px; max-width:180px; object-fit:contain; }
+.nexaport-brand--dark .nexaport-brand__wordmark { filter:brightness(0) invert(1); }
+.nexaport-brand--compact .nexaport-brand__symbol { width:30px; height:30px; }
+.nexaport-brand--compact .nexaport-brand__wordmark { height:25px; }
+@media(max-width:460px) { .nexaport-brand--compact .nexaport-brand__wordmark { display:none; } }

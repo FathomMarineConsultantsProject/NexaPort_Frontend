@@ -1,4 +1,5 @@
-import { Anchor, Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-react";
+import NexaportBrand from "../components/branding/NexaportBrand";
+import { Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { loginUser } from "../api/Auth";
@@ -58,7 +59,7 @@ export default function Auth() {
       navigate(
         returnTo && loginDestination(response.user) === "/choose-workspace"
           ? `/choose-workspace?returnTo=${encodeURIComponent(returnTo)}`
-          : returnTo && loginDestination(response.user) !== "/client-verification-status"
+          : returnTo && (returnTo.startsWith("/companies/") || returnTo.startsWith("/professionals/") || returnTo.startsWith("/claim-invitations/") || loginDestination(response.user) !== "/client-verification-status")
             ? returnTo : loginDestination(response.user),
         { replace: true },
       );
@@ -81,10 +82,7 @@ export default function Auth() {
     <div className="auth-page">
       <div className="auth-page-inner">
         {/* Branding */}
-        <div className="auth-brand">
-          <div className="auth-brand-mark"><Anchor size={20} strokeWidth={2.4} /></div>
-          <span className="auth-brand-text">Nexa<span>Port</span></span>
-        </div>
+        <NexaportBrand className="auth-brand" />
 
         {/* Card */}
         <div className={`auth-card ${tab === "register" ? "auth-card--register" : ""}`}>
@@ -210,7 +208,7 @@ export default function Auth() {
                   <span className="auth-role-action">Register &rarr;</span>
                 </Link>
 
-                <Link to="/register-maritime-company" className="auth-role-card">
+                <Link to={returnTo?.startsWith("/companies/") ? `/register-maritime-company?returnTo=${encodeURIComponent(returnTo)}` : "/register-maritime-company"} className="auth-role-card">
                   <span className="auth-role-icon"><Building2 size={19} /></span>
                   <div className="auth-role-info">
                     <strong>Maritime Company</strong>

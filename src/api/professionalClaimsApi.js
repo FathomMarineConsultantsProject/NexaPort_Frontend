@@ -1,0 +1,18 @@
+import axiosClient from "./axiosClient";
+const path = (type,id) => `${encodeURIComponent(type)}/${encodeURIComponent(id)}`;
+export const searchProfessionals = async params => (await axiosClient.get("/public/professionals/search",{ params })).data.data;
+export const getPublicProfessional = async (type,id) => (await axiosClient.get(`/public/professionals/${path(type,id)}`)).data.data;
+export const registerProfessionalClaimAccount = async body => (await axiosClient.post("/auth/register-professional-claim",body)).data;
+export const getProfessionalClaimState = async (type,id) => (await axiosClient.get(`/professional-claims/${path(type,id)}/state`)).data.data;
+export const getMyProfessionalClaims = async () => (await axiosClient.get("/professional-claims/mine")).data.data;
+export const getManagedProfessionals = async () => (await axiosClient.get("/professional-claims/managed")).data.data;
+export const submitProfessionalClaim = async body => (await axiosClient.post("/professional-claims",body)).data.data;
+export const createProfessionalEvidenceUpload = async body => (await axiosClient.post("/professional-claims/evidence/upload-url",body)).data.data;
+export const getProfessionalProfile = async (type,id) => (await axiosClient.get(`/professional-claims/${path(type,id)}/profile`)).data.data;
+export const updateProfessionalProfile = async (type,id,body) => (await axiosClient.patch(`/professional-claims/${path(type,id)}/profile`,body)).data.data;
+export const getAdminProfessionalClaims = async params => (await axiosClient.get("/admin/professional-claims",{ params })).data.data;
+export const getAdminProfessionalClaim = async id => (await axiosClient.get(`/admin/professional-claims/${id}`)).data.data;
+export const getAdminProfessionalTargetStatus = async (type,id) => (await axiosClient.get(`/admin/professional-claims/targets/${path(type,id)}`)).data.data;
+export const getProfessionalEvidence = async id => (await axiosClient.get(`/admin/professional-claims/${id}/evidence`)).data.data;
+export const decideProfessionalClaim = async (id,action,notes,publicReason) => (await axiosClient.post(`/admin/professional-claims/${id}/${action}`,{ notes,publicReason })).data.data;
+export const revokeProfessionalLink = async (type,id,userId,notes) => (await axiosClient.post(`/admin/professional-claims/links/${path(type,id)}/${encodeURIComponent(userId)}/revoke`,{notes})).data.data;

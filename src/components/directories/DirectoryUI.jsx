@@ -181,7 +181,7 @@ export function DirectoryResultCard({ row, directory }) {
       <div className="md-result-card__body">
         <div className="md-result-card__title">
           <h2>{row.company_name || row.companyName}</h2>
-          {row.public_id && <small className="nexaport-id">NexaPort ID: {row.public_id}</small>}
+          {row.nexaport_company_id && <small className="nexaport-id">NexaPort ID: {row.nexaport_company_id}</small>}
           <StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} />
         </div>
         <div className="md-result-card__types" aria-label="Directory classifications">
@@ -234,7 +234,7 @@ export function DirectoryDetailHeader({ view, directory, onEdit }) {
         <div className="md-detail-header__meta">
           <StatusBadge status={view.reviewStatus} active={view.isActive} />
           {location && <span><MapPin size={14} aria-hidden="true" />{location}</span>}
-          {view.entity.public_id && <span className="md-nexaport-id">NexaPort ID <strong>{view.entity.public_id}</strong></span>}
+          {view.entity.nexaport_company_id && <span className="md-nexaport-id">NexaPort ID <strong>{view.entity.nexaport_company_id}</strong></span>}
         </div>
         {!isShipyard && view.description && <p className="md-detail-header__description">{view.description}</p>}
       </div>
@@ -316,7 +316,10 @@ export function CompanyOverview({ view, showContactMethods = false }) {
     ["Review status", view.reviewStatus === "pending" ? "Pending review" : view.reviewStatus],
     ["Active status", view.isActive ? "Active" : "Inactive"],
     ["Experience", view.yearsExperience ? `${view.yearsExperience} years` : null],
-    ["Claimed status", view.claimedStatus],
+    ["Account claim", view.accountClaimState === "legacy_association" ? "Legacy account association · verification not recorded" : view.accountClaimState],
+    ["Active account links", view.activeAccountCount],
+    ["Pending claims", view.pendingClaimCount],
+    ["Historical source claim status", view.claimedStatus],
   ].filter(([, value]) => cleanText(value));
 
   return (

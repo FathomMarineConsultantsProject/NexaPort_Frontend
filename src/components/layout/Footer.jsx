@@ -1,12 +1,12 @@
-import { Anchor } from "lucide-react";
+import NexaportBrand from "../branding/NexaportBrand";
 import "./Footer.css";
 
 export default function Footer() {
   return (
     <footer className="np-footer">
       <div className="np-footer-left">
-        <Anchor size={18} />
-        <span>NexaPort Maritime Marketplace<small>Powered by Fathom Tech</small></span>
+        <NexaportBrand surface="dark" compact />
+        <span>Maritime Marketplace<small>Powered by Fathom Tech</small></span>
       </div>
 
       <div className="np-footer-right">

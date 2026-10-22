@@ -9,7 +9,7 @@ const TYPES = NEW_ADMIN_DIRECTORIES.map(({ type, label }) => [type, label]);
 const COMPANY_FIELDS = [
   ["companyName", "Company name", true], ["logoUrl", "Logo URL"], ["country", "Country"], ["city", "City"],
   ["publicAddress", "Public address"], ["publicEmail", "Public email", false, "email"], ["publicPhone", "Public phone"], ["website", "Website"],
-  ["claimedStatus", "Claimed status"], ["yearsExperience", "Years of experience", false, "number"], ["vesselsHandled", "Vessels handled", false, "number"],
+  ["claimedStatus", "Historical source claim status"], ["yearsExperience", "Years of experience", false, "number"], ["vesselsHandled", "Vessels handled", false, "number"],
   ["description", "Description", false, "textarea"],
 ];
 const SECTIONS = {

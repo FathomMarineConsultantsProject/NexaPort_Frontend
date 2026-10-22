@@ -1,4 +1,5 @@
-import { Anchor, Check, ChevronLeft, ChevronRight, Plus, Trash2, Upload } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, Trash2, Upload } from "lucide-react";
+import NexaportBrand from "../components/branding/NexaportBrand";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getVesselTypes } from "../api/masterApi";
@@ -180,17 +181,7 @@ export default function RegisterClient({
   return (
     <main className="client-register-page">
       <header className="client-register-top">
-        <Link
-          to={
-            adminMode
-              ? "/admin/client-registrations"
-              : "/"
-          }
-          className="client-register-brand"
-        >
-          <Anchor size={21} />
-          NexaPort
-        </Link>
+        <NexaportBrand to={adminMode ? "/admin/client-registrations" : "/"} className="client-register-brand" />
 
         {adminMode ? (
           <button

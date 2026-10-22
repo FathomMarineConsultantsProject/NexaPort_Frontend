@@ -9,12 +9,13 @@ import {
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   getAccreditationSchemes,
   getAccreditedInspectors,
 } from "../api/accreditedInspectorApi";
 import CopyableContact from "../components/common/CopyableContact";
+import AdminClaimStatus from "../components/directories/AdminClaimStatus";
 import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
 import ViewToggle from "../components/common/ViewToggle";
 import "./AccreditedInspectorDirectory.css";
@@ -300,6 +301,7 @@ export default function AccreditedInspectorDirectory() {
                   {inspector.rcms_status && <span className="accredited-rcms">RCMS: {inspector.rcms_status}</span>}
                   <span className="accredited-source">Source: {sourceLabel}</span>
                   <button type="button" onClick={() => setSelectedInspector(inspector)}>View details</button>
+                  <Link to={`/professionals/accredited_inspector/${inspector.id}/claim`}>Claim options</Link>
                 </div>
               </article>
             ))}
@@ -316,7 +318,7 @@ export default function AccreditedInspectorDirectory() {
                       <td>{inspector.telephone ? <CopyableContact value={inspector.telephone} href={`tel:${inspector.telephone}`} type="phone" /> : "—"}</td>
                       <td>{inspector.country || "—"}</td>
                       <td>{inspector.rcms_status || "—"}</td>
-                      <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedInspector(inspector); }}>View details</button></td>
+                      <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedInspector(inspector); }}>View details</button> · <Link to={`/professionals/accredited_inspector/${inspector.id}/claim`}>Claim options</Link></td>
                     </tr>
                   ))}
                 </tbody>
@@ -332,6 +334,7 @@ export default function AccreditedInspectorDirectory() {
           title={selectedInspector.full_name}
           onClose={() => setSelectedInspector(null)}
         >
+          <AdminClaimStatus professionalType="accredited_inspector" professionalId={String(selectedInspector.id)} />
           <DirectoryDetailGrid entries={[
             ["Accreditation scheme", scheme ? `${scheme.code} — ${scheme.name}` : ""],
             ["Country", selectedInspector.country],

@@ -29,6 +29,8 @@
 .landing-header { position: relative; z-index: 20; background: #f5f7f8; border-bottom: 1px solid var(--landing-line); }
 .landing-header-inner { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 28px; }
 .landing-brand { display: inline-flex; align-items: center; gap: 10px; flex: none; font-size: 24px; font-weight: 700; letter-spacing: -.045em; line-height: 1; }
+.landing-brand .nexaport-brand__symbol { width:40px; height:40px; }
+.landing-brand .nexaport-brand__wordmark { height:32px; }
 .landing-brand strong { color: var(--landing-teal); }
 .landing-brand-mark { display: grid; place-items: center; width: 40px; height: 40px; color: #fff; background: var(--landing-deep); border-radius: 4px; }
 .landing-navigation { display: flex; align-items: center; justify-content: flex-end; gap: clamp(16px, 1.65vw, 30px); margin-left: auto; font-size: 14px; font-weight: 600; }

@@ -1,5 +1,5 @@
+import NexaportBrand from "../branding/NexaportBrand";
 import {
-  Anchor,
   Bell,
   Building2,
   Briefcase,
@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, matchPath, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { matchPath, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   getAdminNotifications,
   markAdminNotificationRead,
@@ -281,17 +281,10 @@ export default function Navbar() {
 
   return (
     <header className="np-navbar">
-      <Link className="np-brand" to="/" aria-label="NexaPort home">
-        <div className="np-logo">
-          <Anchor size={22} />
-        </div>
-        <div className="np-brand-text">
-          Nexa<span>Port</span>
-        </div>
-      </Link>
+      <NexaportBrand className="np-brand" surface="dark" compact />
 
       <nav className="np-navlinks" aria-label="Primary navigation">
-        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink></> : <>
+        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink></> : <>
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
@@ -346,6 +339,7 @@ export default function Navbar() {
         {isSuperAdmin && <NavLink to="/admin/client-registrations">
           <Users size={17} /> Client approvals
         </NavLink>}
+        {isSuperAdmin && <NavLink to="/admin/profile-claims"><Building2 size={17} /> Profile Claims</NavLink>}
         </>}
       </nav>
 
@@ -516,7 +510,7 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
-          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink></> : <>
+          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink></> : <>
           <NavLink to="/dashboard" onClick={closeMobileNavigation}>
             <Grid2X2 size={18} /> Dashboard
           </NavLink>
@@ -565,6 +559,7 @@ export default function Navbar() {
           {isSuperAdmin && <NavLink to="/admin/client-registrations" onClick={closeMobileNavigation}>
             <Users size={18} /> Client approvals
           </NavLink>}
+          {isSuperAdmin && <NavLink to="/admin/profile-claims" onClick={closeMobileNavigation}><Building2 size={18} /> Profile Claims</NavLink>}
           </>}
         </nav>
       )}
