@@ -20,7 +20,7 @@ export default function MaritimeDirectoryPage({ directory }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const applied = useMemo(() => readFilters(searchParams), [searchParams]);
   const page = Math.max(1, Number.parseInt(searchParams.get("page"), 10) || 1);
-  const viewMode = searchParams.get("view") === "table" ? "table" : "grid";
+  const viewMode = ["list", "table"].includes(searchParams.get("view")) ? "list" : "grid";
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [filters, setFilters] = useState(() => readFilters(searchParams));
@@ -84,7 +84,7 @@ export default function MaritimeDirectoryPage({ directory }) {
         <div className="md-filters__label">
           <SlidersHorizontal size={17} aria-hidden="true" />
           <span>Filter directory</span>
-          <ViewToggle value={viewMode} onChange={(value) => setSearchParams((current) => { const next = new URLSearchParams(current); value === "table" ? next.set("view", "table") : next.delete("view"); return next; })} label="Directory layout" />
+          <ViewToggle value={viewMode} onChange={(value) => setSearchParams((current) => { const next = new URLSearchParams(current); value === "list" ? next.set("view", "list") : next.delete("view"); return next; })} label="Directory layout" />
         </div>
         <label className="md-filters__search">
           <span>Search</span>

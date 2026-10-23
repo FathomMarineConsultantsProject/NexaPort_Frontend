@@ -19,13 +19,19 @@ test("existing directory views show stored references without creating new ones"
     "InspectorSearch.jsx", "FlagDirectory.jsx", "AccreditedInspectorDirectory.jsx",
     "AppointedSurveyorDirectory.jsx", "VesselDirectory.jsx", "FleetManagement.jsx",
     "PortDirectory.jsx", "PortDetailPage.jsx", "MaritimeDirectoryPage.jsx",
-    "MaritimeDirectoryDetails.jsx", "CompanyProfile.jsx",
+    "CompanyProfile.jsx",
   ];
   for (const name of names) {
     const source = await page(name);
     assert.match(source, /className="nexaport-id"/, `${name} should use compact reference styling`);
-    assert.match(source, /public_id|nexaport_id/, `${name} should read the API reference`);
+    assert.match(source, /public_id|nexaport_id|nexaport_company_id/, `${name} should read the API reference`);
   }
+  const [details, shared] = await Promise.all([
+    page("MaritimeDirectoryDetails.jsx"),
+    readFile(new URL("../src/components/directories/DirectoryUI.jsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(details, /DirectoryDetailHeader/);
+  assert.match(shared, /view\.entity\.nexaport_company_id/);
 });
 
 test("all company categories use the same entity detail route", async () => {

@@ -165,7 +165,7 @@ export default function MaritimeDirectoryDetails() {
     <main className={`md-detail-page md-detail-page--${directory.type}`}>
       <Link className="md-back-link" to={directory.path}><ArrowLeft size={16} />Back to {directory.label}</Link>
       <DirectoryDetailHeader view={view} directory={directory} onEdit={directoryType === "owners_managers" ? null : () => navigate(`/directories/${directoryType}/${entityId}/edit`)} />
-      <AdminClaimStatus companyId={entityId} />
+      <AdminClaimStatus companyId={view.entity.id} />
       {!view.isBunkerSupplier && view.sources.length > 0 && <p className="md-source-note">Source: {view.sources.map((source, index) => <span key={`${source.source_url}-${index}`}>{index > 0 ? ", " : ""}<a href={source.source_url} target="_blank" rel="noreferrer">{source.source_name}</a></span>)}</p>}
       {directoryType === "supplier" && view.entity.extra_data?.impa && <section className="md-impa-panel" aria-label="IMPA listing information">
         <div className="md-impa-panel__heading"><div><span className="md-impa-panel__eyebrow">Directory source</span><h2>IMPA member listing</h2></div>{view.entity.extra_data.impa.premium && <span className="md-impa-chip">Premium</span>}</div>

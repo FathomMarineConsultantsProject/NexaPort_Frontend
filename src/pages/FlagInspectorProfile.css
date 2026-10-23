@@ -11,6 +11,7 @@
   font-family: var(--np-font-sans);
 }
 .flag-profile-page > :is(.flag-profile-hero, .flag-profile-grid, .flag-profile-state) { max-width: 1100px; margin-inline: auto; }
+.flag-profile-page > .account-ownership { max-width: 1068px; margin-inline: auto; }
 
 .flag-profile-back {
   width: fit-content;

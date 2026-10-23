@@ -10,11 +10,12 @@ import {
   Smartphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { getAppointedSurveyors } from "../api/appointedSurveyorApi";
 import CopyableContact from "../components/common/CopyableContact";
 import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
 import AdminClaimStatus from "../components/directories/AdminClaimStatus";
+import { isSuperAdmin } from "../utils/auth";
 import ViewToggle from "../components/common/ViewToggle";
 import "./AppointedSurveyorDirectory.css";
 
@@ -72,6 +73,7 @@ export default function AppointedSurveyorDirectory() {
   const country = searchParams.get("country") || "";
   const scope = searchParams.get("scope") || "";
   const mlc = searchParams.get("mlc") || "";
+  const recordId = searchParams.get("record");
   const setFilter = (key, value) => { setLoading(true); setSearchParams((current) => { const next = new URLSearchParams(current); value ? next.set(key, value) : next.delete(key); return next; }); };
   const [surveyors, setSurveyors] = useState([]);
   const [summary, setSummary] = useState(emptySummary);
@@ -105,6 +107,7 @@ export default function AppointedSurveyorDirectory() {
         });
         if (!active) return;
         setSurveyors(response.surveyors || []);
+        if (recordId) setSelectedSurveyor((response.surveyors || []).find((item) => String(item.id) === recordId) || null);
         setSummary(response.summary || emptySummary);
         setCountries(response.filters?.countries || []);
       } catch (requestError) {
@@ -124,7 +127,7 @@ export default function AppointedSurveyorDirectory() {
     return () => {
       active = false;
     };
-  }, [country, debouncedSearch, mlc, retryKey, scope]);
+  }, [country, debouncedSearch, mlc, recordId, retryKey, scope]);
 
   const hasFilters = Boolean(debouncedSearch || country || scope || mlc);
   const metrics = [
@@ -275,7 +278,7 @@ export default function AppointedSurveyorDirectory() {
                     <ContactRow icon={MapPin} label="Address" value={surveyor.address_text} />
                   </div>
 
-                  <div className="appointed-card-foot"><span>Source: {surveyor.source_document_title}</span><button type="button" onClick={() => setSelectedSurveyor(surveyor)}>View details</button>{surveyor.full_name && <Link to={`/professionals/appointed_surveyor/${surveyor.id}/claim`}>Claim options</Link>}</div>
+                  <div className="appointed-card-foot"><span>Source: {surveyor.source_document_title}</span><button type="button" onClick={() => setSelectedSurveyor(surveyor)}>View Details</button></div>
                 </article>
               );
             })}
@@ -296,7 +299,7 @@ export default function AppointedSurveyorDirectory() {
                         <td>{phone ? <CopyableContact value={phone} href={phoneHref(phone)} type="phone" /> : "—"}</td>
                         <td>{surveyor.country || "—"}</td>
                         <td>{surveyor.mlc_under_500gt_authorized ? "Authorized" : "Not authorized"}</td>
-                        <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedSurveyor(surveyor); }}>View details</button>{surveyor.full_name && <> · <Link to={`/professionals/appointed_surveyor/${surveyor.id}/claim`}>Claim options</Link></>}</td>
+                        <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedSurveyor(surveyor); }}>View Details</button></td>
                       </tr>
                     );
                   })}
@@ -311,9 +314,9 @@ export default function AppointedSurveyorDirectory() {
         <DirectoryDetailsModal
           eyebrow="Appointed Ship Surveyor"
           title={[selectedSurveyor.professional_title, selectedSurveyor.full_name].filter(Boolean).join(" ")}
-          onClose={() => setSelectedSurveyor(null)}
+          onClose={() => { setSelectedSurveyor(null); if (recordId) setFilter("record", ""); }}
         >
-          {selectedSurveyor.full_name && <AdminClaimStatus professionalType="appointed_surveyor" professionalId={String(selectedSurveyor.id)} />}
+          {selectedSurveyor.public_id && <small className="nexaport-id">Reference: {selectedSurveyor.public_id}</small>}
           <DirectoryDetailGrid entries={[
             ["Organization", selectedSurveyor.organization_name],
             ["Appointment scope", selectedSurveyor.appointment_scope],
@@ -328,6 +331,7 @@ export default function AppointedSurveyorDirectory() {
             ["Source document", selectedSurveyor.source_document_title],
             ["Source published", selectedSurveyor.source_published_date ? new Date(selectedSurveyor.source_published_date).toLocaleDateString() : ""],
           ]} />
+          {selectedSurveyor.full_name && isSuperAdmin() && <AdminClaimStatus professionalType="appointed_surveyor" professionalId={String(selectedSurveyor.id)} />}
         </DirectoryDetailsModal>
       )}
     </main>

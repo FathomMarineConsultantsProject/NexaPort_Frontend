@@ -9,13 +9,14 @@ import {
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   getAccreditationSchemes,
   getAccreditedInspectors,
 } from "../api/accreditedInspectorApi";
 import CopyableContact from "../components/common/CopyableContact";
 import AdminClaimStatus from "../components/directories/AdminClaimStatus";
+import { isSuperAdmin } from "../utils/auth";
 import DirectoryDetailsModal, { DirectoryDetailGrid } from "../components/common/DirectoryDetailsModal";
 import ViewToggle from "../components/common/ViewToggle";
 import "./AccreditedInspectorDirectory.css";
@@ -38,6 +39,7 @@ export default function AccreditedInspectorDirectory() {
   const search = searchParams.get("search") || "";
   const country = searchParams.get("country") || "";
   const rcms = searchParams.get("rcms") || "";
+  const recordId = searchParams.get("record");
   const setFilter = (key, value) => setSearchParams((current) => { const next = new URLSearchParams(current); value ? next.set(key, value) : next.delete(key); return next; });
   const [schemes, setSchemes] = useState([]);
   const [scheme, setScheme] = useState(null);
@@ -104,6 +106,7 @@ export default function AccreditedInspectorDirectory() {
         if (!active) return;
         setScheme(response.scheme || null);
         setInspectors(response.inspectors || []);
+        if (recordId) setSelectedInspector((response.inspectors || []).find((item) => String(item.id) === recordId) || null);
         setFilters(response.filters || { countries: [], rcms_statuses: [] });
         setSummary(response.summary || emptySummary);
       } catch (requestError) {
@@ -123,7 +126,7 @@ export default function AccreditedInspectorDirectory() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [country, rcms, retryKey, schemeSlug, schemes, search]);
+  }, [country, rcms, recordId, retryKey, schemeSlug, schemes, search]);
 
   const changeScheme = (nextSlug) => {
     setInspectors([]);
@@ -300,8 +303,7 @@ export default function AccreditedInspectorDirectory() {
                 <div className="accredited-card-foot">
                   {inspector.rcms_status && <span className="accredited-rcms">RCMS: {inspector.rcms_status}</span>}
                   <span className="accredited-source">Source: {sourceLabel}</span>
-                  <button type="button" onClick={() => setSelectedInspector(inspector)}>View details</button>
-                  <Link to={`/professionals/accredited_inspector/${inspector.id}/claim`}>Claim options</Link>
+                  <button type="button" onClick={() => setSelectedInspector(inspector)}>View Details</button>
                 </div>
               </article>
             ))}
@@ -318,7 +320,7 @@ export default function AccreditedInspectorDirectory() {
                       <td>{inspector.telephone ? <CopyableContact value={inspector.telephone} href={`tel:${inspector.telephone}`} type="phone" /> : "—"}</td>
                       <td>{inspector.country || "—"}</td>
                       <td>{inspector.rcms_status || "—"}</td>
-                      <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedInspector(inspector); }}>View details</button> · <Link to={`/professionals/accredited_inspector/${inspector.id}/claim`}>Claim options</Link></td>
+                      <td><button type="button" onClick={(event) => { event.stopPropagation(); setSelectedInspector(inspector); }}>View Details</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -332,9 +334,9 @@ export default function AccreditedInspectorDirectory() {
         <DirectoryDetailsModal
           eyebrow={`${scheme?.code || ""} Accredited Inspector`}
           title={selectedInspector.full_name}
-          onClose={() => setSelectedInspector(null)}
+          onClose={() => { setSelectedInspector(null); if (recordId) setFilter("record", ""); }}
         >
-          <AdminClaimStatus professionalType="accredited_inspector" professionalId={String(selectedInspector.id)} />
+          {selectedInspector.public_id && <small className="nexaport-id">Reference: {selectedInspector.public_id}</small>}
           <DirectoryDetailGrid entries={[
             ["Accreditation scheme", scheme ? `${scheme.code} — ${scheme.name}` : ""],
             ["Country", selectedInspector.country],
@@ -345,6 +347,7 @@ export default function AccreditedInspectorDirectory() {
             ["Source", selectedInspector.source_name || sourceLabel],
             ["Source last checked", selectedInspector.source_last_checked_at ? new Date(selectedInspector.source_last_checked_at).toLocaleString() : ""],
           ]} />
+          {isSuperAdmin() && <AdminClaimStatus professionalType="accredited_inspector" professionalId={String(selectedInspector.id)} />}
           {selectedInspector.source_url && <a className="directory-modal-source" href={selectedInspector.source_url} target="_blank" rel="noopener noreferrer">View source <ExternalLink size={14} /></a>}
         </DirectoryDetailsModal>
       )}
