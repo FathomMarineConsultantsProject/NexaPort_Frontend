@@ -285,14 +285,15 @@ export default function AppointedSurveyorDirectory() {
           </div> : (
             <div className="appointed-table-wrap">
               <table className="appointed-table">
-                <thead><tr><th>Name</th><th>Organization</th><th>Appointment type</th><th>Email</th><th>Phone</th><th>Country</th><th>MLC status</th><th><span className="sr-only">Action</span></th></tr></thead>
+                <thead><tr><th>Name</th><th>NexaPort ID</th><th>Organization</th><th>Appointment type</th><th>Email</th><th>Phone</th><th>Country</th><th>MLC status</th><th><span className="sr-only">Action</span></th></tr></thead>
                 <tbody>
                   {surveyors.map((surveyor) => {
                     const email = splitValues(surveyor.email_addresses)[0];
                     const phone = splitValues(surveyor.mobile_numbers || surveyor.telephone_numbers)[0];
                     return (
                       <tr key={surveyor.id}>
-                        <td><strong>{[surveyor.professional_title, surveyor.full_name].filter(Boolean).join(" ")}</strong>{surveyor.public_id && <small className="nexaport-id">Reference: {surveyor.public_id}</small>}</td>
+                        <td>{[surveyor.professional_title, surveyor.full_name].filter(Boolean).join(" ")}</td>
+                        <td className="appointed-table-id">{surveyor.public_id || "—"}</td>
                         <td>{surveyor.organization_name || "—"}</td>
                         <td className="capitalize">{surveyor.appointment_scope || "—"}</td>
                         <td>{email ? <CopyableContact value={email} href={`mailto:${email}`} type="email" /> : "—"}</td>

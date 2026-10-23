@@ -160,6 +160,7 @@
 .appointed-table tbody tr:last-child td { border-bottom: 0; }
 .appointed-table tbody tr:hover { background: var(--np-teal-50); }
 .appointed-table td strong { color: #10233f; }
+.appointed-table .appointed-table-id { color: var(--np-teal-800); font-family: var(--np-font-mono); font-size: 12px; overflow-wrap: anywhere; }
 .appointed-table td .copyable-contact { max-width: 190px; }
 .appointed-table td.capitalize { text-transform: capitalize; }
 .appointed-table td:last-child { text-align: right; }

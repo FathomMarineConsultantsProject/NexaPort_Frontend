@@ -117,6 +117,7 @@ export default function MaritimeDirectoryPage({ directory }) {
               <thead>
                 <tr>
                   <th>Company Name</th>
+                  <th>NexaPort ID</th>
                   {directory.type === "owners_managers" && <><th>Type</th><th>Fleet</th><th>Contact</th></>}
                   <th>Location</th>
                   <th>Review Status</th>
@@ -129,17 +130,17 @@ export default function MaritimeDirectoryPage({ directory }) {
                   const location = [row.city, row.country].filter(Boolean).join(", ") || "—";
                   return (
                     <tr key={row.id}>
-                      <td className="dashboard-table__link">
-                        <Link to={`/directories/${directory.type}/${row.id}`}>
-                          <strong>{row.company_name || row.companyName}</strong>
-                          {row.nexaport_company_id && <small className="nexaport-id">NexaPort ID: {row.nexaport_company_id}</small>}
+                      <td data-label="Company Name">
+                        <Link className="md-company-name" to={`/directories/${directory.type}/${row.id}`}>
+                          {row.company_name || row.companyName}
                         </Link>
                       </td>
-                      {directory.type === "owners_managers" && <><td>{(row.directory_types || []).map((type) => DIRECTORY_TYPE_LABELS[type] || type).join(", ")}</td><td>{directoryFleetCount(row) ?? "—"}</td><td>{row.public_email || row.website || "—"}</td></>}
-                      <td>{location}</td>
-                      <td><StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} /></td>
-                      <td>{(row.is_active ?? row.isActive) !== false ? "Active" : "Inactive"}</td>
-                      <td>
+                      <td data-label="NexaPort ID" className="md-table-id">{row.nexaport_company_id || "—"}</td>
+                      {directory.type === "owners_managers" && <><td data-label="Type">{(row.directory_types || []).map((type) => DIRECTORY_TYPE_LABELS[type] || type).join(", ")}</td><td data-label="Fleet">{directoryFleetCount(row) ?? "—"}</td><td data-label="Contact">{row.public_email || row.website || "—"}</td></>}
+                      <td data-label="Location">{location}</td>
+                      <td data-label="Review Status"><StatusBadge status={row.review_status || row.reviewStatus} active={(row.is_active ?? row.isActive) !== false} /></td>
+                      <td data-label="Activity">{(row.is_active ?? row.isActive) !== false ? "Active" : "Inactive"}</td>
+                      <td data-label="Action">
                         <Link className="dashboard-table__link" to={`/directories/${directory.type}/${row.id}`}>
                           View Dossier
                         </Link>

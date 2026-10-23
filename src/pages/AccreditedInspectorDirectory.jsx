@@ -310,11 +310,12 @@ export default function AccreditedInspectorDirectory() {
           </div> : (
             <div className="accredited-table-wrap">
               <table className="accredited-table">
-                <thead><tr><th>Name</th><th>Accreditation scheme</th><th>Email</th><th>Phone</th><th>Country</th><th>RCMS status</th><th><span className="sr-only">Action</span></th></tr></thead>
+                <thead><tr><th>Name</th><th>NexaPort ID</th><th>Accreditation scheme</th><th>Email</th><th>Phone</th><th>Country</th><th>RCMS status</th><th><span className="sr-only">Action</span></th></tr></thead>
                 <tbody>
                   {inspectors.map((inspector) => (
                     <tr key={inspector.id}>
-                      <td><strong>{inspector.full_name}</strong>{inspector.public_id && <small className="nexaport-id">Reference: {inspector.public_id}</small>}</td>
+                      <td>{inspector.full_name}</td>
+                      <td className="accredited-table-id">{inspector.public_id || "—"}</td>
                       <td>{scheme.code} — {scheme.name}</td>
                       <td>{inspector.email ? <CopyableContact value={inspector.email} href={`mailto:${inspector.email}`} type="email" /> : "—"}</td>
                       <td>{inspector.telephone ? <CopyableContact value={inspector.telephone} href={`tel:${inspector.telephone}`} type="phone" /> : "—"}</td>

@@ -2400,6 +2400,9 @@ body:has(.md-page, .md-detail-page, .md-form),
 
 
 .md-results { gap: 10px; }
+.md-table-register .md-company-name { color: var(--np-navy-900); font-weight: 400; text-decoration: none; }
+.md-table-register .md-company-name:hover { color: var(--np-teal-800); text-decoration: underline; }
+.md-table-register .md-table-id { color: var(--np-teal-800); font-family: var(--np-font-mono); font-size: 12px; overflow-wrap: anywhere; }
 .md-result-card { padding: 14px; border-radius: 0; transition: border-color 140ms ease, background 140ms ease; }
 .md-result-card:hover { border-color: #91bdb8; background: #fbfdfd; box-shadow: none; transform: none; }
 .md-result-card h2 { font-size: 14px; }

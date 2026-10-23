@@ -29,6 +29,7 @@
 .accredited-table tbody tr:last-child td { border-bottom: 0; }
 .accredited-table tbody tr:hover { background: var(--np-teal-50); }
 .accredited-table td strong { color: #10233f; }
+.accredited-table .accredited-table-id { color: var(--np-teal-800); font-family: var(--np-font-mono); font-size: 12px; overflow-wrap: anywhere; }
 .accredited-table td .copyable-contact { max-width: 210px; }
 .accredited-table td:last-child { text-align: right; }
 .accredited-table td:last-child button { min-height: 40px; border: 1px solid var(--np-teal-700); border-radius: var(--np-radius); background: var(--np-surface); padding: 7px 12px; color: var(--np-teal-800); font: 600 13px var(--np-font-sans); cursor: pointer; }

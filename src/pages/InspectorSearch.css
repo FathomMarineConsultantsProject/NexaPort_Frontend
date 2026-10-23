@@ -29,6 +29,8 @@
 .inspector-identity > span { background: var(--np-teal-50); color: var(--np-teal-800); font-size: 13px; font-weight: 700; }
 .inspector-identity > div { min-width: 0; }
 .inspector-identity strong { color: var(--np-navy-900); font-size: 15px; overflow-wrap: anywhere; }
+.inspector-identity .inspector-name { color: var(--np-navy-900); font-size: 15px; overflow-wrap: anywhere; }
+.inspector-search-results .inspector-reference { color: var(--np-teal-800); font-family: var(--np-font-mono); font-size: 12px; overflow-wrap: anywhere; }
 .inspector-identity small, .inspector-search-results .block { display: block; margin-top: 4px; color: var(--np-color-text-muted); font-size: 13px; overflow-wrap: anywhere; }
 .inspector-search-results .nexaport-id { color: var(--np-teal-800); font-family: var(--np-font-mono); }
 .inspector-type { display: inline-flex; border-radius: var(--np-radius); padding: 4px 7px; background: var(--np-ground); color: var(--np-navy-800); font-size: 12px; font-weight: 600; white-space: nowrap; }

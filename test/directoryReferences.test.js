@@ -16,9 +16,9 @@ test("consultant cards and profiles prefer issued numeric IDs over historical EX
 
 test("existing directory views show stored references without creating new ones", async () => {
   const names = [
-    "InspectorSearch.jsx", "FlagDirectory.jsx", "AccreditedInspectorDirectory.jsx",
+    "FlagDirectory.jsx", "AccreditedInspectorDirectory.jsx",
     "AppointedSurveyorDirectory.jsx", "VesselDirectory.jsx", "FleetManagement.jsx",
-    "PortDirectory.jsx", "PortDetailPage.jsx", "MaritimeDirectoryPage.jsx",
+    "PortDirectory.jsx", "PortDetailPage.jsx",
     "CompanyProfile.jsx",
   ];
   for (const name of names) {
@@ -32,6 +32,13 @@ test("existing directory views show stored references without creating new ones"
   ]);
   assert.match(details, /DirectoryDetailHeader/);
   assert.match(shared, /view\.entity\.nexaport_company_id/);
+  const [companies, inspectors] = await Promise.all([
+    page("MaritimeDirectoryPage.jsx"), page("InspectorSearch.jsx"),
+  ]);
+  assert.match(companies, /className="md-table-id"/);
+  assert.match(companies, /row\.nexaport_company_id/);
+  assert.match(inspectors, /className="inspector-reference"/);
+  assert.match(inspectors, /item\.nexaport_id/);
 });
 
 test("all company categories use the same entity detail route", async () => {
