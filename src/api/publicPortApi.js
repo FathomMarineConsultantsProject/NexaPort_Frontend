@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  import.meta.env?.VITE_API_BASE_URL || "https://nexa-port-backend.vercel.app/api";
+import { API_BASE_URL } from "./apiBaseUrl.js";
 
 export const searchPublicPorts = async ({ search = "", limit = 50 } = {}) => {
   const params = new URLSearchParams({ search, limit: String(limit) });

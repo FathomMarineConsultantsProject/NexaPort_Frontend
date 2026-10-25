@@ -12,6 +12,7 @@ import { isSuperAdmin } from "../utils/auth";
 import "../styles/maritimeDirectory.css";
 import { DIRECTORY_TYPE_LABELS } from "../config/maritimeDirectories";
 import { directoryFleetCount } from "../utils/directoryData";
+import ProductSearch from "../components/directories/ProductSearch";
 
 const initialFilters = { search: "", country: "", port: "", category: "", source: "", membershipTier: "", companyType: "all", reviewStatus: "", isActive: "", sort: "name-asc" };
 const readFilters = (params) => Object.fromEntries(Object.entries(initialFilters).map(([key, fallback]) => [key, params.get(key) || fallback]));
@@ -27,6 +28,7 @@ export default function MaritimeDirectoryPage({ directory }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
+  const [supplierSearchMode, setSupplierSearchMode] = useState("suppliers");
 
   useEffect(() => { Promise.resolve().then(() => setFilters(applied)); }, [applied]);
 
@@ -79,6 +81,8 @@ export default function MaritimeDirectoryPage({ directory }) {
   return (
     <main className={`md-page md-page--${directory.type}`}>
       <DirectoryPageHeader directory={directory} total={pagination.total} canAdd={isSuperAdmin() && directory.type !== "owners_managers"} />
+      {directory.type === "supplier" && <div className="md-product-mode" role="group" aria-label="Search mode"><button type="button" aria-pressed={supplierSearchMode === "suppliers"} onClick={() => setSupplierSearchMode("suppliers")}>Suppliers</button><button type="button" aria-pressed={supplierSearchMode === "products"} onClick={() => setSupplierSearchMode("products")}>Products</button></div>}
+      {supplierSearchMode === "products" && directory.type === "supplier" ? <ProductSearch /> : <>
 
       <section className="md-filters" aria-label="Filter directory">
         <div className="md-filters__label">
@@ -166,6 +170,7 @@ export default function MaritimeDirectoryPage({ directory }) {
           <button type="button" disabled={page >= pagination.pages || loading} onClick={() => { setLoading(true); setSearchParams((current) => { const next = new URLSearchParams(current); next.set("page", String(page + 1)); return next; }); }}>Next</button>
         </nav>
       )}
+      </>}
     </main>
   );
 }

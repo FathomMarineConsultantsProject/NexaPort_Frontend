@@ -21,6 +21,7 @@ const expectedDirectories = [
   ["Service Providers", "/service-providers"],
   ["Ship Agents", "/ship-agents"],
   ["Suppliers", "/suppliers"],
+  ["Bunker Suppliers", "/suppliers?category=bunker"],
   ["Shipyards", "/shipyards"],
   ["Tug Boats", "/tug-boats"],
 ];

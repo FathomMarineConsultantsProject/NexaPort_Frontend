@@ -1,10 +1,9 @@
 import axios from "axios";
 import { loginPathFor } from "../utils/safeReturnPath.js";
+import { API_BASE_URL } from "./apiBaseUrl.js";
 
 const axiosClient = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://nexa-port-backend.vercel.app/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },

@@ -83,7 +83,7 @@ export const ADMIN_DIRECTORY_GROUPS = [
 export const ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS.flatMap((group) => group.items);
 export const NEW_ADMIN_DIRECTORIES = ADMIN_DIRECTORY_GROUPS[1].items.filter((item) => item.type);
 
-// Existing directories stay Admin-only; Consultants keeps its former non-Client visibility.
+// Client access to Suppliers opens the product search; directory management stays Admin-only.
 export function getVisibleDirectoryGroups(roleId) {
   const role = Number(roleId);
   const consultant = { label: "Consultants", path: "/experts", icon: Users, excludedRoles: [3] };
@@ -91,7 +91,7 @@ export function getVisibleDirectoryGroups(roleId) {
     ...group,
     items: [
       ...(group.label === "Surveyors" ? [consultant] : []),
-      ...group.items.map((item) => ({ ...item, roles: [1] })),
+      ...group.items.map((item) => ({ ...item, roles: item.type === "supplier" ? [1, 3] : [1] })),
     ],
   }));
   return groups.map((group) => ({ ...group, items: group.items.filter((item) => (!item.roles || item.roles.includes(role)) && !item.excludedRoles?.includes(role)) })).filter((group) => group.items.length);

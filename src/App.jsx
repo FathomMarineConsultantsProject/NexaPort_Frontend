@@ -35,6 +35,8 @@ import AppointedSurveyorDirectory from "./pages/AppointedSurveyorDirectory";
 import InspectorSearch from "./pages/InspectorSearch";
 import MaritimeDirectoryPage from "./pages/MaritimeDirectoryPage";
 import MaritimeDirectoryDetails from "./pages/MaritimeDirectoryDetails";
+import SupplierPublicProfile from "./pages/SupplierPublicProfile";
+import ProductSearch from "./components/directories/ProductSearch";
 import MaritimeDirectoryForm from "./components/directories/MaritimeDirectoryForm";
 import { NEW_ADMIN_DIRECTORIES } from "./config/adminDirectories";
 import PostServiceRequest from "./pages/PostServiceRequest";
@@ -140,8 +142,11 @@ const Shell = () => (
         <Route path="/inspector-search" element={<AdminOnly><InspectorSearch /></AdminOnly>} />
         <Route path="/surveyors" element={<AdminOnly><InspectorSearch humanOnly /></AdminOnly>} />
         {NEW_ADMIN_DIRECTORIES.map((directory) => (
-          <Route key={directory.path} path={directory.path} element={<AdminOnly><MaritimeDirectoryPage directory={directory} /></AdminOnly>} />
+          <Route key={directory.path} path={directory.path} element={directory.type === "supplier" && getRoleId() === 3
+            ? <main className="md-page md-page--supplier"><h1>Suppliers</h1><h2>Products</h2><ProductSearch /></main>
+            : <AdminOnly><MaritimeDirectoryPage directory={directory} /></AdminOnly>} />
         ))}
+        <Route path="/supplier-profiles/:id" element={<SupplierPublicProfile />} />
         <Route path="/directories/:directoryType/new" element={<AdminOnly><MaritimeDirectoryForm /></AdminOnly>} />
         <Route path="/directories/:directoryType/:entityId/edit" element={<AdminOnly><MaritimeDirectoryForm /></AdminOnly>} />
         <Route path="/directories/:directoryType/:entityId" element={<AdminOnly><MaritimeDirectoryDetails /></AdminOnly>} />

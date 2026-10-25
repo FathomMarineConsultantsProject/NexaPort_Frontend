@@ -23,7 +23,7 @@ test("Consultants stays available to previous non-Client roles under Directories
     assert.ok(entries.some((item) => item.path === "/experts"));
     if (role !== 1) assert.deepEqual(entries.map((item) => item.path), ["/experts"]);
   }
-  assert.deepEqual(getVisibleDirectoryGroups(3), []);
+  assert.deepEqual(getVisibleDirectoryGroups(3).flatMap((group) => group.items).map((item) => item.path), ["/suppliers"]);
   assert.deepEqual(getVisibleDirectoryGroups(1).flatMap((group) => group.items).filter((item) => item.path !== "/experts").map((item) => item.path), ADMIN_DIRECTORIES.map((item) => item.path));
   const navbar = await source("components/layout/Navbar.jsx");
   assert.doesNotMatch(navbar, /<NavLink to="\/experts"/);
