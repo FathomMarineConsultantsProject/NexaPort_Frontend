@@ -15,9 +15,10 @@ const companyWebsite = value => {
 };
 const evidenceLabel = item => {
   if (item.type === 'verified_offer') return 'Reviewed verified offer';
-  if (item.evidenceClassification === 'self_branded_specification') return 'Supplier linked product specification';
-  if (item.evidenceClassification === 'supplier_catalogue_part') return 'Supplier catalogue part';
-  return 'Supplier catalogue listing';
+  if (item.evidenceClassification === 'explicit_brochure_offer') return 'Brochure offer';
+  if (item.evidenceClassification === 'reviewed_self_branded_offer') return 'Reviewed offer';
+  if (item.evidenceClassification === 'supplier_catalogue_part') return 'Catalogue part';
+  return 'Catalogue listing';
 };
 
 function EvidenceLinks({ relationships = [] }) {
@@ -29,12 +30,18 @@ function SupplierRow({ supplier, matched = false, related = false }) {
   const name = matched ? supplier.canonical_company_name : supplier.name;
   const location = matched ? [supplier.canonical_city, supplier.canonical_country] : [supplier.location, supplier.country];
   const website = companyWebsite(supplier.website);
-  return <details className="np-products__supplier"><summary><span className="np-products__supplier-main"><strong>{name}</strong><small>{location.filter(Boolean).join(', ') || 'Location not listed'} · {matched ? (supplier.nexaport_company_id || supplier.public_id || 'NexaPort supplier') : 'Directory supplier'}</small></span><span className="np-products__supplier-status">{related ? 'Related specification source' : supplier.relationships?.map(evidenceLabel).join(' · ')}</span><span className="np-products__chevron" aria-hidden="true">⌄</span></summary>
+  const email = matched ? supplier.public_email : supplier.public_email || supplier.email;
+  const phone = matched ? supplier.public_phone : supplier.public_phone || supplier.phone;
+  const address = supplier.address || location.filter(Boolean).join(', ');
+  return <details className="np-products__supplier"><summary><span className="np-products__supplier-main"><strong>{name}</strong><small>{location.filter(Boolean).join(', ') || 'Location not listed'}</small></span><span className="np-products__supplier-status">{related ? 'Related specification' : supplier.relationships?.map(evidenceLabel).join(' · ')}</span><span className="np-products__chevron" aria-hidden="true">⌄</span></summary>
     <div className="np-products__supplier-body"><div className="np-products__contact-grid">
-      {matched && <><div><small>Email</small>{supplier.public_email ? <a href={`mailto:${supplier.public_email}`}>{supplier.public_email}</a> : <span>Not listed</span>}</div><div><small>Phone</small>{supplier.public_phone ? <a href={`tel:${supplier.public_phone}`}>{supplier.public_phone}</a> : <span>Not listed</span>}</div></>}
-      <div><small>Location</small><span>{location.filter(Boolean).join(', ') || 'Not listed'}</span></div>
+      <div><small>Company</small><strong>{name}</strong></div>
+      {matched && <div><small>NXP ID</small><span>{supplier.nexaport_company_id || supplier.public_id || 'Not listed'}</span></div>}
+      <div><small>Phone</small>{phone ? <a href={`tel:${phone}`}>{phone}</a> : <span>Not listed</span>}</div>
+      <div><small>Email</small>{email ? <a href={`mailto:${email}`}>{email}</a> : <span>Not listed</span>}</div>
+      <div><small>Address / location</small><span>{address || 'Not listed'}</span></div>
       {website && <div><small>Website</small><a href={website} target="_blank" rel="noreferrer">Visit website ↗</a></div>}
-    </div><div className="np-products__supplier-links">{matched && <Link to={`/supplier-profiles/${supplier.canonical_entity_id}`}>Open NexaPort profile ↗</Link>}<EvidenceLinks relationships={supplier.relationships} /></div><p className="np-products__evidence-note">{related ? 'A product specification is linked. An offer to sell has not been verified.' : 'Product evidence does not confirm current stock or availability.'}</p></div>
+    </div><div className="np-products__supplier-links">{matched && <Link to={`/supplier-profiles/${supplier.canonical_entity_id}`}>View NexaPort profile ↗</Link>}<EvidenceLinks relationships={supplier.relationships} /></div></div>
   </details>;
 }
 
@@ -121,6 +128,7 @@ export default function ProductSearch() {
 
   const primary = selected?.identifiers?.[0];
   const code = primary?.display_value || selectedSummary?.identifiers?.[0];
+  const supplierRows = selected ? [...new Map([...(selected.suppliers || []), ...(selected.sourceSuppliers || [])].map(supplier => [supplier.id, supplier])).values()] : [];
   return <section className="np-products" aria-label="Product catalogue">
     <form onSubmit={search} className="np-products__search"><label htmlFor="np-product-query">Search by product code, manufacturer model, part number, supplier SKU or name</label><div><input id="np-product-query" value={query} onChange={event => setQuery(event.target.value)} minLength={2} maxLength={120} placeholder="e.g. E350" required/><button type="submit" disabled={searchLoading}>Search products</button></div></form>
     {searchError && <div role="alert"><p>{searchError}</p><button type="button" onClick={() => search(null, searchPages.page)}>Retry</button></div>}
@@ -136,12 +144,11 @@ export default function ProductSearch() {
         {detailLoading && <div className="np-products__skeleton" role="status" aria-label="Loading product details"><span/><span/><span/><span/></div>}
         {detailError && <div role="alert" className="np-products__detail-error"><p>{detailError}</p><button type="button" onClick={() => open(selectedSummary)}>Retry</button></div>}
         {selected && <div className="np-products__detail-content"><div className="np-products__facts">{selected.manufacturer && <span><small>Manufacturer / brand</small><strong>{selected.manufacturer}</strong></span>}{selected.uom && <span><small>Unit</small><strong>{selected.uom}</strong></span>}{selected.categories?.length > 0 && <span><small>Category</small><strong>{selected.categories.map(category => category.name).join(' / ')}</strong></span>}</div>
-          {imageUrl ? <img className="np-products__image" src={imageUrl} alt={selected.name} onError={() => setImageUrl(null)}/> : <div className="np-products__image-placeholder" aria-hidden="true">Product image unavailable</div>}
+          {imageUrl && <img className="np-products__image" src={imageUrl} alt={selected.name} onError={() => setImageUrl(null)}/>}
           {selected.description && <p className="np-products__description">{selected.description}</p>}
           {Object.keys(selected.specifications || {}).length > 0 && <section><h3>Specifications</h3><dl className="np-products__specifications">{Object.entries(selected.specifications).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
-          <section><div className="np-products__section-heading"><h3>Matched NexaPort suppliers <span>{selected.supplierCount}</span></h3></div>{selected.supplierCount === 0 && <p>No matched NexaPort supplier was found for this product.</p>}<div className="np-products__suppliers">{selected.suppliers?.map(supplier => <SupplierRow key={supplier.id} supplier={supplier} matched />)}</div>{selected.pagination?.pages > 1 && <nav aria-label="Product supplier pages"><button type="button" disabled={selected.pagination.page <= 1 || detailLoading} onClick={() => open(selectedSummary, selected.pagination.page - 1)}>Previous</button><span>Page {selected.pagination.page} of {selected.pagination.pages}</span><button type="button" disabled={selected.pagination.page >= selected.pagination.pages || detailLoading} onClick={() => open(selectedSummary, selected.pagination.page + 1)}>Next</button></nav>}</section>
-          {selected.sourceSuppliers?.length > 0 && <section><div className="np-products__section-heading"><h3>Other directory suppliers <span>{selected.sourceSuppliers.length}</span></h3></div><p className="np-products__section-note">Directory listings with product evidence; these are not matched NexaPort accounts.</p><div className="np-products__suppliers">{selected.sourceSuppliers.map(supplier => <SupplierRow key={supplier.id} supplier={supplier} />)}</div></section>}
-          {selected.relatedProductSources?.length > 0 && <section><div className="np-products__section-heading"><h3>Related product sources <span>{selected.relatedProductSources.length}</span></h3></div><p className="np-products__section-note">Specifications reference this product; an offer to sell has not been verified.</p><div className="np-products__suppliers">{selected.relatedProductSources.map(supplier => <SupplierRow key={supplier.id} supplier={supplier} related />)}</div></section>}
+          <section><div className="np-products__section-heading"><h3>Suppliers <span>{selected.sourceSupplierCount ?? supplierRows.length}</span></h3></div>{supplierRows.length === 0 && <p>No suppliers listed for this product.</p>}<div className="np-products__suppliers">{supplierRows.map(supplier => <SupplierRow key={supplier.id} supplier={supplier} matched={Boolean(supplier.canonical_entity_id)} />)}</div>{selected.pagination?.pages > 1 && <nav aria-label="Product supplier pages"><button type="button" disabled={selected.pagination.page <= 1 || detailLoading} onClick={() => open(selectedSummary, selected.pagination.page - 1)}>Previous</button><span>Page {selected.pagination.page} of {selected.pagination.pages}</span><button type="button" disabled={selected.pagination.page >= selected.pagination.pages || detailLoading} onClick={() => open(selectedSummary, selected.pagination.page + 1)}>Next</button></nav>}</section>
+          {selected.relatedProductSources?.length > 0 && <section><div className="np-products__section-heading"><h3>Related product sources <span>{selected.relatedProductSources.length}</span></h3></div><div className="np-products__suppliers">{selected.relatedProductSources.map(supplier => <SupplierRow key={supplier.id} supplier={supplier} related />)}</div></section>}
         </div>}
       </article>}
     </div>
