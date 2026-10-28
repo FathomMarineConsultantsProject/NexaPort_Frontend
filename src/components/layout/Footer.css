@@ -1,82 +1,15 @@
-.np-footer {
-  min-height: 64px;
-  background: var(--np-color-nav);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  color: #c3d1d4;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px var(--np-page-gutter);
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: auto;
-}
-
-.np-footer-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.np-footer-identity {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.np-footer-marketplace {
-  color: #e7efef;
-  font-weight: 600;
-}
-
-.np-footer-credit {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  column-gap: 5px;
-  row-gap: 1px;
-}
-
-.np-footer-powered {
-  color: #c3d1d4;
-  font-size: 10px;
-}
-
-.np-footer-bathyon {
-  color: #e7efef;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.np-footer-bathyon sup {
-  color: #65c6b9;
-  font-size: 7px;
-  letter-spacing: 0.02em;
-  margin-left: 2px;
-  vertical-align: super;
-}
-
-.np-footer-tagline {
-  color: #c3d1d4;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.np-footer-left svg {
-  color: #65c6b9;
-}
-
-.np-footer-right {
-  color: #c3d1d4;
-  font-size: 12px;
-  letter-spacing: 0.2px;
-}
-
-@media (max-width: 720px) {
-  .np-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .np-footer-credit { max-width: 340px; }
-}
+.np-footer { margin-top: auto; padding: 28px var(--np-page-gutter) 17px; background: var(--np-color-nav); border-top: 1px solid rgba(255,255,255,.12); color: #bcc9ce; }
+.np-footer-main, .np-footer-bottom { max-width: 1600px; margin-inline: auto; display: flex; justify-content: space-between; gap: 24px; }
+.np-footer-main { align-items: center; min-height: 85px; padding-bottom: 24px; }
+.np-footer-product { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.np-footer-product .nexaport-brand__symbol { width: 38px; height: 38px; }
+.np-footer-product .nexaport-brand__wordmark { height: 31px; }
+.np-footer-product > span { padding-left: 46px; font-size: 13px; font-weight: 500; }
+.np-footer-parent { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+.np-footer-powered { font-size: 12px; }
+.np-footer-parent strong { color: #f2f5f6; font-size: 18px; font-weight: 700; line-height: 1.2; }
+.np-footer-tagline { font-size: 12px; font-style: italic; line-height: 1.4; }
+.np-footer-bottom { border-top: 1px solid #40505a; padding-top: 14px; align-items: center; font-size: 12px; line-height: 1.5; }
+.np-footer a:focus-visible { outline: 2px solid #f2f5f6; outline-offset: 4px; }
+@media (max-width: 720px) { .np-footer { padding-top: 28px; } .np-footer-main, .np-footer-bottom { flex-direction: column; align-items: flex-start; } .np-footer-main { gap: 24px; } .np-footer-bottom { gap: 4px; } }
+@media (max-width: 460px) { .np-footer-product .nexaport-brand--dark .nexaport-brand__wordmark { display: block; height: 29px; } }

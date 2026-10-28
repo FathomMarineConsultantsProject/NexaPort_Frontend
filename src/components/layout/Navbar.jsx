@@ -14,7 +14,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { matchPath, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   getAdminNotifications,
@@ -53,6 +53,11 @@ export default function Navbar() {
   const notificationTriggerRef = useRef(null);
   const notificationsRef = useRef(null);
   const notificationRequestInFlight = useRef(false);
+  const headerRef = useRef(null);
+  const navRef = useRef(null);
+  const measuredNavWidth = useRef(0);
+  const [brandLevel, setBrandLevel] = useState(0);
+  const [compactNavigation, setCompactNavigation] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   const storedUser = localStorage.getItem("np_user");
@@ -70,6 +75,38 @@ export default function Navbar() {
   const directoryActive = location.pathname.startsWith("/directories/") || visibleDirectoryGroups.flatMap((group) => group.items).some(({ path }) =>
     matchPath({ path: `${path.split("?")[0]}/*` }, location.pathname)
   );
+
+  useLayoutEffect(() => {
+    const updateLayout = () => {
+      const header = headerRef.current;
+      const nav = navRef.current;
+      if (!header || !nav) return;
+      const width = header.clientWidth;
+      if (width <= 1120) {
+        setCompactNavigation(false);
+        setBrandLevel(3);
+        return;
+      }
+      const links = [...nav.children];
+      const linkWidth = links.reduce((sum, item) => sum + item.getBoundingClientRect().width, 0);
+      const navStyles = getComputedStyle(nav);
+      const gap = parseFloat(navStyles.columnGap) || 0;
+      if (linkWidth > 0) measuredNavWidth.current = linkWidth + Math.max(0, links.length - 1) * gap + 48;
+      const navWidth = measuredNavWidth.current;
+      const actionsWidth = header.querySelector(".np-account-actions")?.getBoundingClientRect().width || 96;
+      const productWidth = header.querySelector(".nexaport-brand")?.getBoundingClientRect().width || 176;
+      const padding = (parseFloat(getComputedStyle(header).paddingLeft) || 0) * 2;
+      const available = width - navWidth - actionsWidth - productWidth - padding - 24;
+      const level = available >= 252 ? 0 : available >= 190 ? 1 : available >= 160 ? 2 : 3;
+      setBrandLevel(level);
+      setCompactNavigation(available < 0);
+    };
+    updateLayout();
+    const observer = new ResizeObserver(updateLayout);
+    observer.observe(headerRef.current);
+    window.addEventListener("resize", updateLayout);
+    return () => { observer.disconnect(); window.removeEventListener("resize", updateLayout); };
+  }, [roleId, visibleDirectoryGroups.length]);
 
   const loadNotifications = useCallback(async () => {
     if (!canUseNotifications || notificationRequestInFlight.current) return;
@@ -280,10 +317,17 @@ export default function Navbar() {
   };
 
   return (
-    <header className="np-navbar">
-      <NexaportBrand className="np-brand" surface="dark" compact />
+    <header ref={headerRef} className={`np-navbar${compactNavigation ? " np-navbar--compact" : ""}`} data-brand-level={brandLevel}>
+      <div className="np-branding">
+        <NexaportBrand className="np-brand" surface="dark" compact />
+        <div className="np-brand-signature">
+          <span className="np-brand-descriptor">Maritime Marketplace</span>
+          <span className="np-brand-powered">Powered by <strong>BATHYON FM</strong></span>
+          <span className="np-brand-tagline">Deep Intelligence. Limitless Innovation.</span>
+        </div>
+      </div>
 
-      <nav className="np-navlinks" aria-label="Primary navigation">
+      <nav ref={navRef} className="np-navlinks" aria-label="Primary navigation">
         {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink></> : <>
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
