@@ -322,7 +322,7 @@ export default function Navbar() {
         <NexaportBrand className="np-brand" surface="dark" compact />
         <div className="np-brand-signature">
           <span className="np-brand-descriptor">Maritime Marketplace</span>
-          <span className="np-brand-powered">Powered by <strong>BATHYON FM</strong></span>
+          <span className="np-brand-powered">Powered by <strong aria-label="BATHYON FM">BATHYON<sup aria-hidden="true">FM</sup></strong></span>
           <span className="np-brand-tagline">Deep Intelligence. Limitless Innovation.</span>
         </div>
       </div>

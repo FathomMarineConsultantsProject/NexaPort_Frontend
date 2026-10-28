@@ -623,6 +623,7 @@
 .np-brand-descriptor { color: #f2f5f6; font-size: 13px; font-weight: 600; }
 .np-brand-powered, .np-brand-tagline { color: #bcc9ce; font-size: 11px; font-weight: 400; }
 .np-brand-powered strong { color: #f2f5f6; font-weight: 700; }
+.np-brand-powered sup { margin-left: 2px; font-size: .55em; line-height: 0; vertical-align: super; }
 .np-navbar[data-brand-level="1"] .np-brand-tagline,
 .np-navbar[data-brand-level="2"] .np-brand-tagline,
 .np-navbar[data-brand-level="3"] .np-brand-signature { display: none; }

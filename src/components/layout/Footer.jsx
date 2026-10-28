@@ -11,7 +11,7 @@ export default function Footer() {
         </div>
         <div className="np-footer-parent">
           <span className="np-footer-powered">Powered by</span>
-          <strong>BATHYON FM</strong>
+          <strong aria-label="BATHYON FM">BATHYON<sup aria-hidden="true">FM</sup></strong>
           <span className="np-footer-tagline">Deep Intelligence. Limitless Innovation.</span>
         </div>
       </div>
