@@ -96,10 +96,6 @@ function HideFromClient({ children }) {
   return getRoleId() === 3 ? <Navigate to="/requests" replace state={{ notice: "Clients cannot access the Experts page." }} /> : children;
 }
 
-function ClientOnly({ children }) {
-  return getRoleId() === 3 ? children : <Navigate to="/requests" replace state={{ notice: "Only approved clients can access requisitions." }} />;
-}
-
 function TemplatesOnly({ children }) {
   return [1, 2].includes(getRoleId()) ? children : <Navigate to="/requests" replace state={{ notice: "Clients cannot access Templates." }} />;
 }
@@ -127,9 +123,9 @@ const Shell = () => (
         <Route path="/templates/:id" element={<TemplatesOnly><TemplateEditorPage /></TemplatesOnly>} />
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
-        <Route path="/procurement/requisitions" element={<ClientOnly><RequisitionList /></ClientOnly>} />
-        <Route path="/procurement/requisitions/new" element={<ClientOnly><RequisitionEditor /></ClientOnly>} />
-        <Route path="/procurement/requisitions/:id" element={<ClientOnly><RequisitionEditor /></ClientOnly>} />
+        <Route path="/procurement/requisitions" element={<AdminOnly><RequisitionList /></AdminOnly>} />
+        <Route path="/procurement/requisitions/new" element={<AdminOnly><RequisitionEditor /></AdminOnly>} />
+        <Route path="/procurement/requisitions/:id" element={<AdminOnly><RequisitionEditor /></AdminOnly>} />
         <Route path="/requests/new" element={<RequestCreatorOnly><PostServiceRequest /></RequestCreatorOnly>} />
         <Route path="/requests/:id" element={<ServiceRequestDetails />} />
         <Route path="/admin/inspection-workflows" element={<AdminOnly><InspectionWorkflowQueue /></AdminOnly>} />

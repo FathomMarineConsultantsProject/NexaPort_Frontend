@@ -335,7 +335,7 @@ export default function Navbar() {
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
-        {roleId === 3 && <NavLink to="/procurement/requisitions">Procurement</NavLink>}
+        {isSuperAdmin && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Requisitions</NavLink>}
 
         {isSuperAdmin && <NavLink to="/admin/inspection-workflows">
           <RouteIcon size={17} /> Inspection Workflow
@@ -562,7 +562,7 @@ export default function Navbar() {
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>
-          {roleId === 3 && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Procurement</NavLink>}
+          {isSuperAdmin && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Requisitions</NavLink>}
 
           {isSuperAdmin && <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>
             <RouteIcon size={18} /> Inspection Workflow
