@@ -44,6 +44,7 @@ import ServiceRequestDetails from "./pages/ServiceRequestDetails";
 import SharedRequest from "./pages/SharedRequest";
 import { loginPathFor, safeReturnPath } from "./utils/safeReturnPath";
 import ServiceRequests from "./pages/ServiceRequests";
+import { RequisitionList,RequisitionEditor } from "./pages/ProcurementRequisitions";
 import Dashboard from "./pages/Dashboard";
 import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
@@ -122,6 +123,9 @@ const Shell = () => (
         <Route path="/templates/:id" element={<TemplatesOnly><TemplateEditorPage /></TemplatesOnly>} />
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
+        <Route path="/procurement/requisitions" element={<RequisitionList />} />
+        <Route path="/procurement/requisitions/new" element={<RequisitionEditor />} />
+        <Route path="/procurement/requisitions/:id" element={<RequisitionEditor />} />
         <Route path="/requests/new" element={<RequestCreatorOnly><PostServiceRequest /></RequestCreatorOnly>} />
         <Route path="/requests/:id" element={<ServiceRequestDetails />} />
         <Route path="/admin/inspection-workflows" element={<AdminOnly><InspectionWorkflowQueue /></AdminOnly>} />
