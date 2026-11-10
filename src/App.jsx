@@ -97,8 +97,8 @@ function HideFromClient({ children }) {
   return getRoleId() === 3 ? <Navigate to="/requests" replace state={{ notice: "Clients cannot access the Experts page." }} /> : children;
 }
 
-function ClientOnly({ children }) {
-  return getRoleId() === 3 ? children : <Navigate to="/dashboard" replace />;
+function RequisitionRequesterOnly({ children }) {
+  return [1, 3].includes(getRoleId()) ? children : <Navigate to="/dashboard" replace />;
 }
 
 function TemplatesOnly({ children }) {
@@ -128,11 +128,11 @@ const Shell = () => (
         <Route path="/templates/:id" element={<TemplatesOnly><TemplateEditorPage /></TemplatesOnly>} />
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
-        <Route path="/procurement/requisitions" element={<ClientOnly><RequisitionList /></ClientOnly>} />
-        <Route path="/procurement/requisitions/new" element={<ClientOnly><RequisitionEditor /></ClientOnly>} />
-        <Route path="/procurement/requisitions/submitted" element={<ClientOnly><SubmittedRequests /></ClientOnly>} />
-        <Route path="/procurement/requisitions/submitted/:id" element={<ClientOnly><SubmittedRequestDetail /></ClientOnly>} />
-        <Route path="/procurement/requisitions/:id" element={<ClientOnly><RequisitionEditor /></ClientOnly>} />
+        <Route path="/procurement/requisitions" element={<RequisitionRequesterOnly><RequisitionList /></RequisitionRequesterOnly>} />
+        <Route path="/procurement/requisitions/new" element={<RequisitionRequesterOnly><RequisitionEditor /></RequisitionRequesterOnly>} />
+        <Route path="/procurement/requisitions/submitted" element={<RequisitionRequesterOnly><SubmittedRequests /></RequisitionRequesterOnly>} />
+        <Route path="/procurement/requisitions/submitted/:id" element={<RequisitionRequesterOnly><SubmittedRequestDetail /></RequisitionRequesterOnly>} />
+        <Route path="/procurement/requisitions/:id" element={<RequisitionRequesterOnly><RequisitionEditor /></RequisitionRequesterOnly>} />
         <Route path="/procurement/purchaser/inbox" element={<PurchaserInbox />} />
         <Route path="/procurement/purchaser/inbox/:id" element={<PurchaserRequestDetail />} />
         <Route path="/procurement/admin/assignments" element={<AdminOnly><AssignmentQueue /></AdminOnly>} />

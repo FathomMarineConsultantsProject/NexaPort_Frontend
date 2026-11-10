@@ -338,7 +338,7 @@ export default function Navbar() {
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
-        {roleId === 3 && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Requisitions</NavLink>}
+        {[1, 3].includes(roleId) && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Requisitions</NavLink>}
         {purchaserAllowed && <NavLink to="/procurement/purchaser/inbox"><ClipboardList size={17} aria-hidden="true" /> Purchaser inbox</NavLink>}
         {isSuperAdmin && <NavLink to="/procurement/admin/assignments"><ClipboardList size={17} aria-hidden="true" /> Assignments</NavLink>}
 
@@ -567,7 +567,7 @@ export default function Navbar() {
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>
-          {roleId === 3 && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Requisitions</NavLink>}
+          {[1, 3].includes(roleId) && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Requisitions</NavLink>}
           {purchaserAllowed && <NavLink to="/procurement/purchaser/inbox" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Purchaser inbox</NavLink>}
           {isSuperAdmin && <NavLink to="/procurement/admin/assignments" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Assignments</NavLink>}
 
