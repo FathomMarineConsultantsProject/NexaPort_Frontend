@@ -453,3 +453,14 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+/* Shared directory rhythm across vessel, port, expert, and flag registers. */
+:is(.expert-page, .ports-page, .vessel-directory, .flag-page) { font-family: var(--np-font-sans); color: var(--np-color-text); }
+:is(.expert-header, .ports-header, .vessel-directory > header, .flag-header) h1 { font-weight: 600; letter-spacing: -.025em; }
+:is(.ports-kicker, .vessel-directory .eyebrow, .flag-eyebrow) { color: var(--np-color-text-muted); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+:is(.expert-filters, .ports-toolbar, .vessel-directory-filters, .flag-toolbar) { gap: 16px; margin-bottom: 24px; }
+:is(.expert-filters, .ports-toolbar, .vessel-directory-filters, .flag-toolbar) :is(input, select) { min-height: 40px; border-radius: 8px; font-family: var(--np-font-sans); }
+:is(.expert-page, .ports-page, .vessel-directory, .flag-page) :is(a, button, input, select):focus-visible { outline: 2px solid var(--np-color-accent); outline-offset: 2px; }
+.ports-table th { background: var(--np-color-surface-muted); color: var(--np-color-text-muted); font-weight: 500; }
+.ports-table td { border-bottom-color: var(--np-color-border); }
+.port-register, .flag-country-group, .flag-record-card { border-radius: 12px; }
+.vessel-directory-card { border-radius: 12px; }

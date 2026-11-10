@@ -195,6 +195,8 @@ export default function AdminDashboard() {
       </div>
     </section>
 
+    <div className="admin-analytics"><PipelineChart metrics={metrics} /><AvailabilityChart availability={metrics.availability} /></div>
+
     <section className="admin-attention" aria-labelledby="admin-attention-title">
       <div className="admin-section-heading"><div><span className="admin-section-kicker">Decision queue</span><h2 id="admin-attention-title">Requires Attention</h2></div><p>Separate owners and actions; counts are not additive</p></div>
       <div className="admin-attention-grid">
@@ -208,8 +210,6 @@ export default function AdminDashboard() {
         <AttentionItem label="Approved invoices" value={metrics.paymentsPending} detail="Payment pending" href={workflowQueue} owner="Finance" />
       </div>
     </section>
-
-    <div className="admin-analytics"><PipelineChart metrics={metrics} /><AvailabilityChart availability={metrics.availability} /></div>
 
     <section className="admin-workstation" aria-labelledby="admin-workstation-title">
       <div className="admin-section-heading"><div><span className="admin-section-kicker">Operational workstation</span><h2 id="admin-workstation-title">Current work</h2></div><p>Up to 8 preview rows per queue · open the register for the full list</p></div>

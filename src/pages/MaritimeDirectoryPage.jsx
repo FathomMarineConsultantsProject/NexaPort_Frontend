@@ -29,6 +29,7 @@ export default function MaritimeDirectoryPage({ directory }) {
   const [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [supplierSearchMode, setSupplierSearchMode] = useState("suppliers");
+  const [showFilters, setShowFilters] = useState(() => [...searchParams.keys()].some((key) => !["search", "page", "view"].includes(key)));
 
   useEffect(() => { Promise.resolve().then(() => setFilters(applied)); }, [applied]);
 
@@ -84,10 +85,11 @@ export default function MaritimeDirectoryPage({ directory }) {
       {directory.type === "supplier" && <div className="md-product-mode" role="group" aria-label="Search mode"><button type="button" aria-pressed={supplierSearchMode === "suppliers"} onClick={() => setSupplierSearchMode("suppliers")}>Suppliers</button><button type="button" aria-pressed={supplierSearchMode === "products"} onClick={() => setSupplierSearchMode("products")}>Products</button></div>}
       {supplierSearchMode === "products" && directory.type === "supplier" ? <ProductSearch /> : <>
 
-      <section className="md-filters" aria-label="Filter directory">
+      <section className={`md-filters${showFilters ? " md-filters--expanded" : ""}`} aria-label="Filter directory">
         <div className="md-filters__label">
           <SlidersHorizontal size={17} aria-hidden="true" />
           <span>Filter directory</span>
+          <button className="md-filter-toggle" type="button" aria-expanded={showFilters} onClick={() => setShowFilters((open) => !open)}>{showFilters ? "Fewer filters" : "More filters"}</button>
           <ViewToggle value={viewMode} onChange={(value) => setSearchParams((current) => { const next = new URLSearchParams(current); value === "list" ? next.set("view", "list") : next.delete("view"); return next; })} label="Directory layout" />
         </div>
         <label className="md-filters__search">

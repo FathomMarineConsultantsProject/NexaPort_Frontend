@@ -10,6 +10,27 @@
   --md-font: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
 }
 
+/* Directory register refinement */
+.md-page { width: min(1440px, calc(100% - 48px)); padding-block: 32px 64px; }
+.md-page-header { gap: 16px; padding-bottom: 24px; }
+.md-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.md-page-header h1 { font-weight: 600; letter-spacing: -.025em; }
+.md-result-count { font-weight: 500; color: var(--md-muted); }
+.md-filters { grid-template-columns: minmax(280px, 2fr) repeat(3, minmax(160px, 1fr)); gap: 16px; padding: 20px; margin-block: 24px; border-radius: 12px; }
+.md-filters__label { font-weight: 600; gap: 8px; }
+.md-filter-toggle { margin-left: auto; padding: 8px 12px; border: 1px solid var(--md-line); border-radius: 8px; background: var(--md-paper); color: var(--md-teal); font: inherit; cursor: pointer; }
+.md-filter-toggle:hover { background: var(--md-soft); }
+.md-filters:not(.md-filters--expanded) > label:not(.md-filters__search), .md-filters:not(.md-filters--expanded) > .md-filter-clear { display: none; }
+.md-filters:not(.md-filters--expanded) { grid-template-columns: minmax(0, 1fr); }
+.md-filters label > span { font-weight: 500; }
+.md-filters input, .md-filters select { min-height: 40px; border-radius: 8px; }
+.md-results { gap: 16px; }
+.md-result-card { gap: 16px; padding: 20px; border-radius: 12px; box-shadow: none; transition: border-color 160ms ease, background-color 160ms ease; }
+.md-result-card:hover { box-shadow: none; transform: none; background: var(--md-soft); }
+.md-result-card:focus-visible, .md-filter-toggle:focus-visible { outline: 2px solid var(--md-teal); outline-offset: 2px; }
+@media (max-width: 900px) { .md-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .md-page { width: calc(100% - 32px); } .md-filters { grid-template-columns: 1fr; padding: 16px; } }
+
 body:has(.md-page, .md-detail-page, .md-form),
 .app-shell:has(.md-page, .md-detail-page, .md-form),
 .app-main:has(.md-page, .md-detail-page, .md-form) {
