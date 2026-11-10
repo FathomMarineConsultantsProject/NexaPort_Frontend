@@ -22,6 +22,7 @@ import {
   markAllAdminNotificationsRead,
 } from "../../api/adminNotificationApi";
 import { getRoleId, isMaritimeCompany } from "../../utils/auth";
+import { getPurchaserAccess } from "../../api/procurementApi";
 import { getNavigationDirectoryGroups } from "../../config/adminDirectories";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
@@ -45,6 +46,7 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
+  const [purchaserAllowed, setPurchaserAllowed] = useState(false);
   const menuRef = useRef(null);
   const directoriesRef = useRef(null);
   const directoriesTriggerRef = useRef(null);
@@ -71,6 +73,7 @@ export default function Navbar() {
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
   const visibleDirectoryGroups = getNavigationDirectoryGroups(roleId);
+  useEffect(() => { let active=true; getPurchaserAccess().then(result=>{if(active)setPurchaserAllowed(Boolean(result.allowed))}).catch(()=>{if(active)setPurchaserAllowed(false)}); return()=>{active=false}; },[roleId]);
   const avatarPhoto = photoUrl || user?.photo_url || user?.profile_photo_url || user?.avatar_url || null;
   const directoryActive = location.pathname.startsWith("/directories/") || visibleDirectoryGroups.flatMap((group) => group.items).some(({ path }) =>
     matchPath({ path: `${path.split("?")[0]}/*` }, location.pathname)
@@ -328,14 +331,16 @@ export default function Navbar() {
       </div>
 
       <nav ref={navRef} className="np-navlinks" aria-label="Primary navigation">
-        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink></> : <>
+        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink>{purchaserAllowed && <NavLink to="/procurement/purchaser/inbox"><ClipboardList size={17} aria-hidden="true" /> Purchaser inbox</NavLink>}</> : <>
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
-        {isSuperAdmin && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Requisitions</NavLink>}
+        {roleId === 3 && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Requisitions</NavLink>}
+        {purchaserAllowed && <NavLink to="/procurement/purchaser/inbox"><ClipboardList size={17} aria-hidden="true" /> Purchaser inbox</NavLink>}
+        {isSuperAdmin && <NavLink to="/procurement/admin/assignments"><ClipboardList size={17} aria-hidden="true" /> Assignments</NavLink>}
 
         {isSuperAdmin && <NavLink to="/admin/inspection-workflows">
           <RouteIcon size={17} /> Inspection Workflow
@@ -555,14 +560,16 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
-          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink></> : <>
+          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink>{purchaserAllowed && <NavLink to="/procurement/purchaser/inbox" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Purchaser inbox</NavLink>}</> : <>
           <NavLink to="/dashboard" onClick={closeMobileNavigation}>
             <Grid2X2 size={18} /> Dashboard
           </NavLink>
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>
-          {isSuperAdmin && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Requisitions</NavLink>}
+          {roleId === 3 && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Requisitions</NavLink>}
+          {purchaserAllowed && <NavLink to="/procurement/purchaser/inbox" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Purchaser inbox</NavLink>}
+          {isSuperAdmin && <NavLink to="/procurement/admin/assignments" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Assignments</NavLink>}
 
           {isSuperAdmin && <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>
             <RouteIcon size={18} /> Inspection Workflow

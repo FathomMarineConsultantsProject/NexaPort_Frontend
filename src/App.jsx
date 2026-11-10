@@ -45,6 +45,7 @@ import SharedRequest from "./pages/SharedRequest";
 import { loginPathFor, safeReturnPath } from "./utils/safeReturnPath";
 import ServiceRequests from "./pages/ServiceRequests";
 import { RequisitionList,RequisitionEditor } from "./pages/ProcurementRequisitions";
+import { SubmittedRequests,SubmittedRequestDetail,PurchaserInbox,PurchaserRequestDetail,AssignmentQueue } from "./pages/ProcurementWorkflow";
 import Dashboard from "./pages/Dashboard";
 import TemplatesPage from "./pages/TemplatesPage";
 import TemplateEditorPage from "./pages/TemplateEditorPage";
@@ -96,6 +97,10 @@ function HideFromClient({ children }) {
   return getRoleId() === 3 ? <Navigate to="/requests" replace state={{ notice: "Clients cannot access the Experts page." }} /> : children;
 }
 
+function ClientOnly({ children }) {
+  return getRoleId() === 3 ? children : <Navigate to="/dashboard" replace />;
+}
+
 function TemplatesOnly({ children }) {
   return [1, 2].includes(getRoleId()) ? children : <Navigate to="/requests" replace state={{ notice: "Clients cannot access Templates." }} />;
 }
@@ -123,9 +128,14 @@ const Shell = () => (
         <Route path="/templates/:id" element={<TemplatesOnly><TemplateEditorPage /></TemplatesOnly>} />
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
-        <Route path="/procurement/requisitions" element={<AdminOnly><RequisitionList /></AdminOnly>} />
-        <Route path="/procurement/requisitions/new" element={<AdminOnly><RequisitionEditor /></AdminOnly>} />
-        <Route path="/procurement/requisitions/:id" element={<AdminOnly><RequisitionEditor /></AdminOnly>} />
+        <Route path="/procurement/requisitions" element={<ClientOnly><RequisitionList /></ClientOnly>} />
+        <Route path="/procurement/requisitions/new" element={<ClientOnly><RequisitionEditor /></ClientOnly>} />
+        <Route path="/procurement/requisitions/submitted" element={<ClientOnly><SubmittedRequests /></ClientOnly>} />
+        <Route path="/procurement/requisitions/submitted/:id" element={<ClientOnly><SubmittedRequestDetail /></ClientOnly>} />
+        <Route path="/procurement/requisitions/:id" element={<ClientOnly><RequisitionEditor /></ClientOnly>} />
+        <Route path="/procurement/purchaser/inbox" element={<PurchaserInbox />} />
+        <Route path="/procurement/purchaser/inbox/:id" element={<PurchaserRequestDetail />} />
+        <Route path="/procurement/admin/assignments" element={<AdminOnly><AssignmentQueue /></AdminOnly>} />
         <Route path="/requests/new" element={<RequestCreatorOnly><PostServiceRequest /></RequestCreatorOnly>} />
         <Route path="/requests/:id" element={<ServiceRequestDetails />} />
         <Route path="/admin/inspection-workflows" element={<AdminOnly><InspectionWorkflowQueue /></AdminOnly>} />
