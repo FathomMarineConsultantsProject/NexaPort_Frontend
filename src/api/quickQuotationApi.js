@@ -1,0 +1,11 @@
+import axiosClient from './axiosClient';
+const base='/procurement/quick-quotations';
+export const listQuick=async()=>(await axiosClient.get(base)).data.data;
+export const createQuick=async()=>(await axiosClient.post(base)).data.data;
+export const getQuick=async(id)=>(await axiosClient.get(`${base}/${id}`)).data.data;
+export const uploadQuick=async(id,file)=>{const form=new FormData();form.append('document',file);return(await axiosClient.post(`${base}/${id}/sources`,form,{headers:{'Content-Type':undefined}})).data.data};
+export const saveQuick=async(id,body)=>(await axiosClient.patch(`${base}/${id}`,body)).data.data;
+export const refreshQuickRate=async(id,baseCurrency,quoteCurrency)=>(await axiosClient.get(`${base}/${id}/rate`,{params:{base:baseCurrency,quote:quoteCurrency}})).data.data;
+export const downloadQuickPdf=async id=>(await axiosClient.get(`${base}/${id}/customer.pdf`,{responseType:'blob'})).data;
+export const previewQuick=async id=>(await axiosClient.get(`${base}/${id}/preview`)).data.data;
+export const loadQuickSource=async(id,sourceId)=>(await axiosClient.get(`${base}/${id}/sources/${sourceId}`,{responseType:'blob'})).data;

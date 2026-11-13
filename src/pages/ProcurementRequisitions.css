@@ -29,3 +29,4 @@
   .pr-responsive-table td { display:grid; grid-template-columns:104px minmax(0,1fr); gap:12px; padding:8px 16px; border:0; overflow-wrap:anywhere; }
   .pr-responsive-table td::before { content:attr(data-label); color:var(--np-color-text-muted); font-size:12px; }
 }
+.quick-review{display:grid;grid-template-columns:minmax(260px,38%) minmax(0,1fr);gap:16px}.quick-source iframe{display:block;width:100%;height:620px;border:1px solid var(--np-color-border)}.quick-review .pr-table{min-width:980px}.quick-review input{width:100%;min-width:70px;box-sizing:border-box}.quick-review td:nth-child(2) input{min-width:180px}@media(max-width:900px){.quick-review{grid-template-columns:1fr}.quick-source iframe{height:420px}}

@@ -56,10 +56,10 @@ export function DashboardTable({ columns, rows, getRowHref, emptyMessage }) {
           <tr>{columns.map((column) => <th key={column.key} scope="col" className={column.className || ""}>{column.label}</th>)}</tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {rows.map((row,index) => {
             const href = getRowHref?.(row);
             return (
-              <tr key={row.id || row.service_request_id}>
+              <tr key={row.id || row.service_request_id || `dashboard-row-${index}`}>
                 {columns.map((column) => (
                   <td key={column.key} data-label={column.label} className={column.className || ""}>
                     {href && column.primary
