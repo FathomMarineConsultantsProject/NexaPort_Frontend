@@ -26,6 +26,42 @@
 .rfq-branding-form button{justify-self:start;align-self:end}
 .rfq-branding-logo{display:flex;align-items:center;gap:12px;margin:8px 0 16px}
 .rfq-branding-logo img{display:block;max-width:220px;max-height:96px;object-fit:contain}
+.rfq-settings{margin:16px 0;padding:20px 24px;border:1px solid #dce4e7;background:#fff}
+.rfq-settings summary{cursor:pointer;color:#284b57;font-weight:600}
+.rfq-settings .rfq-branding-form{margin-top:20px}
+.rfq-identifiers{border:1px solid #dce4e7;border-radius:8px;padding:12px 16px}
+.rfq-identifiers legend{color:#40565f;font-size:13px}
+.rfq-identifiers div{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin:8px 0}
+.rfq-identifiers button{padding:8px 12px;border:1px solid #bdcbd0;border-radius:8px;background:#fff;color:#176477;cursor:pointer}
+.rfq-branding-form .rfq-checkbox{display:flex;align-items:center;gap:8px}
+.rfq-branding-form .rfq-checkbox input{width:auto;min-height:auto}
+.received-editor{border-top:1px solid #dce4e7;padding-top:20px;margin-top:16px}
+.received-summary{display:flex;gap:20px;flex-wrap:wrap;margin:20px 0;color:#40565f;font-size:13px}
+.received-summary strong{color:#203640}
+.received-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.received-fields label,.received-terms{display:grid;gap:6px;color:#4d626b;font-size:13px}
+.received-fields input,.received-terms textarea,.received-table input,.received-charges input,.received-charges select{box-sizing:border-box;width:100%;min-height:36px;padding:7px 9px;border:1px solid #bdcbd0;border-radius:6px;background:#fff;color:#24343c;font:inherit}
+.received-stated-totals{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.received-stated-totals label{display:grid;gap:5px;font-size:13px;color:#4d626b}.received-stated-totals input{width:140px;min-height:36px;padding:7px 9px;border:1px solid #bdcbd0;border-radius:6px;font:inherit}
+.client-fulfillment{display:grid;gap:16px}.fulfillment-stage{margin:0}.fulfillment-stage .intake-table-head>span{color:#52656d;font-size:13px}.fulfillment-policy{margin:12px 0;padding:12px 16px;border:1px solid #d8e0e3;border-radius:8px}.fulfillment-policy summary{cursor:pointer;font-weight:600}.fulfillment-confirm{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 0;border-top:1px solid #d8e0e3}.fulfillment-confirm>strong{min-width:160px}.fulfillment-confirm label{display:flex;align-items:center;gap:6px}.fulfillment-confirm input[aria-label]{min-width:180px;flex:1}.fulfillment-stage table input{width:100%;min-width:74px;padding:7px 8px;border:1px solid #cbd5d9;border-radius:6px;font:inherit}.fulfillment-stage table td small{display:block;max-width:260px;overflow-wrap:anywhere;color:#52656d}.fulfillment-stage .received-actions{margin-top:12px}
+.received-table-head{display:flex;justify-content:space-between;align-items:center;margin:12px 0}
+.received-table{max-height:440px}
+.received-table td{min-width:70px}
+.received-table td:nth-child(2){min-width:240px}
+.received-table td:nth-child(2) input+input{margin-top:6px}
+.received-table td details{max-width:170px;overflow-wrap:anywhere}
+.received-row-attention{background:#fff9ec}
+.received-add-row,.received-actions button:not(.intake-primary),.received-charges button,.received-warnings button,.rfq-response-list button{min-height:36px;padding:7px 12px;border:1px solid #bdcbd0;border-radius:7px;background:#fff;color:#176477;cursor:pointer;font:inherit}
+.received-add-row{margin:12px 0}
+.received-charges{display:grid;gap:8px;max-width:650px;margin:20px 0}
+.received-charges>div{display:grid;grid-template-columns:1fr 1fr 90px auto;gap:8px}
+.received-charges>button{justify-self:start}
+.received-terms textarea{min-height:72px;resize:vertical}
+.received-warnings{margin:16px 0;padding:12px 16px;border-left:3px solid #aa6b1a;background:#fff8e9}
+.received-warnings>div{display:flex;align-items:center;gap:12px;margin-top:8px}
+.received-warnings small{overflow-wrap:anywhere;max-width:420px;color:#657780}
+.received-actions{display:flex;gap:8px;margin-top:20px}
+.rfq-response-list article button{justify-self:end}
+@media(max-width:750px){.received-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.received-charges>div{grid-template-columns:1fr 1fr}.received-warnings>div{flex-wrap:wrap}}
 .rfq-branding-logo button,.rfq-logo-upload{min-height:40px;padding:8px 12px;border:1px solid #bdcbd0;border-radius:8px;background:white;color:#176477;font:inherit;cursor:pointer}
 .rfq-logo-upload{position:relative;overflow:hidden;display:inline-flex;align-items:center}
 .rfq-logo-upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -47,3 +83,32 @@
 .rfq-response-form button{justify-self:start}
 .rfq-response-list article{padding:12px 0;border-bottom:1px solid #e8eef0}
 .rfq-response-list article span{color:#657780;font-size:13px}
+
+.intake-stage-nav{display:flex;gap:4px;overflow-x:auto;white-space:nowrap;padding:4px 0 14px;margin:4px 0 16px;border-bottom:1px solid #dce4e7;scrollbar-width:thin}
+.intake-stage-nav a{flex:none;padding:8px 11px;border-radius:6px;color:#4d626b;text-decoration:none;font-size:13px;font-weight:600}
+.intake-stage-nav a:hover,.intake-stage-nav a:focus-visible{background:#eaf2f3;color:#176477}
+.intake-page section[id]{scroll-margin-top:20px}
+@media(max-width:650px){.intake-stage-nav{margin-inline:-16px;padding-inline:16px}}
+
+.comparison-coverage{padding:12px 16px;margin:12px 0;border:1px solid #dce4e7;border-radius:8px;background:#f8faf9}
+.comparison-coverage strong{display:block;margin-bottom:8px}
+.comparison-coverage details{padding:6px 0;border-top:1px solid #e4eaec}
+.comparison-coverage summary{cursor:pointer;font-size:13px;color:#38515b}
+.comparison-coverage p{font-size:12px;line-height:1.5;color:#657780}
+.quote-comparison .comparison-analyze-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.comparison-analyze-controls label{display:grid;gap:4px;color:#52656d;font-size:13px}
+.comparison-analyze-controls select{min-height:40px;padding:7px 10px;border:1px solid #bdcbd0;border-radius:7px;background:#fff;color:#24343c;font:inherit}
+.quote-comparison .intake-table-head .intake-primary{min-height:40px;padding:8px 16px;border:1px solid #176477;border-radius:8px;background:#176477;color:#fff;text-decoration:none;font-weight:500}
+.comparison-exceptions,.comparison-assignments{margin:14px 0;padding:12px 16px;border:1px solid #dce4e7;border-radius:8px;background:#fff}
+.comparison-exceptions>summary,.comparison-assignments>summary{cursor:pointer;color:#24343c;font-weight:500}
+.comparison-exceptions>label{display:inline-flex;align-items:center;gap:6px;margin:12px 0;color:#52656d;font-size:13px}
+.comparison-exceptions .intake-table-wrap,.comparison-assignments .intake-table-wrap{margin-top:12px}
+.comparison-exceptions p{color:#657780;font-size:13px}
+.comparison-strategies{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.comparison-strategies article{min-width:0;padding:18px;border:1px solid #dce4e7;border-radius:8px;background:#fff}
+.comparison-strategies h3{margin:0 0 10px;font-size:16px;color:#24343c}
+.comparison-strategies p{font-size:13px;line-height:1.5;color:#657780}
+.comparison-strategies button{min-height:38px;padding:7px 12px;border:1px solid #bdcbd0;border-radius:7px;background:#fff;color:#176477;cursor:pointer}
+.comparison-strategies button.intake-primary{border-color:#176477;background:#176477;color:#fff}
+.comparison-strategies summary{margin-top:14px;font-size:13px;color:#176477;cursor:pointer}
+@media(max-width:750px){.comparison-strategies{grid-template-columns:1fr}}

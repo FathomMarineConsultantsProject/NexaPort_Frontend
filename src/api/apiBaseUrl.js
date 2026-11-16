@@ -1,8 +1,7 @@
 const DEPLOYED_API_BASE_URL = "https://nexa-port-backend.vercel.app/api";
 
-// Development must use an explicitly local API; never route local test actions
-// to the deployed backend through an inherited .env value.
-const developmentMode = import.meta.env?.VITE_API_MODE || "local";
+// Development uses the hosted API unless VITE_API_MODE explicitly selects local.
+const developmentMode = import.meta.env?.VITE_API_MODE || "hosted";
 if (import.meta.env?.DEV && !["local", "hosted"].includes(developmentMode)) {
   throw new Error("VITE_API_MODE must be local or hosted");
 }
