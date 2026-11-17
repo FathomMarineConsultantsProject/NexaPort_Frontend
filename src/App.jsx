@@ -66,6 +66,8 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function ProcurementOnly({children}) { return [1,5].includes(getRoleId()) ? <RequireAuth>{children}</RequireAuth> : <Navigate to="/dashboard" replace />; }
+
 function GuestOnly({ children }) {
   const session = useValidatedSession();
   if (session.status === "checking") return <div className="route-loading" role="status">Checking your session...</div>;
@@ -80,6 +82,7 @@ function GuestOnly({ children }) {
 
 function CompanyBoundary({ children }) {
   const location = useLocation();
+  if (getRoleId() === 5 && !["/procurement/requisitions", "/procurement/purchaser", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals", "/profile", "/choose-workspace"].some(p=>location.pathname.startsWith(p))) return <Navigate to="/procurement/requisitions" replace />;
   if (isMaritimeCompany() && !["/company-profile", "/dashboard", "/profile", "/procurement/vendor", "/procurement/purchaser", "/procurement/requisitions", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals"].some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -132,20 +135,20 @@ const Shell = () => (
         <Route path="/templates/:id" element={<TemplatesOnly><TemplateEditorPage /></TemplatesOnly>} />
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
-        <Route path="/procurement/requisitions" element={<RequireAuth><IntakeList /></RequireAuth>} />
-        <Route path="/procurement/requisitions/new" element={<RequireAuth><IntakeCreate /></RequireAuth>} />
+        <Route path="/procurement/requisitions" element={<ProcurementOnly><IntakeList /></ProcurementOnly>} />
+        <Route path="/procurement/requisitions/new" element={<ProcurementOnly><IntakeCreate /></ProcurementOnly>} />
         <Route path="/procurement/requisitions/legacy" element={<RequisitionRequesterOnly><RequisitionList /></RequisitionRequesterOnly>} />
         <Route path="/procurement/requisitions/legacy/:id" element={<RequisitionRequesterOnly><RequisitionEditor /></RequisitionRequesterOnly>} />
         <Route path="/procurement/requisitions/submitted" element={<RequisitionRequesterOnly><SubmittedRequests /></RequisitionRequesterOnly>} />
         <Route path="/procurement/requisitions/submitted/:id" element={<RequisitionRequesterOnly><SubmittedRequestDetail /></RequisitionRequesterOnly>} />
-        <Route path="/procurement/requisitions/:id" element={<RequireAuth><IntakeWorkspace /></RequireAuth>} />
-        <Route path="/procurement/purchaser/inbox" element={<PurchaserInbox />} />
-        <Route path="/procurement/purchaser/inbox/:id" element={<PurchaserRequestDetail />} />
-        <Route path="/procurement/quick-quotations" element={<QuickQuotationList />} />
-        <Route path="/procurement/quick-quotations/:id" element={<QuickQuotationEditor />} />
-        <Route path="/procurement/approvals" element={<SeniorApprovalQueue />} />
-        <Route path="/procurement/purchase-orders" element={<PurchaseOrderList />} />
-        <Route path="/procurement/purchase-orders/:id" element={<PurchaseOrderDetail />} />
+        <Route path="/procurement/requisitions/:id" element={<ProcurementOnly><IntakeWorkspace /></ProcurementOnly>} />
+        <Route path="/procurement/purchaser/inbox" element={<ProcurementOnly><PurchaserInbox /></ProcurementOnly>} />
+        <Route path="/procurement/purchaser/inbox/:id" element={<ProcurementOnly><PurchaserRequestDetail /></ProcurementOnly>} />
+        <Route path="/procurement/quick-quotations" element={<ProcurementOnly><QuickQuotationList /></ProcurementOnly>} />
+        <Route path="/procurement/quick-quotations/:id" element={<ProcurementOnly><QuickQuotationEditor /></ProcurementOnly>} />
+        <Route path="/procurement/approvals" element={<ProcurementOnly><SeniorApprovalQueue /></ProcurementOnly>} />
+        <Route path="/procurement/purchase-orders" element={<ProcurementOnly><PurchaseOrderList /></ProcurementOnly>} />
+        <Route path="/procurement/purchase-orders/:id" element={<ProcurementOnly><PurchaseOrderDetail /></ProcurementOnly>} />
         <Route path="/procurement/vendor" element={<VendorProcurementInbox />} />
         <Route path="/procurement/vendor/rfqs/:id" element={<VendorRfqDetail />} />
         <Route path="/procurement/vendor/orders/:id" element={<VendorOrderDetail />} />

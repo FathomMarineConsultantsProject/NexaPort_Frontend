@@ -12,5 +12,6 @@ export default function Dashboard() {
   if (roleId === 2) return <ExpertDashboard />;
   if (roleId === 3) return <ClientDashboard />;
   if (roleId === 4) return <ProviderDashboard />;
+  if (roleId === 5) return <Navigate to="/procurement/requisitions" replace />;
   return <Navigate to="/login" replace />;
 }

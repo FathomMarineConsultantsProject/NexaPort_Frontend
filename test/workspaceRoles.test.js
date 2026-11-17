@@ -13,6 +13,7 @@ test("single-role users route normally and see no selector", () => {
     assert.equal(renderToStaticMarkup(createElement(WorkspaceChoices, { user })), "");
   }
   assert.equal(loginDestination({ role_id: 3 }), "/client-verification-status");
+  assert.equal(loginDestination({ role_id: 5, roles: [5] }), "/procurement/requisitions");
 });
 
 test("multi-role login shows two operational choices and indicates the current role", () => {

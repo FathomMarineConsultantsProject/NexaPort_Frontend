@@ -331,14 +331,14 @@ export default function Navbar() {
       </div>
 
       <nav ref={navRef} className="np-navlinks" aria-label="Primary navigation">
-        {isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink>{purchaserAllowed&&<NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
+        {roleId===5 ? <NavLink to="/procurement/requisitions">Procurement</NavLink> : isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink>{[1,5].includes(roleId)&&purchaserAllowed&&<NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
         <NavLink to="/requests">
           <Briefcase size={17} /> Requests
         </NavLink>
-        {[1, 3].includes(roleId) && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}
+        {[1, 5].includes(roleId) && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}
 
         {isSuperAdmin && <NavLink to="/admin/inspection-workflows">
           <RouteIcon size={17} /> Inspection Workflow
@@ -558,14 +558,14 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
-          {isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink>{purchaserAllowed&&<NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
+          {roleId===5 ? <NavLink to="/procurement/requisitions">Procurement</NavLink> : isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink>{[1,5].includes(roleId)&&purchaserAllowed&&<NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
           <NavLink to="/dashboard" onClick={closeMobileNavigation}>
             <Grid2X2 size={18} /> Dashboard
           </NavLink>
           <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
           </NavLink>
-          {[1, 3].includes(roleId) && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Procurement · Requisitions</NavLink>}
+          {[1, 5].includes(roleId) && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Procurement · Requisitions</NavLink>}
 
           {isSuperAdmin && <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>
             <RouteIcon size={18} /> Inspection Workflow
