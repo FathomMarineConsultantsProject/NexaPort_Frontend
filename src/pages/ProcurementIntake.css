@@ -112,3 +112,15 @@
 .comparison-strategies button.intake-primary{border-color:#176477;background:#176477;color:#fff}
 .comparison-strategies summary{margin-top:14px;font-size:13px;color:#176477;cursor:pointer}
 @media(max-width:750px){.comparison-strategies{grid-template-columns:1fr}}
+.comparison-price-sheet{margin:18px 0;border:1px solid #dce4e7;border-radius:8px;background:#fff;overflow:hidden}
+.comparison-price-head{padding:15px 18px;border-bottom:1px solid #e4eaec}
+.comparison-price-head h3{margin:0 0 4px;font-size:16px;color:#24343c}
+.comparison-price-head p{margin:0;color:#657780;font-size:12px;line-height:1.5}
+.comparison-price-sheet .intake-table-wrap{margin:0;overflow-x:auto}
+.comparison-price-sheet table{width:100%;min-width:760px;border-collapse:collapse}
+.comparison-price-sheet th,.comparison-price-sheet td{padding:10px 12px;vertical-align:top;border-bottom:1px solid #e9eef0;text-align:left;font-size:13px}
+.comparison-price-sheet th{background:#f5f8f8;color:#52656d;font-weight:600}
+.comparison-price-sheet td strong{display:block;color:#24343c;font-weight:600}
+.comparison-price-sheet td small{display:block;margin-top:3px;color:#657780;line-height:1.35}
+.comparison-price-sheet .comparison-best-price{background:#edf7f2;border-left:2px solid #2d815d}
+.comparison-price-state{color:#657780;font-size:12px;line-height:1.4}
