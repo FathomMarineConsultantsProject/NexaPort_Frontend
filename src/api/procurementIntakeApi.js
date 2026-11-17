@@ -23,9 +23,11 @@ export const addDirectoryContact=async(id,body)=>(await axiosClient.post(`${base
 export const generateRfqForRecipient=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/generate`,body)).data.data;
 export const listReceivedQuotations=async(id)=>(await axiosClient.get(`${base}/${id}/received-quotations`)).data.data;
 export const getReceivedQuotation=async(id,quoteId)=>(await axiosClient.get(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
+export const deleteReceivedQuotation=async(id,quoteId)=>(await axiosClient.delete(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
 export const saveExtractedQuotation=async(id,body,quoteId=null)=>(await axiosClient.post(quoteId?`${base}/${id}/received-quotations/${quoteId}/revisions`:`${base}/${id}/received-quotations/extracted`,body,{timeout:30000})).data.data;
 export const recordReceivedQuotation=async(id,body)=>(await axiosClient.post(`${base}/${id}/received-quotations`,body)).data.data;
 export const getComparison=async(id)=>(await axiosClient.get(`${base}/${id}/comparison`)).data.data;
+export const getComparisonTestMode=async(id)=>(await axiosClient.get(`${base}/${id}/comparison/test-mode`)).data.data;
 export const getComparisonRates=async(id,target)=>(await axiosClient.get(`${base}/${id}/comparison/rates`,{params:{target}})).data.data;
 export const saveComparisonMatches=async(id,body)=>(await axiosClient.post(`${base}/${id}/comparison/matches`,body)).data.data;
 export const previewComparison=async(id,body)=>(await axiosClient.post(`${base}/${id}/comparison/preview`,body)).data.data;
@@ -42,6 +44,9 @@ export const acceptClientPo=async(id,poId)=>(await axiosClient.post(`${base}/${i
 export const getSupplierPos=async id=>(await axiosClient.get(`${base}/${id}/supplier-pos`)).data.data;
 export const issueSupplierPos=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-pos/issue`,body)).data.data;
 export const downloadSupplierPo=async(id,poId)=>(await axiosClient.get(`${base}/${id}/supplier-pos/${poId}/pdf`,{responseType:'blob'})).data;
+export const acceptClientQuotation=async(id,quoteId)=>(await axiosClient.post(`${base}/${id}/client-quotations/${quoteId}/client-accept`,{confirmed:true})).data.data;
+export const generateSupplierPoDrafts=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-pos/drafts`,body)).data.data;
+export const downloadSupplierPoDraft=async(id,poId)=>(await axiosClient.get(`${base}/${id}/supplier-pos/drafts/${poId}/pdf`,{responseType:'blob'})).data;
 export const saveComparisonRevision=async(id,body)=>(await axiosClient.post(`${base}/${id}/comparison/revisions`,body)).data.data;
 export const updateRfqPolicy=async(id,body)=>(await axiosClient.put(`${base}/${id}/supplier-rfqs/policy`,body,{timeout:20000})).data.data;
 export const uploadRfqLogo=async(id,file)=>{const form=new FormData();form.append('logo',file);return(await axiosClient.post(`${base}/${id}/supplier-rfqs/policy/logo`,form,{headers:{'Content-Type':undefined},timeout:20000})).data.data};

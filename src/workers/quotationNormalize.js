@@ -5,7 +5,7 @@ const MONEY='[0-9][0-9,]*(?:\\.[0-9]{1,16})?';
 const amount=x=>{const v=clean(x).replace(/,/g,'');if(!/^\d+(?:\.\d{1,16})?$/.test(v))return null;const [whole,fraction='']=v.split('.');if(fraction.length<=4)return v;const rounded=BigInt(whole)*10000n+BigInt(fraction.slice(0,4))+(Number(fraction[4])>=5?1n:0n);return `${rounded/10000n}.${String(rounded%10000n).padStart(4,'0')}`};
 const normDate=x=>{const v=clean(x);if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;const t=Date.parse(`${v} 12:00 GMT`);return Number.isFinite(t)?new Date(t).toISOString().slice(0,10):null};
 const source=b=>({sourcePage:b.location?.pageNumber||null,sourceSheet:b.location?.sheetName||null,sourceCells:(b.metadata?.cells||[]).filter(c=>c&&!c.empty).map(c=>c.address).slice(0,50),sourceEvidence:clean(b.text).slice(0,600)});
-const reference=x=>clean(x).match(/\b(?:part\s*(?:no\.?|number)|maker(?:'?s)?\s*(?:ref(?:erence)?|part))\s*[:#-]?\s*([A-Z0-9][A-Z0-9./-]{2,})/i)?.[1]||null;
+const reference=x=>clean(x).match(/\bRef(?:erence)?\s*[:#-]?\s*([^|]+?)(?=\s*\||$)/i)?.[1]?.trim()||clean(x).match(/\b(?:part\s*(?:no\.?|number)|maker(?:'?s)?\s*(?:ref(?:erence)?|part))\s*[:#-]?\s*([A-Z0-9][A-Z0-9./-]{2,})/i)?.[1]||null;
 const impa=x=>clean(x).match(/\bIMPA(?:\s*code)?\s*[:#-]?\s*((?:\d[ -]?){6})\b/i)?.[1]?.replace(/\D/g,'')||null;
 const isTotal=x=>/\b(?:grand\s*total|total\s+(?:aud|usd|eur|jpy|gbp|cad|sgd)|amount\s+due)\b/i.test(x);
 function header(blocks){const first=blocks.slice(0,35).map(b=>clean(b.text));const joined=first.join('\n');const labelled=(label)=>joined.match(new RegExp(`(?:^|\\n)\\s*${label}\\s*[:#]\\s*([^\\n]+)`,'im'))?.[1]?.trim()||null;

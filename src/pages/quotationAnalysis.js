@@ -23,6 +23,11 @@ export async function analyzeQuotationComparison({requisitionId,currency,previou
     await api.saveComparisonMatches(requisitionId,{requestKey:requestKeyFor(fingerprint),decisions});
     workspace=await api.getComparison(requisitionId);
     if(!workspace.matchRevision)throw new Error('Saved matches are stale. Analyze the latest quotation revisions again.');
+    for(const edit of edits.values()){
+      const saved=workspace.matches.find(match=>match.quotationLineId===edit.quotationLineId);
+      if(!saved||saved.requisitionItemId!==edit.requisitionItemId||saved.status!==edit.status||saved.reason!==edit.reason||!saved.reviewed)
+        throw new Error('A manual match correction did not persist. Reload before continuing.');
+    }
   }
   const validItems=new Set(workspace.items.map(item=>item.id)),validLines=new Set(workspace.lines.map(line=>line.id));
   const validOverrides=Object.fromEntries(Object.entries(overrides).filter(([itemId,lineId])=>validItems.has(itemId)&&validLines.has(lineId)));
