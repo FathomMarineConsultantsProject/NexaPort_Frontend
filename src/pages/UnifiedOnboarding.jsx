@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import NexaportBrand from '../components/branding/NexaportBrand';
-import { getUnifiedOnboarding, saveUnifiedOnboarding } from '../api/Auth';
+import { getUnifiedOnboarding, saveUnifiedOnboarding, getApplications } from '../api/Auth';
+import { postRegistrationV2 } from '../utils/postRegistrationRollout.js';
+import { safeReturnPath } from '../utils/safeReturnPath.js';
 import './UnifiedRegistration.css';
 
 const steps = {
@@ -10,7 +12,23 @@ const steps = {
   company: [['description','Company description'],['address','Company address'],['website','Website'],['services','Services or products']],
   client: [['fleet','Fleet and business details'],['verification','Client verification notes']],
 };
-export default function UnifiedOnboarding() {
+function OnboardingPaths() {
+  const [state,setState] = useState(null);
+  const [error,setError] = useState('');
+  useEffect(()=>{getApplications().then(setState).catch(()=>setError('Unable to load your application status. Retry by refreshing the page.'));},[]);
+  const applications = state?.applications || [];
+  const returnTo = safeReturnPath(localStorage.getItem('np_after_verification'));
+  const pathways = [
+    ['consultant','Consultant or surveyor','Build your professional profile and submit your qualifications for review.'],
+    ['client','Shipowner or manager','Verify your company to request maritime services.'],
+    ['company','Maritime company','Create a company listing or request access to an existing one.'],
+  ];
+  return <main className="unified-page"><div className="unified-shell"><header className="unified-header"><NexaportBrand to="/dashboard"/><Link to="/dashboard">Explore NexaPort</Link></header><div className="unified-intro"><h1>Complete a profile</h1><span>Choose the services you need. You can continue browsing while an application is reviewed.</span></div>{error && <p role="alert" className="unified-error">{error}</p>}{!state && !error && <p role="status">Loading applications…</p>}<div className="pathway-list">{pathways.map(([key,title,description])=>{const status=applications.find(item=>item.pathway===key)?.status||'not_started';return <section key={key} className="pathway-row"><div><h2>{title}</h2><p>{description}</p><small>Status: {status.replaceAll('_',' ')}</small></div>{status==='pending'?(key==='client'?<Link to="/client-verification-status">View review status</Link>:<span>Review pending</span>):<Link to={status==='approved'?`/choose-workspace${key==='client'&&returnTo?`?returnTo=${encodeURIComponent(returnTo)}`:''}`:key==='client'&&status==='rejected'?'/client-verification-status':`/onboarding/${key}`}>{status==='not_started'?'Start profile':status==='approved'?'Open approved workspace':'Continue profile'}</Link>}</section>})}</div>{state && Object.keys(state.legacyDraft||{}).length>0 && <details><summary>Earlier saved setup notes</summary><p>Your earlier notes are preserved. Review them as you complete a structured profile.</p>{Object.entries(state.legacyDraft).map(([section,fields])=><section key={section}><h3>{section}</h3>{Object.entries(fields||{}).map(([key,value])=><p key={key}><strong>{key}:</strong> {String(value)}</p>)}</section>)}</details>}</div></main>;
+}
+
+export default function UnifiedOnboarding() { return postRegistrationV2 ? <OnboardingPaths/> : <LegacyOnboarding/>; }
+
+function LegacyOnboarding() {
   const navigate=useNavigate();
   const [record,setRecord]=useState(null);
   const [section,setSection]=useState('personal');

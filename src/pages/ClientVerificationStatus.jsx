@@ -97,6 +97,7 @@ export default function ClientVerificationStatus() {
     <main className="verification-page">
       <header className="verification-top"><div><Anchor size={21} /> NexaPort</div>
         {hasMultipleRoles(getStoredUser()) && <button type="button" onClick={() => navigate("/choose-workspace")}>Switch role</button>}
+        <button type="button" onClick={() => navigate("/dashboard")}>Explore NexaPort</button>
         <button onClick={logout}><LogOut size={17} /> Sign Out</button></header>
       <section className="verification-shell">
         <div className={`verification-status-icon ${rejected ? "rejected" : ""}`}>{rejected ? <RefreshCw size={28} /> : <Clock size={28} />}</div>

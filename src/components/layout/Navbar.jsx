@@ -23,6 +23,7 @@ import {
 } from "../../api/adminNotificationApi";
 import { getRoleId, isMaritimeCompany } from "../../utils/auth";
 import { getPurchaserAccess } from "../../api/procurementApi";
+import { postRegistrationV2 } from "../../utils/postRegistrationRollout.js";
 import { getNavigationDirectoryGroups } from "../../config/adminDirectories";
 import ConsultantAvatar from "../experts/ConsultantAvatar";
 import {
@@ -69,10 +70,10 @@ export default function Navbar() {
 
   const roleId = getRoleId();
   const isSuperAdmin = roleId === 1;
-  const isCompany = isMaritimeCompany();
+  const isCompany = roleId === 4 && isMaritimeCompany();
   const canUseNotifications = roleId === 1 || roleId === 2;
   const userId = user?.id;
-  useEffect(() => { let active=true; getPurchaserAccess().then(result=>{if(active)setPurchaserAllowed(Boolean(result.allowed))}).catch(()=>{if(active)setPurchaserAllowed(false)}); return()=>{active=false}; },[roleId]);
+  useEffect(() => { let active=true; if (![1, 5].includes(roleId)) { setPurchaserAllowed(false); return () => { active=false; }; } getPurchaserAccess().then(result=>{if(active)setPurchaserAllowed(Boolean(result.allowed))}).catch(()=>{if(active)setPurchaserAllowed(false)}); return()=>{active=false}; },[roleId]);
   const visibleDirectoryGroups = getNavigationDirectoryGroups(roleId);
   const avatarPhoto = photoUrl || user?.photo_url || user?.profile_photo_url || user?.avatar_url || null;
   const directoryActive = location.pathname.startsWith("/directories/") || visibleDirectoryGroups.flatMap((group) => group.items).some(({ path }) =>
@@ -335,9 +336,10 @@ export default function Navbar() {
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
-        <NavLink to="/requests">
+        {!(postRegistrationV2 && roleId===6) && <NavLink to="/requests">
           <Briefcase size={17} /> Requests
-        </NavLink>
+        </NavLink>}
+        {postRegistrationV2 && roleId===6 && <><NavLink to="/companies">Companies</NavLink><NavLink to="/professionals">Professionals</NavLink><NavLink to="/ports">Ports</NavLink><NavLink to="/onboarding">Complete profile</NavLink></>}
         {[1, 5].includes(roleId) && <NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}
 
         {isSuperAdmin && <NavLink to="/admin/inspection-workflows">
@@ -562,9 +564,10 @@ export default function Navbar() {
           <NavLink to="/dashboard" onClick={closeMobileNavigation}>
             <Grid2X2 size={18} /> Dashboard
           </NavLink>
-          <NavLink to="/requests" onClick={closeMobileNavigation}>
+          {!(postRegistrationV2 && roleId===6) && <NavLink to="/requests" onClick={closeMobileNavigation}>
             <Briefcase size={18} /> Requests
-          </NavLink>
+          </NavLink>}
+          {postRegistrationV2 && roleId===6 && <><NavLink to="/companies" onClick={closeMobileNavigation}>Companies</NavLink><NavLink to="/professionals" onClick={closeMobileNavigation}>Professionals</NavLink><NavLink to="/ports" onClick={closeMobileNavigation}>Ports</NavLink><NavLink to="/onboarding" onClick={closeMobileNavigation}>Complete profile</NavLink></>}
           {[1, 5].includes(roleId) && <NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}><ClipboardList size={18} aria-hidden="true" /> Procurement · Requisitions</NavLink>}
 
           {isSuperAdmin && <NavLink to="/admin/inspection-workflows" onClick={closeMobileNavigation}>

@@ -2,7 +2,8 @@ export const WORKSPACE_LABELS = { 1: "Super Admin", 2: "Consultant", 3: "Client"
 export const workspaceRoles = (user) => [...new Set((user?.roles || [user?.role_id]).map(Number))]
   .filter((role) => Object.hasOwn(WORKSPACE_LABELS, role));
 export const hasMultipleRoles = (user) => workspaceRoles(user).length > 1;
-export const workspaceDestination = (user) => Number(user?.role_id) === 6 ? "/onboarding" : Number(user?.role_id) === 5 ? "/procurement/requisitions" : user?.account_type === "professional_claim_pending"
+import { postRegistrationV2 } from "./postRegistrationRollout.js";
+export const workspaceDestination = (user) => Number(user?.role_id) === 6 ? (postRegistrationV2 ? "/dashboard" : "/onboarding") : Number(user?.role_id) === 5 ? "/procurement/requisitions" : user?.account_type === "professional_claim_pending"
   ? "/professional-claims" : Number(user?.role_id) === 4 && user?.company_claim_status === "pending"
     ? "/company-claims" : Number(user?.role_id) === 3 && user?.verification_status !== "approved"
       ? "/client-verification-status" : "/dashboard";

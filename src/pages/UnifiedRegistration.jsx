@@ -6,6 +6,7 @@ import { registerUnified } from '../api/Auth';
 import { searchCompanies } from '../api/companyClaimsApi';
 import './UnifiedRegistration.css';
 import { CATEGORIES, SENIORITY, ROLES, COUNTRY_CODES, initialRegistration, validateRegistration } from '../utils/unifiedRegistrationModel.js';
+import { postRegistrationV2 } from '../utils/postRegistrationRollout.js';
 
 export default function UnifiedRegistration() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function UnifiedRegistration() {
       const result = await registerUnified(form);
       localStorage.setItem('np_token',result.token);
       localStorage.setItem('np_user',JSON.stringify(result.user));
-      navigate('/onboarding',{replace:true});
+      navigate(postRegistrationV2 ? '/dashboard' : '/onboarding',{replace:true});
     } catch (error) {
       if (error.response?.data?.field_errors) setErrors(error.response.data.field_errors);
       setServerError(error.response?.data?.message || (error.response ? "We couldn't create your account. Please try again." : 'Unable to connect to the account service. Please try again.'));

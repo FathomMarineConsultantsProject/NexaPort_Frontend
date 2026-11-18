@@ -24,6 +24,7 @@ import { getServiceRequestDropdowns } from "../api/masterApi";
 import { searchPublicPorts } from "../api/publicPortApi";
 import InspectionCapabilityMultiSelect from "../components/requests/InspectionCapabilityMultiSelect";
 import "./RegisterConsultant.css";
+import { getApplication, saveApplication } from "../api/Auth";
 
 const steps = [
   {
@@ -139,7 +140,7 @@ const hasReferenceValue = (ref) =>
 const normalizeReferences = (refs) =>
   refs.map(normalizeReference).filter(hasReferenceValue);
 
-export default function RegisterConsultant() {
+export default function RegisterConsultant({ accountLinked = false }) {
   const [formData, setFormData] = useState(initialConsultantRegistration);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -147,6 +148,9 @@ export default function RegisterConsultant() {
   const [issuedNexaportId, setIssuedNexaportId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const [saveState, setSaveState] = useState("");
+  const [applicationStatus, setApplicationStatus] = useState("");
+  const [fileBusy, setFileBusy] = useState(false);
   const [flagOptions, setFlagOptions] = useState([]);
   const [flagSearch, setFlagSearch] = useState("");
   const [flagsLoading, setFlagsLoading] = useState(false);
@@ -161,6 +165,16 @@ export default function RegisterConsultant() {
   );
 
   const currentStep = steps[activeStep];
+
+  useEffect(() => {
+    if (!accountLinked) return;
+    const user = JSON.parse(localStorage.getItem("np_user") || "{}");
+    const names = String(user.full_name || "").trim().split(/\s+/);
+    getApplication("consultant").then(({ application }) => {
+      setApplicationStatus(application.status);
+      setFormData({ ...initialConsultantRegistration, ...application.draft, firstName: names[0] || "", lastName: names.slice(1).join(" ") || names[0] || "", email: user.email || "", username: user.username || "", phoneNumber: application.draft?.phoneNumber || user.phone || "", password: "", confirmPassword: "", photoFile: null, cvFile: null });
+    }).catch(() => setSaveState("Unable to load your saved profile. Refresh to retry."));
+  }, [accountLinked]);
 
   useEffect(() => {
     let active = true;
@@ -408,8 +422,7 @@ export default function RegisterConsultant() {
       ["employmentStatus", "Please select employment status."],
       ["email", "Email is required."],
       ["username", "Username is required."],
-      ["password", "Password is required."],
-      ["confirmPassword", "Confirm password is required."],
+      ...(!accountLinked ? [["password", "Password is required."], ["confirmPassword", "Confirm password is required."]] : []),
       ["dobDD", "DOB day is required."],
       ["dobMM", "DOB month is required."],
       ["dobYYYY", "DOB year is required."],
@@ -439,11 +452,11 @@ export default function RegisterConsultant() {
     if (!/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
       nextErrors.email = "Enter a valid email.";
     }
-    if (formData.password && formData.password.length < 6) {
+    if (!accountLinked && formData.password && formData.password.length < 6) {
       nextErrors.password = "Password must be at least 6 characters.";
     }
     if (
-      formData.password &&
+      !accountLinked && formData.password &&
       formData.confirmPassword &&
       formData.password !== formData.confirmPassword
     ) {
@@ -477,8 +490,8 @@ export default function RegisterConsultant() {
         }
       });
     }
-    if (!formData.photoFile) nextErrors.photoFile = "Profile photo is required.";
-    if (!formData.cvFile) nextErrors.cvFile = "CV file is required.";
+    if (!formData.photoFile && !formData.photoS3Key) nextErrors.photoFile = "Profile photo is required.";
+    if (!formData.cvFile && !formData.cvS3Key) nextErrors.cvFile = "CV file is required.";
 
     requiredOtherFields.forEach(([selector, otherKey, message]) => {
       if (String(formData[selector]).toLowerCase() === "other" && !formData[otherKey].trim()) {
@@ -558,7 +571,7 @@ export default function RegisterConsultant() {
 
   const validatePhoto = (file) => {
     if (!file) return "Profile photo is required.";
-    if (!file.type.startsWith("image/")) return "Please upload an image.";
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return "Use PNG, JPEG, or WebP.";
     if (file.size > 3 * 1024 * 1024) return "Photo must be 3MB or less.";
     return "";
   };
@@ -570,7 +583,7 @@ export default function RegisterConsultant() {
     return "";
   };
 
-  const setFile = (key, file, validator) => {
+  const setFile = async (key, file, validator) => {
     const message = validator(file);
     if (message) {
       setField(key, null);
@@ -578,6 +591,18 @@ export default function RegisterConsultant() {
       return;
     }
     setFormData((prev) => ({ ...prev, [key]: file }));
+    if (accountLinked) {
+      setFileBusy(true); setSaveState("Uploading…");
+      try {
+        const uploadedKey = await uploadFile(key === "photoFile" ? "photo" : "cv", file);
+        const field = key === "photoFile" ? "photoS3Key" : "cvS3Key";
+        const draft = { ...formData, [field]: uploadedKey };
+        delete draft.photoFile; delete draft.cvFile; delete draft.password; delete draft.confirmPassword;
+        await saveApplication("consultant", draft);
+        setFormData(prev => ({ ...prev, [field]: uploadedKey })); setSaveState("All changes saved.");
+      } catch (error) { setErrors(prev=>({ ...prev, [key]: error.message || "Upload failed. Retry the file." })); setSaveState("Upload failed — retry."); }
+      finally { setFileBusy(false); }
+    }
     setErrors((prev) => {
       const copy = { ...prev };
       delete copy[key];
@@ -590,7 +615,7 @@ export default function RegisterConsultant() {
       kind,
       contentType: file.type,
       size: file.size,
-    });
+    }, accountLinked);
     const uploadRes = await fetch(presign.uploadUrl, {
       method: "PUT",
       headers: { "Content-Type": file.type },
@@ -649,11 +674,21 @@ export default function RegisterConsultant() {
     return scopedErrors;
   };
 
-  const goNext = () => {
+  const goNext = async () => {
+    if (fileBusy) { setSaveState("Wait for the upload to finish."); return; }
     const scopedErrors = validateCurrentStep();
     if (Object.keys(scopedErrors).length) return;
+    if (accountLinked) {
+      setSaveState("Saving…");
+      try { const { photoFile, cvFile, password, confirmPassword, ...draft } = formData; await saveApplication("consultant", draft); setSaveState("All changes saved."); }
+      catch { setSaveState("Unable to save — retry Continue."); return; }
+    }
     setActiveStep((step) => Math.min(step + 1, steps.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const goBack = async () => {
+    if (accountLinked) { setSaveState("Saving…"); try { const {photoFile,cvFile,password,confirmPassword,...draft}=formData; await saveApplication("consultant",draft); setSaveState("All changes saved."); } catch { setSaveState("Unable to save — retry Previous."); return; } }
+    setActiveStep(step=>Math.max(step-1,0));
   };
 
   const handleSubmit = async (event) => {
@@ -669,9 +704,9 @@ export default function RegisterConsultant() {
 
     setLoading(true);
     try {
-      const photoS3Key = await uploadFile("photo", formData.photoFile);
-      const cvS3Key = await uploadFile("cv", formData.cvFile);
-      const registration = await registerConsultant(buildPayload(photoS3Key, cvS3Key));
+      const photoS3Key = formData.photoS3Key || await uploadFile("photo", formData.photoFile);
+      const cvS3Key = formData.cvS3Key || await uploadFile("cv", formData.cvFile);
+      const registration = await registerConsultant(buildPayload(photoS3Key, cvS3Key), accountLinked);
       setIssuedNexaportId(registration?.expert?.nexaport_id || registration?.nexaport_id || "");
       setSuccess(true);
       setFormData(initialConsultantRegistration);
@@ -929,8 +964,8 @@ export default function RegisterConsultant() {
       case "personal":
         return (
           <div className="consultant-grid">
-            {renderTextField("First Name", "firstName", true)}
-            {renderTextField("Last Name", "lastName", true)}
+            {renderTextField("First Name", "firstName", true, { readOnly: accountLinked })}
+            {renderTextField("Last Name", "lastName", true, { readOnly: accountLinked })}
             {renderTextField("Phone Number", "phoneNumber", true, { placeholder: "+44 7700 900123" })}
             {renderTextField("Mobile phone number", "mobileNumber")}
             {renderSelect("Nationality", "nationality", NATIONALITIES, true)}
@@ -962,9 +997,9 @@ export default function RegisterConsultant() {
       case "account":
         return (
           <div className="consultant-grid">
-            {renderTextField("Email", "email", true, { type: "email" })}
-            {renderTextField("Username", "username", true, { autoComplete: "username" })}
-            <div className="consultant-field">
+            {renderTextField("Email", "email", true, { type: "email", readOnly: accountLinked })}
+            {renderTextField("Username", "username", true, { autoComplete: "username", readOnly: accountLinked })}
+            {!accountLinked && <div className="consultant-field">
               <label>Password <span>*</span></label>
               <div className="consultant-password-wrap">
                 <input
@@ -984,8 +1019,8 @@ export default function RegisterConsultant() {
                 </button>
               </div>
               {errors.password && <p className="consultant-error">{errors.password}</p>}
-            </div>
-            {renderTextField("Confirm Password", "confirmPassword", true, {
+            </div>}
+            {!accountLinked && renderTextField("Confirm Password", "confirmPassword", true, {
               type: showPassword ? "text" : "password",
               autoComplete: "new-password",
             })}
@@ -1152,13 +1187,13 @@ export default function RegisterConsultant() {
             <div className="consultant-field consultant-upload">
               <label>Profile Photo <span>*</span></label>
               <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setFile("photoFile", event.target.files?.[0] || null, validatePhoto)} />
-              <small>{formData.photoFile ? formData.photoFile.name : "PNG, JPEG or WEBP. Maximum 3MB."}</small>
+              <small>{formData.photoFile ? formData.photoFile.name : formData.photoS3Key ? "Photo uploaded. You can replace it." : "PNG, JPEG or WEBP. Maximum 3MB."}</small>
               {errors.photoFile && <p className="consultant-error">{errors.photoFile}</p>}
             </div>
             <div className="consultant-field consultant-upload">
               <label>Original CV File <span>*</span></label>
               <input type="file" accept="application/pdf,.pdf" onChange={(event) => setFile("cvFile", event.target.files?.[0] || null, validateCv)} />
-              <small>{formData.cvFile ? formData.cvFile.name : "PDF only. Maximum 5MB."}</small>
+              <small>{formData.cvFile ? formData.cvFile.name : formData.cvS3Key ? "CV uploaded. You can replace it." : "PDF only. Maximum 5MB."}</small>
               {errors.cvFile && <p className="consultant-error">{errors.cvFile}</p>}
             </div>
             {renderTextarea("Inspection Cost", "inspectionCost", true)}
@@ -1171,15 +1206,16 @@ export default function RegisterConsultant() {
     }
   };
 
+  if (accountLinked && ["pending", "approved"].includes(applicationStatus)) return <main className="consultant-page"><section className="consultant-success"><h1>{applicationStatus === "pending" ? "Profile under review" : "Consultant profile approved"}</h1><p>{applicationStatus === "pending" ? "You can keep exploring NexaPort while your qualifications are reviewed." : "Open your approved workspace to access consultant features."}</p><Link to={applicationStatus === "approved" ? "/choose-workspace" : "/dashboard"} className="consultant-submit">{applicationStatus === "approved" ? "Choose workspace" : "Explore NexaPort"}</Link></section></main>;
   if (success) {
     return (
       <main className="consultant-page">
         <section className="consultant-success">
-          <h1>Registration completed successfully.</h1>
-          <p>Your NexaPort consultant account has been created.</p>
+          <h1>{accountLinked ? "Profile submitted for review." : "Registration completed successfully."}</h1>
+          <p>{accountLinked ? "Your account remains active while NexaPort reviews your consultant application." : "Your NexaPort consultant account has been created."}</p>
           {issuedNexaportId && <p>Your Nexaport ID: <strong>{issuedNexaportId}</strong></p>}
-          <Link to="/login" className="consultant-submit">
-            Sign in to NexaPort
+          <Link to={accountLinked ? "/dashboard" : "/login"} className="consultant-submit">
+            {accountLinked ? "Explore NexaPort" : "Sign in to NexaPort"}
           </Link>
         </section>
       </main>
@@ -1196,6 +1232,7 @@ export default function RegisterConsultant() {
           </div>
           <p>Complete each section with your professional registration details.</p>
           {errors.form && <div className="consultant-alert" role="alert">{errors.form}</div>}
+          {accountLinked && <p role="status">{saveState || (applicationStatus === "pending" ? "This application is under review." : "Draft saves when you continue to the next step.")}</p>}
         </header>
 
         <form onSubmit={handleSubmit} className="consultant-layout">
@@ -1228,7 +1265,7 @@ export default function RegisterConsultant() {
                 className="consultant-secondary"
                 type="button"
                 disabled={activeStep === 0 || loading}
-                onClick={() => setActiveStep((step) => Math.max(step - 1, 0))}
+                onClick={goBack}
               >
                 Previous
               </button>
@@ -1238,7 +1275,7 @@ export default function RegisterConsultant() {
                 </button>
               ) : (
                 <button className="consultant-submit" type="submit" disabled={loading}>
-                  {loading ? "Submitting..." : "Submit registration"}
+                  {loading ? "Submitting..." : accountLinked ? "Review & submit profile" : "Submit registration"}
                 </button>
               )}
             </div>

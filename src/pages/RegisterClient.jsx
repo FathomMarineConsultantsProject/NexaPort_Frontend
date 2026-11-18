@@ -15,6 +15,7 @@ import {
   uploadToPresignedUrl,
 } from "../api/clientRegistrationApi";
 import "./RegisterClient.css";
+import { getApplication, saveApplication } from "../api/Auth";
 
 const STEPS = ["User Details", "Company Details", "Fleet Information", "Required Services", "Verification"];
 const COMPANY_TYPES = ["Ship Owner", "Ship Manager", "Charterer", "Broker", "Bank", "Insurer", "Other"];
@@ -40,7 +41,7 @@ const validImo = (value) => {
 };
 
 export default function RegisterClient({
-  adminMode = false
+  adminMode = false, accountLinked = false
 }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -51,8 +52,11 @@ export default function RegisterClient({
   const [documents, setDocuments] = useState({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [saveState, setSaveState] = useState("");
+  const [applicationStatus, setApplicationStatus] = useState("");
 
   useEffect(() => { getVesselTypes().then((response) => setVesselTypes(response.data || [])).catch(() => setVesselTypes([])); }, []);
+  useEffect(() => { if (!accountLinked) return; const user=JSON.parse(localStorage.getItem("np_user")||"{}"); getApplication("client").then(({application})=>{setApplicationStatus(application.status);setForm({ ...initialForm, ...application.draft, full_name:user.full_name||"", email:user.email||"", mobile_number:application.draft?.mobile_number||user.phone||"", password:"", confirmPassword:"" });}).catch(()=>setSaveState("Unable to load your saved draft. Refresh to retry.")); }, [accountLinked]);
 
   const setValue = (name, value) => setForm((current) => ({ ...current, [name]: value }));
   const setCompany = (name, value) => setForm((current) => ({ ...current, company: { ...current.company, [name]: value } }));
@@ -60,8 +64,8 @@ export default function RegisterClient({
   const validateStep = () => {
     if (step === 0) {
       if (!form.full_name.trim() || !form.designation.trim() || !/^\S+@\S+\.\S+$/.test(form.email) || !form.mobile_number.trim()) return "Complete all required user details.";
-      if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password)) return "Password must have at least 8 characters with letters and numbers.";
-      if (form.password !== form.confirmPassword) return "Passwords do not match.";
+      if (!accountLinked && (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password))) return "Password must have at least 8 characters with letters and numbers.";
+      if (!accountLinked && form.password !== form.confirmPassword) return "Passwords do not match.";
     }
     if (step === 1) {
       const company = form.company;
@@ -96,10 +100,11 @@ export default function RegisterClient({
         setBusy(false);
       }
     }
+    if (accountLinked) { setSaveState("Saving…"); try { const {password,confirmPassword,...draft}=form; await saveApplication("client",draft); setSaveState("All changes saved."); } catch { setSaveState("Unable to save — retry Continue."); return; } }
     setStep((value) => Math.min(STEPS.length - 1, value + 1));
     window.scrollTo(0, 0);
   };
-  const back = () => { setMessage(""); setStep((value) => Math.max(0, value - 1)); window.scrollTo(0, 0); };
+  const back = async () => { if (accountLinked) { setSaveState("Saving…"); try { const {password,confirmPassword,...draft}=form; await saveApplication("client",draft); setSaveState("All changes saved."); } catch { setSaveState("Unable to save — retry Back."); return; } } setMessage(""); setStep((value) => Math.max(0, value - 1)); window.scrollTo(0, 0); };
 
   const selectDocument = async (category, file) => {
     if (!file) return;
@@ -165,23 +170,19 @@ export default function RegisterClient({
         return;
       }
 
-      localStorage.setItem("np_token", response.token);
-      localStorage.setItem(
-        "np_user",
-        JSON.stringify(response.user)
-      );
-
-      navigate("/client-verification-status", {
+      if (!accountLinked) { localStorage.setItem("np_token", response.token); localStorage.setItem("np_user", JSON.stringify(response.user)); }
+      navigate(accountLinked ? "/onboarding" : "/client-verification-status", {
         replace: true,
       });
     } catch (requestError) { setMessage(requestError.response?.data?.message || requestError.message || "Unable to create registration."); }
     finally { setBusy(false); }
   };
 
+  if (accountLinked && ["pending","approved","rejected"].includes(applicationStatus)) return <main className="client-register-page"><section className="client-register-shell"><h1>{applicationStatus === "approved" ? "Client verification approved" : applicationStatus === "pending" ? "Verification under review" : "Changes requested"}</h1><p>Your company verification status and any requested changes are available on the status page.</p><Link to={applicationStatus === "approved" ? "/choose-workspace" : "/client-verification-status"}>View next step</Link></section></main>;
   return (
     <main className="client-register-page">
       <header className="client-register-top">
-        <NexaportBrand to={adminMode ? "/admin/client-registrations" : "/"} className="client-register-brand" />
+        <NexaportBrand to={adminMode ? "/admin/client-registrations" : accountLinked ? "/dashboard" : "/"} className="client-register-brand" />
 
         {adminMode ? (
           <button
@@ -193,8 +194,8 @@ export default function RegisterClient({
             Back to Owners and Managers
           </button>
         ) : (
-          <Link to="/login">
-            Sign in
+          <Link to={accountLinked ? "/dashboard" : "/login"}>
+            {accountLinked ? "Explore NexaPort" : "Sign in"}
           </Link>
         )}
       </header>
@@ -220,9 +221,10 @@ export default function RegisterClient({
         </div>
         <ol className="client-stepper" aria-label="Registration progress">{STEPS.map((label, index) => <li key={label} className={index === step ? "active" : index < step ? "complete" : ""} aria-current={index === step ? "step" : undefined} aria-label={`${label}, ${index < step ? "completed" : index === step ? "current step" : "upcoming"}`}><span>{index < step ? <Check size={14} aria-hidden="true" /> : index + 1}</span><small>{label}</small></li>)}</ol>
         {message && <div className="client-form-message" role="alert">{message}</div>}
+        {accountLinked && <p role="status">{saveState || "Your draft saves as you continue."}</p>}
 
         <section className="client-form-card">
-          {step === 0 && <UserStep form={form} setValue={(name, value) => { setValue(name, value); if (name === "email") { setRegistrationDraftToken(""); setDraftEmail(""); setDocuments({}); } }} />}
+          {step === 0 && <UserStep form={form} accountLinked={accountLinked} setValue={(name, value) => { setValue(name, value); if (name === "email") { setRegistrationDraftToken(""); setDraftEmail(""); setDocuments({}); } }} />}
           {step === 1 && <CompanyStep company={form.company} setCompany={setCompany} />}
           {step === 2 && <FleetStep form={form} setValue={setValue} vesselTypes={vesselTypes} updateVessel={updateVessel} add={() => setValue("vessels", [...form.vessels, blankVessel()])} remove={(index) => setValue("vessels", form.vessels.filter((_, vesselIndex) => vesselIndex !== index))} />}
           {step === 3 && <ServicesStep selected={form.services} toggle={(name) => setValue("services", form.services.includes(name) ? form.services.filter((item) => item !== name) : [...form.services, name])} />}
@@ -236,8 +238,8 @@ export default function RegisterClient({
 
 const Field = ({ label, required, optional: isOptional, ...props }) => <label className="client-field"><span>{label} {required && <b>Required</b>}{isOptional && <em>Optional</em>}</span><input {...props} /></label>;
 
-function UserStep({ form, setValue }) {
-  return <><div className="client-section-title"><h2>User Details</h2><p>Use your official company contact information. The email will be used for your NexaPort account and registration communications.</p></div><div className="client-grid two"><Field label="Full name" required value={form.full_name} onChange={(e) => setValue("full_name", e.target.value)} /><Field label="Designation" required value={form.designation} onChange={(e) => setValue("designation", e.target.value)} /><Field label="Official email address" required type="email" value={form.email} onChange={(e) => setValue("email", e.target.value)} /><Field label="Mobile number" required value={form.mobile_number} onChange={(e) => setValue("mobile_number", e.target.value)} /><Field label="Password" required type="password" autoComplete="new-password" value={form.password} onChange={(e) => setValue("password", e.target.value)} /><Field label="Confirm password" required type="password" autoComplete="new-password" value={form.confirmPassword} onChange={(e) => setValue("confirmPassword", e.target.value)} /></div></>;
+function UserStep({ form, setValue, accountLinked }) {
+  return <><div className="client-section-title"><h2>User Details</h2><p>Use your official company contact information. The email will be used for your NexaPort account and registration communications.</p></div><div className="client-grid two"><Field label="Full name" required readOnly={accountLinked} value={form.full_name} onChange={(e) => setValue("full_name", e.target.value)} /><Field label="Designation" required value={form.designation} onChange={(e) => setValue("designation", e.target.value)} /><Field label="Official email address" required type="email" readOnly={accountLinked} value={form.email} onChange={(e) => setValue("email", e.target.value)} /><Field label="Mobile number" required value={form.mobile_number} onChange={(e) => setValue("mobile_number", e.target.value)} />{!accountLinked && <><Field label="Password" required type="password" autoComplete="new-password" value={form.password} onChange={(e) => setValue("password", e.target.value)} /><Field label="Confirm password" required type="password" autoComplete="new-password" value={form.confirmPassword} onChange={(e) => setValue("confirmPassword", e.target.value)} /></>}</div></>;
 }
 
 function CompanyStep({ company, setCompany }) {

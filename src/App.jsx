@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Footer from "./components/layout/Footer";
 import Navbar from "./components/layout/Navbar";
 import ApprovedClientRoute from "./components/auth/ApprovedClientRoute";
@@ -6,6 +6,7 @@ import useValidatedSession from "./components/auth/useValidatedSession";
 import Auth from "./pages/Auth";
 import UnifiedRegistration from "./pages/UnifiedRegistration";
 import UnifiedOnboarding from "./pages/UnifiedOnboarding";
+import AdminConsultantApplications from "./pages/AdminConsultantApplications";
 import ChooseWorkspace from "./pages/ChooseWorkspace";
 import Landing from "./pages/Landing";
 import RegisterConsultant from "./pages/RegisterConsultant";
@@ -62,6 +63,7 @@ import InspectionWorkflowWorkspace from "./pages/InspectionWorkflowWorkspace";
 import { getRoleId, isMaritimeCompany } from "./utils/auth";
 import { workspaceDestination } from "./utils/workspaceRoles.js";
 import "./App.css";
+import { postRegistrationV2 } from "./utils/postRegistrationRollout.js";
 
 function RequireAuth({ children }) {
   if (!localStorage.getItem("np_token")) return <Navigate to={loginPathFor(window.location.pathname)} replace />;
@@ -84,9 +86,9 @@ function GuestOnly({ children }) {
 
 function CompanyBoundary({ children }) {
   const location = useLocation();
-  if (getRoleId() === 6 && !["/onboarding", "/profile"].some(p => location.pathname.startsWith(p))) return <Navigate to="/onboarding" replace />;
+  if (getRoleId() === 6 && !(postRegistrationV2 ? ["/dashboard", "/profile", "/onboarding", "/requests/new"] : ["/onboarding", "/profile"]).some(p => location.pathname.startsWith(p))) return <Navigate to={postRegistrationV2 ? "/dashboard" : "/onboarding"} replace />;
   if (getRoleId() === 5 && !["/procurement/requisitions", "/procurement/purchaser", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals", "/profile", "/choose-workspace"].some(p=>location.pathname.startsWith(p))) return <Navigate to="/procurement/requisitions" replace />;
-  if (isMaritimeCompany() && !["/company-profile", "/dashboard", "/profile", "/procurement/vendor", "/procurement/purchaser", "/procurement/requisitions", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals"].some((p) => location.pathname.startsWith(p))) {
+  if (getRoleId() === 4 && isMaritimeCompany() && !["/company-profile", "/dashboard", "/profile", "/procurement/vendor", "/procurement/purchaser", "/procurement/requisitions", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals"].some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -122,6 +124,7 @@ function TemplateAuthorOnly({ children }) {
 function RequestCreatorOnly({ children }) {
   return [1, 3].includes(getRoleId())
     ? children
+    : postRegistrationV2 && getRoleId()===6 ? <main className="dashboard-container"><h1>Complete your company verification</h1><p>To submit inspection requests, complete your company profile and verification. You can keep exploring NexaPort while your application is reviewed.</p><Link to="/onboarding/client" onClick={()=>localStorage.setItem('np_after_verification','/requests/new')}>Complete verification</Link> <Link to="/dashboard">Not now</Link></main>
     : <Navigate to="/requests" replace state={{ notice: "Experts cannot create service requests." }} />;
 }
 
@@ -219,6 +222,10 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/register" element={<GuestOnly><UnifiedRegistration /></GuestOnly>} />
       <Route path="/onboarding" element={<RequireAuth><UnifiedOnboarding /></RequireAuth>} />
+      <Route path="/onboarding/consultant" element={<RequireAuth>{postRegistrationV2 ? <RegisterConsultant accountLinked /> : <Navigate to="/onboarding" replace />}</RequireAuth>} />
+      <Route path="/onboarding/client" element={<RequireAuth>{postRegistrationV2 ? <RegisterClient accountLinked /> : <Navigate to="/onboarding" replace />}</RequireAuth>} />
+      <Route path="/onboarding/company" element={<RequireAuth>{postRegistrationV2 ? <RegisterMaritimeCompany accountLinked /> : <Navigate to="/onboarding" replace />}</RequireAuth>} />
+      <Route path="/admin/consultant-applications" element={<RequireAuth><AdminOnly><AdminConsultantApplications /></AdminOnly></RequireAuth>} />
       <Route path="/register-consultant" element={<RegisterConsultant />} />
       <Route path="/register-client" element={<GuestOnly><RegisterClient /></GuestOnly>} />
       <Route path="/register-maritime-company" element={<GuestOnly><RegisterMaritimeCompany /></GuestOnly>} />
