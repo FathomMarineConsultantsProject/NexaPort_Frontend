@@ -114,7 +114,7 @@ export default function ExpertDirectory() {
         </div>
 
         {isSuperAdmin() && (
-          <Link to="/register-consultant" className="register-btn">
+          <Link to="/register" className="register-btn">
             Register as Consultant
           </Link>
         )}

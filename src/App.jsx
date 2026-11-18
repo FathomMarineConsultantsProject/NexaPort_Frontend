@@ -4,6 +4,8 @@ import Navbar from "./components/layout/Navbar";
 import ApprovedClientRoute from "./components/auth/ApprovedClientRoute";
 import useValidatedSession from "./components/auth/useValidatedSession";
 import Auth from "./pages/Auth";
+import UnifiedRegistration from "./pages/UnifiedRegistration";
+import UnifiedOnboarding from "./pages/UnifiedOnboarding";
 import ChooseWorkspace from "./pages/ChooseWorkspace";
 import Landing from "./pages/Landing";
 import RegisterConsultant from "./pages/RegisterConsultant";
@@ -82,6 +84,7 @@ function GuestOnly({ children }) {
 
 function CompanyBoundary({ children }) {
   const location = useLocation();
+  if (getRoleId() === 6 && !["/onboarding", "/profile"].some(p => location.pathname.startsWith(p))) return <Navigate to="/onboarding" replace />;
   if (getRoleId() === 5 && !["/procurement/requisitions", "/procurement/purchaser", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals", "/profile", "/choose-workspace"].some(p=>location.pathname.startsWith(p))) return <Navigate to="/procurement/requisitions" replace />;
   if (isMaritimeCompany() && !["/company-profile", "/dashboard", "/profile", "/procurement/vendor", "/procurement/purchaser", "/procurement/requisitions", "/procurement/quick-quotations", "/procurement/purchase-orders", "/procurement/approvals"].some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/dashboard" replace />;
@@ -214,6 +217,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/register" element={<GuestOnly><UnifiedRegistration /></GuestOnly>} />
+      <Route path="/onboarding" element={<RequireAuth><UnifiedOnboarding /></RequireAuth>} />
       <Route path="/register-consultant" element={<RegisterConsultant />} />
       <Route path="/register-client" element={<GuestOnly><RegisterClient /></GuestOnly>} />
       <Route path="/register-maritime-company" element={<GuestOnly><RegisterMaritimeCompany /></GuestOnly>} />

@@ -16,7 +16,7 @@ test("optional public session check distinguishes invalid credentials from tempo
   assert.equal(publicSessionFailureStatus(new Error("offline")), "indeterminate");
 });
 
-test("landing and login gate share validation and keep all public registrations", async () => {
+test("landing and login gate share validation and expose unified registration", async () => {
   const [landing, auth, app, api, client] = await Promise.all([
     source("src/pages/Landing.jsx"), source("src/pages/Auth.jsx"), source("src/App.jsx"),
     source("src/api/Auth.js"), source("src/api/axiosClient.js"),
@@ -27,11 +27,12 @@ test("landing and login gate share validation and keep all public registrations"
   assert.match(landing, /session\.status === "authenticated"/);
   assert.match(landing, /session\.status === "indeterminate"/);
   assert.match(landing, /to="\/login"/);
-  assert.match(landing, /to="\/login\?mode=register"/);
+  assert.match(landing, /to="\/register"/);
   assert.match(landing, /to="\/dashboard"/);
   assert.match(auth, /searchParams\.get\("mode"\) === "register"/);
   assert.match(auth, /setSearchParams/);
-  for (const route of ["/register-client", "/register-consultant", "/register-maritime-company"]) assert.ok(auth.includes(route));
+  assert.match(auth, /navigate\(`\/register/);
+  assert.match(app, /path="\/register"/);
   assert.match(app, /const session = useValidatedSession\(\)/);
   assert.match(app, /workspaceDestination\(user\)/);
   assert.match(api, /axiosClient\.get\("\/auth\/me", config\)/);

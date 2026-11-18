@@ -4,12 +4,12 @@ import test from "node:test";
 
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("registration chooser keeps all three explicit account paths", async () => {
-  const auth = await source("../src/pages/Auth.jsx");
-  assert.match(auth, /Client \/ Ship Owner/);
-  assert.match(auth, /Consultant \/ Surveyor/);
-  assert.match(auth, /Maritime Company/);
-  assert.match(auth, /\/register-maritime-company/);
+test("sign-up leads to one account-first registration page", async () => {
+  const [auth, app, registration] = await Promise.all([source("../src/pages/Auth.jsx"),source("../src/App.jsx"),source("../src/pages/UnifiedRegistration.jsx")]);
+  assert.match(auth, /navigate\(`\/register/);
+  assert.doesNotMatch(auth, /auth-role-card/);
+  assert.match(app, /path="\/register"/);
+  assert.match(registration, /registerUnified\(form\)/);
 });
 
 test("company onboarding is two-step and supports multi-type selection", async () => {

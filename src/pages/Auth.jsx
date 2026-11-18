@@ -1,7 +1,7 @@
 import NexaportBrand from "../components/branding/NexaportBrand";
-import { Building2, Eye, EyeOff, Ship, UserRoundCheck } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { loginUser } from "../api/Auth";
 import { loginDestination } from "../utils/workspaceRoles.js";
 import { safeReturnPath } from "../utils/safeReturnPath.js";
@@ -16,6 +16,7 @@ export default function Auth() {
   const [searchParams, setSearchParams] = useSearchParams();
   const returnTo = safeReturnPath(new URLSearchParams(location.search).get("returnTo"));
   const tab = searchParams.get("mode") === "register" ? "register" : "login";
+  useEffect(() => { if (tab === "register") navigate(`/register${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`, { replace: true }); }, [tab, navigate, returnTo]);
   const setTab = (nextTab) => setSearchParams((current) => {
     const next = new URLSearchParams(current);
     if (nextTab === "register") next.set("mode", "register");
@@ -99,7 +100,7 @@ export default function Auth() {
             <button
               aria-pressed={tab === "register"}
               className={`auth-tab${tab === "register" ? " auth-tab--active" : ""}`}
-              onClick={() => { setTab("register"); setError(""); }}
+              onClick={() => navigate(`/register${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`)}
               type="button"
             >
               Register
@@ -177,7 +178,7 @@ export default function Auth() {
 
               <div className="auth-alt">
                 New to NexaPort?{" "}
-                <button type="button" className="auth-alt-link" onClick={() => setTab("register")}>
+                <button type="button" className="auth-alt-link" onClick={() => navigate("/register")}>
                   Create an account
                 </button>
               </div>
@@ -187,35 +188,6 @@ export default function Auth() {
               <div className="auth-heading">
                 <h1>Create an account</h1>
                 <p>Select how you will use the maritime marketplace.</p>
-              </div>
-
-              <div className="auth-roles">
-                <Link to="/register-client" className="auth-role-card">
-                  <span className="auth-role-icon"><Ship size={19} /></span>
-                  <div className="auth-role-info">
-                    <strong>Client / Ship Owner</strong>
-                    <span>Post service requests, review quotations and manage vessels.</span>
-                  </div>
-                  <span className="auth-role-action">Register &rarr;</span>
-                </Link>
-
-                <Link to="/register-consultant" className="auth-role-card">
-                  <span className="auth-role-icon"><UserRoundCheck size={19} /></span>
-                  <div className="auth-role-info">
-                    <strong>Consultant / Surveyor</strong>
-                    <span>Submit quotations, build inspection reports and templates.</span>
-                  </div>
-                  <span className="auth-role-action">Register &rarr;</span>
-                </Link>
-
-                <Link to={returnTo?.startsWith("/companies/") ? `/register-maritime-company?returnTo=${encodeURIComponent(returnTo)}` : "/register-maritime-company"} className="auth-role-card">
-                  <span className="auth-role-icon"><Building2 size={19} /></span>
-                  <div className="auth-role-info">
-                    <strong>Maritime Company</strong>
-                    <span>Manage your directory profile and receive relevant enquiries.</span>
-                  </div>
-                  <span className="auth-role-action">Register &rarr;</span>
-                </Link>
               </div>
 
               <div className="auth-alt">

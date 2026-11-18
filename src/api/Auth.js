@@ -4,6 +4,9 @@ export const registerUser = async (payload) => {
   const res = await axiosClient.post("/auth/register", payload);
   return res.data;
 };
+export const registerUnified = async (payload) => (await axiosClient.post('/auth/register-unified', payload)).data;
+export const getUnifiedOnboarding = async () => (await axiosClient.get('/auth/onboarding')).data;
+export const saveUnifiedOnboarding = async (payload) => (await axiosClient.patch('/auth/onboarding', payload)).data;
 
 export const loginUser = async (payload) => {
   const res = await axiosClient.post("/auth/login", payload);
