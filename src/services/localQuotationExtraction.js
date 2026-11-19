@@ -1,0 +1,12 @@
+const cleanAmount=value=>value == null ? null : String(value).replaceAll(',', '');
+const warning=entry=>({code:entry.code||'SOURCE_REVIEW',message:entry.message||entry.reason||entry.code||'Check source',sourceOrder:entry.line||null,sourcePage:entry.page||null,sourceSheet:null,sourceCells:[],sourceEvidence:entry.evidence==null?null:String(entry.evidence).slice(0,300)});
+
+export function normalizeLocalQuotation(result){
+ const currency=result.currency;
+ const lines=(result.lines||[]).map((row,index)=>({sourceOrder:index+1,supplierLineNumber:String(row.lineNumber),clientItemNumber:null,description:row.description,impaCode:null,makerReference:row.supplierPartNumber,quantity:cleanAmount(row.quantity),uom:row.unit,currency,unitPrice:cleanAmount(row.unitPrice),statedLineTotal:cleanAmount(row.lineTotal),lineDiscount:null,leadTime:row.notes||null,availability:null,sourcePage:row.sourcePage,sourceSheet:null,sourceCells:[],sourceEvidence:row.sourceEvidence,reviewStatus:result.valid?'validated':'needs_review'}));
+ const totals=result.statedTotals||{};
+ const charges=[['shipping','freight'],['gst','tax']].filter(([key])=>totals[key]!=null).map(([key,kind])=>({kind,amount:cleanAmount(totals[key]),currency,sourcePage:result.pageCount,sourceSheet:null,sourceCells:[],sourceEvidence:`Page ${result.pageCount}: ${key.toUpperCase()} ${currency} ${totals[key]}`}));
+ const missing=[['supplierName','Supplier name'],['quotationReference','Quotation reference'],['currency','Currency']].filter(([key])=>!result[key]).map(([,label])=>({code:'MISSING_FIELD',message:`${label} is missing; check the quotation header`,sourceOrder:null,sourcePage:1,sourceSheet:null,sourceCells:[],sourceEvidence:'Quotation header, page 1'}));
+ if(!totals.total)missing.push({code:'MISSING_TOTAL',message:'Printed grand total is missing; check the totals section',sourceOrder:null,sourcePage:result.pageCount,sourceSheet:null,sourceCells:[],sourceEvidence:`Totals section, page ${result.pageCount}`});
+ return {supplierName:result.supplierName||'',supplierQuotationReference:result.quotationReference||'',quotationDate:result.quotationDate||'',expiryDate:result.expiryDate||'',defaultCurrency:currency||'',statedTotals:totals.total&&currency?{[currency]:cleanAmount(totals.total)}:{},charges,commercialTerms:result.commercialTerms||'',lines,warnings:[...(result.warnings||[]).map(warning),...missing],parserVersion:'backend-pymupdf-v1',extractionMethod:'pymupdf-coordinates'};
+}

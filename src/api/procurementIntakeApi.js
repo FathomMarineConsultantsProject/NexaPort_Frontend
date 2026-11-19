@@ -22,6 +22,18 @@ export const downloadMyRfqLogo=async(id)=>(await axiosClient.get(`${base}/${id}/
 export const addDirectoryContact=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/directory`,body)).data.data;
 export const generateRfqForRecipient=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/generate`,body)).data.data;
 export const listReceivedQuotations=async(id)=>(await axiosClient.get(`${base}/${id}/received-quotations`)).data.data;
+export async function extractReceivedQuotation(id,file){
+ const path=`${base}/${id}/received-quotations`;
+ const hosted=import.meta.env.PROD||import.meta.env.VITE_API_MODE!=='local';
+ if(hosted&&file.size>4*1024*1024){
+  const stage=(await axiosClient.post(`${path}/extraction-upload`,{size:file.size})).data.data;
+  const uploaded=await fetch(stage.uploadUrl,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:file});
+  if(!uploaded.ok)throw new Error(`Private PDF staging failed (${uploaded.status})`);
+  return (await axiosClient.post(`${path}/extract-staged`,{key:stage.key},{timeout:60000})).data.data;
+ }
+ const form=new FormData();form.append('file',file);
+ return (await axiosClient.post(`${path}/extract`,form,{headers:{'Content-Type':undefined},timeout:60000})).data.data;
+}
 export const getReceivedQuotation=async(id,quoteId)=>(await axiosClient.get(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
 export const deleteReceivedQuotation=async(id,quoteId)=>(await axiosClient.delete(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
 export const saveExtractedQuotation=async(id,body,quoteId=null)=>(await axiosClient.post(quoteId?`${base}/${id}/received-quotations/${quoteId}/revisions`:`${base}/${id}/received-quotations/extracted`,body,{timeout:30000})).data.data;
