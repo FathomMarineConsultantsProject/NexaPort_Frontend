@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
-import {normalizeLocalQuotation} from '../src/services/localQuotationExtraction.js';
+import {normalizeLocalQuotation,validateBackendExtractionResponse} from '../src/services/localQuotationExtraction.js';
 
 const fixture=new URL('../../tools/local_quotation_extraction/blackwoods-benchmark.json',import.meta.url);
 test('actual Blackwoods coordinates map to quotation editor and revision fields',{skip:!existsSync(fixture)},()=>{
@@ -16,4 +16,9 @@ test('actual Blackwoods coordinates map to quotation editor and revision fields'
  assert.deepEqual(quote.charges.map(c=>[c.kind,c.amount]),[['freight','18.00'],['tax','432.21']]);
  assert.deepEqual(quote.statedTotals,{AUD:'4754.28'});
  assert.deepEqual(quote.warnings,[]);
+});
+
+test('unexpected successful backend payload cannot enter the quotation editor',()=>{
+ assert.throws(()=>validateBackendExtractionResponse({success:true,data:{lines:[]}}),/incomplete response/);
+ assert.throws(()=>validateBackendExtractionResponse({lines:[],warnings:[],pageCount:3,statedTotals:{}}),/no product lines/);
 });
