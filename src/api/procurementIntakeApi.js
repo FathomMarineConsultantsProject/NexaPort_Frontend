@@ -3,6 +3,26 @@ const base='/procurement/intake';
 export const listIntakes=async()=>(await axiosClient.get(base)).data.data;
 export const createIntake=async(title)=>(await axiosClient.post(base,{title})).data.data;
 export const getIntake=async(id)=>(await axiosClient.get(`${base}/${id}`)).data.data;
+export const getStageStates=async id=>(await axiosClient.get(`${base}/${id}/stages`)).data.data;
+export const saveStageState=async(id,stage,body)=>(await axiosClient.put(`${base}/${id}/stages/${stage}`,body)).data.data;
+export const addManualItem=async(id,body)=>(await axiosClient.post(`${base}/${id}/manual-items`,body)).data.data;
+export const updateManualItem=async(id,itemId,body)=>(await axiosClient.put(`${base}/${id}/manual-items/${itemId}`,body)).data.data;
+export const removeManualItem=async(id,itemId)=>(await axiosClient.delete(`${base}/${id}/manual-items/${itemId}`)).data.data;
+export const listAttachments=async id=>(await axiosClient.get(`${base}/${id}/attachments`)).data.data;
+export async function uploadAttachment(id,file,targetKind,targetId,includeSupplierRfq=false){
+ const staged=(await axiosClient.post(`${base}/${id}/attachments`,{filename:file.name,size:file.size,targetKind,targetId,includeSupplierRfq})).data.data;
+ const uploaded=await fetch(staged.uploadUrl,{method:'PUT',headers:{'Content-Type':staged.contentType},body:file});
+ if(!uploaded.ok)throw new Error(`Private attachment upload failed (${uploaded.status})`);
+ return (await axiosClient.post(`${base}/${id}/attachments/${staged.id}/confirm`)).data.data;
+}
+export const attachmentDownload=async(id,attachmentId)=>(await axiosClient.get(`${base}/${id}/attachments/${attachmentId}/download`)).data.data;
+export const setRfqAttachment=async(id,attachmentId,include)=>(await axiosClient.patch(`${base}/${id}/attachments/${attachmentId}/rfq`,{include})).data.data;
+export const removeAttachment=async(id,attachmentId)=>(await axiosClient.delete(`${base}/${id}/attachments/${attachmentId}`)).data.data;
+export const markSupplierAlternative=async(id,lineId,alternative)=>(await axiosClient.patch(`${base}/${id}/supplier-offers/${lineId}/alternative`,{alternative})).data.data;
+export const supplierRfqPackage=async(id,documentId)=>(await axiosClient.get(`${base}/${id}/supplier-rfqs/documents/${documentId}/package`)).data.data;
+export const listClientAttachments=async(id,quoteId)=>(await axiosClient.get(`${base}/${id}/client-quotations/${quoteId}/attachments`)).data.data;
+export const selectClientAttachments=async(id,quoteId,attachmentIds)=>(await axiosClient.put(`${base}/${id}/client-quotations/${quoteId}/attachments`,{attachmentIds,confirmedNoSupplierPricing:true})).data.data;
+export const clientQuotationPackage=async(id,quoteId)=>(await axiosClient.get(`${base}/${id}/client-quotations/${quoteId}/package`)).data.data;
 export const saveIntakeDetails=async(id,changes,expectedVersion)=>(await axiosClient.patch(`${base}/${id}/details`,{changes,expectedVersion})).data.data;
 export const saveIntakeItem=async(id,itemId,changes)=>(await axiosClient.patch(`${base}/${id}/items/${itemId}`,{changes})).data.data;
 export const saveBrowserExtraction=async(id,payload)=>(await axiosClient.post(`${base}/${id}/browser-extraction`,payload)).data.data;

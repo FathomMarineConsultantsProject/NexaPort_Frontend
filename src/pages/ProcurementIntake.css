@@ -124,3 +124,11 @@
 .comparison-price-sheet td small{display:block;margin-top:3px;color:#657780;line-height:1.35}
 .comparison-price-sheet .comparison-best-price{background:#edf7f2;border-left:2px solid #2d815d}
 .comparison-price-state{color:#657780;font-size:12px;line-height:1.4}
+.procurement-attachments{margin:1rem 0;padding:.75rem;border:1px solid #d8e2e8;border-radius:6px;background:#f8fafb;font-size:.85rem}
+.procurement-attachments ul{list-style:none;padding:0;margin:.5rem 0 0}
+.procurement-attachments li{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.35rem 0}
+.procurement-attachments label{display:inline-flex;gap:.35rem;align-items:center;margin-right:.5rem}
+.intake-attachment-upload{position:relative;cursor:pointer;color:#12647a;text-decoration:underline}
+.intake-attachment-upload input{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer}
+.intake-stage-nav span{display:inline-flex;gap:.3rem;align-items:center;margin-right:.6rem}
+.intake-stage-nav small{text-transform:capitalize;color:#526b78}
