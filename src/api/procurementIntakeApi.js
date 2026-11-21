@@ -5,7 +5,6 @@ export const createIntake=async(title)=>(await axiosClient.post(base,{title})).d
 export const updateIntakeTitle=async(id,title,expectedVersion)=>(await axiosClient.patch(`${base}/${id}/title`,{title,expectedVersion})).data.data;
 export const getIntake=async(id)=>(await axiosClient.get(`${base}/${id}`)).data.data;
 export const getStageStates=async id=>(await axiosClient.get(`${base}/${id}/stages`)).data.data;
-export const saveStageState=async(id,stage,body)=>(await axiosClient.put(`${base}/${id}/stages/${stage}`,body)).data.data;
 export const addManualItem=async(id,body)=>(await axiosClient.post(`${base}/${id}/manual-items`,body)).data.data;
 export const updateManualItem=async(id,itemId,body)=>(await axiosClient.put(`${base}/${id}/manual-items/${itemId}`,body)).data.data;
 export const removeManualItem=async(id,itemId)=>(await axiosClient.delete(`${base}/${id}/manual-items/${itemId}`)).data.data;

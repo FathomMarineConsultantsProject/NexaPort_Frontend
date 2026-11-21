@@ -165,7 +165,7 @@
 @media(max-width:650px){.intake-list a{grid-template-columns:1fr 1fr;gap:8px}.intake-list-main{grid-column:1/-1}.intake-list time{text-align:right}.intake-stage-nav{margin-inline:-16px;border-radius:0}.intake-overview>div{min-width:50%;box-sizing:border-box}.intake-heading{gap:16px}}
 
 .intake-stage-action{display:flex;justify-content:flex-end;margin:-8px 0 20px;padding:0 4px}
-.intake-stage-action button{border:0;background:none;color:#176477;text-decoration:underline;font:inherit;font-size:13px;cursor:pointer;padding:8px}
+.intake-stage-action a{border:0;background:none;color:#176477;text-decoration:underline;font:inherit;font-size:13px;cursor:pointer;padding:8px}
 
 .intake-title-row,.intake-title-edit{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .intake-title-row button,.intake-title-edit button:not(.intake-primary){border:0;background:none;color:#176477;text-decoration:underline;cursor:pointer;font:inherit;font-size:13px}
