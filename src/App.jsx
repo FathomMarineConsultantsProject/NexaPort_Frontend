@@ -49,6 +49,7 @@ import { loginPathFor, safeReturnPath } from "./utils/safeReturnPath";
 import ServiceRequests from "./pages/ServiceRequests";
 import { RequisitionList,RequisitionEditor } from "./pages/ProcurementRequisitions";
 import {IntakeList,IntakeCreate,IntakeWorkspace,ProcurementDashboard} from "./pages/ProcurementIntake";
+import ProcurementRfqLinkAdmin from "./pages/ProcurementRfqLinkAdmin";
 import { SubmittedRequests,SubmittedRequestDetail,PurchaserInbox,PurchaserRequestDetail,AssignmentQueue } from "./pages/ProcurementWorkflow";
 import { QuickQuotationList,QuickQuotationEditor } from "./pages/QuickQuotations";
 import { SeniorApprovalQueue,PurchaseOrderList,PurchaseOrderDetail } from "./pages/ProcurementApprovals";
@@ -142,6 +143,7 @@ const Shell = () => (
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
         <Route path="/procurement/overview" element={<ProcurementOnly><ProcurementDashboard /></ProcurementOnly>} />
+        <Route path="/procurement/admin/rfq-links" element={<AdminOnly><ProcurementRfqLinkAdmin /></AdminOnly>} />
         <Route path="/procurement/requisitions" element={<ProcurementOnly><IntakeList /></ProcurementOnly>} />
         <Route path="/procurement/requisitions/new" element={<ProcurementOnly><IntakeCreate /></ProcurementOnly>} />
         <Route path="/procurement/requisitions/legacy" element={<RequisitionRequesterOnly><RequisitionList /></RequisitionRequesterOnly>} />
