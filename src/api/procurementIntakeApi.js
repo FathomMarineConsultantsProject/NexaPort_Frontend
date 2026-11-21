@@ -2,6 +2,7 @@ import axiosClient from './axiosClient';
 const base='/procurement/intake';
 export const listIntakes=async()=>(await axiosClient.get(base)).data.data;
 export const createIntake=async(title)=>(await axiosClient.post(base,{title})).data.data;
+export const deleteIntake=async(id,expectedVersion)=>(await axiosClient.delete(`${base}/${id}`,{data:{expectedVersion}})).data.data;
 export const updateIntakeTitle=async(id,title,expectedVersion)=>(await axiosClient.patch(`${base}/${id}/title`,{title,expectedVersion})).data.data;
 export const getIntake=async(id)=>(await axiosClient.get(`${base}/${id}`)).data.data;
 export const getStageStates=async id=>(await axiosClient.get(`${base}/${id}/stages`)).data.data;

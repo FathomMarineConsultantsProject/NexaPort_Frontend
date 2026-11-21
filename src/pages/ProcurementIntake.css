@@ -170,3 +170,14 @@
 .intake-title-row,.intake-title-edit{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .intake-title-row button,.intake-title-edit button:not(.intake-primary){border:0;background:none;color:#176477;text-decoration:underline;cursor:pointer;font:inherit;font-size:13px}
 .intake-title-edit input{min-width:min(360px,80vw);padding:8px 10px;border:1px solid #bdcbd0;border-radius:7px;font:inherit}
+
+.intake-directory-row{display:flex;align-items:center;border-bottom:1px solid #e8eef0}
+.intake-directory-row:last-child{border-bottom:0}
+.intake-directory a.intake-directory-link{flex:1;min-width:0;border-bottom:0}
+.intake-directory-actions{display:flex;align-items:center;gap:8px;padding:0 16px;color:#657780;font-size:13px;white-space:nowrap}
+.intake-directory-actions button,.intake-directory-edit button:not(.intake-primary){border:0;background:transparent;color:#176477;text-decoration:underline;font:inherit;cursor:pointer;padding:8px 4px}
+.intake-directory-actions button:nth-last-child(2){color:#9a3028}
+.intake-directory-edit{display:flex;align-items:end;gap:8px;flex:1;padding:12px 20px}
+.intake-directory-edit label{display:grid;gap:5px;flex:1;color:#4d626b;font-size:13px}
+.intake-directory-edit input{min-height:38px;padding:8px 10px;border:1px solid #bdcbd0;border-radius:7px;font:inherit}
+@media(max-width:800px){.intake-directory-row{display:block}.intake-directory-actions{padding:0 16px 12px}.intake-directory-edit{flex-wrap:wrap}}
