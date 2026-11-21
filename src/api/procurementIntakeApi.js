@@ -18,6 +18,11 @@ export async function uploadAttachment(id,file,targetKind,targetId,includeSuppli
 }
 export const attachmentDownload=async(id,attachmentId)=>(await axiosClient.get(`${base}/${id}/attachments/${attachmentId}/download`)).data.data;
 export const setRfqAttachment=async(id,attachmentId,include)=>(await axiosClient.patch(`${base}/${id}/attachments/${attachmentId}/rfq`,{include})).data.data;
+export const getRfqLinkSettings=async id=>(await axiosClient.get(`${base}/${id}/supplier-rfqs/link-settings`)).data.data;
+export const saveRfqLinkSettings=async(id,settings)=>(await axiosClient.put(`${base}/${id}/supplier-rfqs/link-settings`,settings)).data.data;
+export const listRfqLinks=async(id,documentId)=>(await axiosClient.get(`${base}/${id}/supplier-rfqs/documents/${documentId}/links`)).data.data;
+export const revokeRfqLink=async(id,documentId,linkId)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/documents/${documentId}/links/${linkId}/revoke`)).data.data;
+export const createCopyableRfqLink=async(id,documentId,attachmentId)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/documents/${documentId}/links`,{attachmentId})).data.data;
 export const removeAttachment=async(id,attachmentId)=>(await axiosClient.delete(`${base}/${id}/attachments/${attachmentId}`)).data.data;
 export const markSupplierAlternative=async(id,lineId,alternative)=>(await axiosClient.patch(`${base}/${id}/supplier-offers/${lineId}/alternative`,{alternative})).data.data;
 export const supplierRfqPackage=async(id,documentId)=>(await axiosClient.get(`${base}/${id}/supplier-rfqs/documents/${documentId}/package`)).data.data;
