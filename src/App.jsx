@@ -48,7 +48,7 @@ import SharedRequest from "./pages/SharedRequest";
 import { loginPathFor, safeReturnPath } from "./utils/safeReturnPath";
 import ServiceRequests from "./pages/ServiceRequests";
 import { RequisitionList,RequisitionEditor } from "./pages/ProcurementRequisitions";
-import {IntakeList,IntakeCreate,IntakeWorkspace} from "./pages/ProcurementIntake";
+import {IntakeList,IntakeCreate,IntakeWorkspace,ProcurementDashboard} from "./pages/ProcurementIntake";
 import { SubmittedRequests,SubmittedRequestDetail,PurchaserInbox,PurchaserRequestDetail,AssignmentQueue } from "./pages/ProcurementWorkflow";
 import { QuickQuotationList,QuickQuotationEditor } from "./pages/QuickQuotations";
 import { SeniorApprovalQueue,PurchaseOrderList,PurchaseOrderDetail } from "./pages/ProcurementApprovals";
@@ -141,6 +141,7 @@ const Shell = () => (
         <Route path="/templates/:id" element={<TemplatesOnly><TemplateEditorPage /></TemplatesOnly>} />
         <Route path="/reports/:id" element={<TemplatesOnly><ReportDetailPage /></TemplatesOnly>} />
         <Route path="/requests" element={<ServiceRequests />} />
+        <Route path="/procurement/overview" element={<ProcurementOnly><ProcurementDashboard /></ProcurementOnly>} />
         <Route path="/procurement/requisitions" element={<ProcurementOnly><IntakeList /></ProcurementOnly>} />
         <Route path="/procurement/requisitions/new" element={<ProcurementOnly><IntakeCreate /></ProcurementOnly>} />
         <Route path="/procurement/requisitions/legacy" element={<RequisitionRequesterOnly><RequisitionList /></RequisitionRequesterOnly>} />

@@ -332,7 +332,7 @@ export default function Navbar() {
       </div>
 
       <nav ref={navRef} className="np-navlinks" aria-label="Primary navigation">
-        {roleId===5 ? <NavLink to="/procurement/requisitions">Procurement</NavLink> : isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink>{[1,5].includes(roleId)&&purchaserAllowed&&<NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
+        {roleId===5 ? <><NavLink to="/procurement/overview" onClick={closeMobileNavigation}>Procurement</NavLink><NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Requisitions</NavLink></> : isCompany ? <><NavLink to="/dashboard"><Grid2X2 size={17} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile"><Building2 size={17} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims"><Building2 size={17} aria-hidden="true" /> My claims</NavLink>{[1,5].includes(roleId)&&purchaserAllowed&&<NavLink to="/procurement/requisitions"><ClipboardList size={17} aria-hidden="true" /> Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
         <NavLink to="/dashboard">
           <Grid2X2 size={17} /> Dashboard
         </NavLink>
@@ -560,7 +560,7 @@ export default function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-navigation" className="np-mobile-nav" aria-label="Mobile navigation">
-          {roleId===5 ? <NavLink to="/procurement/requisitions">Procurement</NavLink> : isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink>{[1,5].includes(roleId)&&purchaserAllowed&&<NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
+          {roleId===5 ? <><NavLink to="/procurement/overview" onClick={closeMobileNavigation}>Procurement</NavLink><NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Requisitions</NavLink></> : isCompany ? <><NavLink to="/dashboard" onClick={closeMobileNavigation}><Grid2X2 size={18} aria-hidden="true" /> Dashboard</NavLink><NavLink to="/company-profile" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> Company Profile</NavLink><NavLink to="/company-claims" onClick={closeMobileNavigation}><Building2 size={18} aria-hidden="true" /> My claims</NavLink>{[1,5].includes(roleId)&&purchaserAllowed&&<NavLink to="/procurement/requisitions" onClick={closeMobileNavigation}>Procurement · Requisitions</NavLink>}<NavLink to="/procurement/vendor">Supplier procurement</NavLink></> : <>
           <NavLink to="/dashboard" onClick={closeMobileNavigation}>
             <Grid2X2 size={18} /> Dashboard
           </NavLink>
