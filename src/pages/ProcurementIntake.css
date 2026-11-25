@@ -232,3 +232,10 @@
 .received-date-review{display:grid;gap:8px;margin:14px 0;padding:12px 16px;border:1px solid #c4d9df;border-radius:8px;background:#f4fafb;color:#263f49}
 .received-date-review p{margin:0}.received-date-review label{display:grid;gap:5px;max-width:220px;font-size:13px}.received-date-review input{min-height:36px;padding:7px 9px;border:1px solid #bdcbd0;border-radius:6px;font:inherit}
 .received-date-review button{justify-self:start;min-height:36px;padding:7px 12px;border:1px solid #8bb0b7;border-radius:7px;background:#fff;color:#176477;cursor:pointer;font:inherit}.received-date-review button:disabled{opacity:.5;cursor:not-allowed}
+
+.received-editor{min-width:0}
+.received-table{max-width:100%;overflow:auto}
+.received-table textarea{box-sizing:border-box;min-width:24ch;width:100%;min-height:4.5rem;resize:vertical;font:inherit;padding:7px 9px;border:1px solid #bdcbd0;border-radius:6px}
+.received-table small{display:block;white-space:normal;overflow-wrap:anywhere}
+.received-table .intake-error{min-width:14ch}
+.received-actions{flex-wrap:wrap}
