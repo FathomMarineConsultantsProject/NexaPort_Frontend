@@ -94,3 +94,12 @@ export const addSupplierContact=async(id,body)=>(await axiosClient.post(`${base}
 export const generateSupplierRfq=async(id,rfqId,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/${rfqId}/generate`,body)).data.data;
 export const markSupplierRfqStatus=async(id,rfqId,status)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/${rfqId}/status`,{status})).data.data;
 export const downloadSupplierRfq=async(id,documentId)=>(await axiosClient.get(`${base}/${id}/supplier-rfqs/documents/${documentId}`,{responseType:'blob'})).data;
+
+export async function extractRequisitionFallback(id,file){
+ try {
+  return (await axiosClient.post(`${base}/${id}/requisition-fallback`,file,{headers:{'Content-Type':'application/pdf'},timeout:50000})).data.data;
+ } catch(error) {
+  if(error.response?.status===404) throw new Error('This server does not yet support requisition fallback. Verify the source and add the items manually.');
+  throw error;
+ }
+}
