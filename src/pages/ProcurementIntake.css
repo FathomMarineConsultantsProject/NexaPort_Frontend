@@ -240,6 +240,10 @@
 .received-table .intake-error{min-width:14ch}
 .received-actions{flex-wrap:wrap}
 .intake-page .intake-table-head button.intake-primary,.intake-page .intake-document button.intake-primary{border:1px solid #176477;background:#176477;color:#fff;text-decoration:none;padding:8px 16px;border-radius:8px}
+.intake-page .intake-attachment-upload{display:inline-flex;align-items:center;min-height:38px;padding:7px 14px;border:1px solid #176477;border-radius:8px;background:#176477;color:#fff;text-decoration:none;font-weight:500}
+.intake-page .intake-requested-table button,.intake-page .received-table button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;margin:2px;padding:5px 10px;border:1px solid #bdcbd0;border-radius:7px;background:#fff;color:#176477;text-decoration:none;font:inherit}
+.intake-page .intake-requested-table button.intake-primary{border-color:#176477;background:#176477;color:#fff}
+.intake-inline-item input{box-sizing:border-box;width:100%;min-width:80px;padding:7px;border:1px solid #bdcbd0;border-radius:6px;font:inherit}
 .intake-page .intake-table-wrap button,.intake-page .intake-stage-action button,.intake-page .intake-title-row button,.intake-page .intake-directory-actions button{min-height:34px;padding:6px 10px;border:1px solid #bdcbd0;border-radius:7px;background:#fff;color:#176477;text-decoration:none;font:inherit;cursor:pointer}
 .intake-page .intake-directory-actions button:nth-last-child(2){color:#9a3028}
 .received-editor>button{min-height:38px;margin:8px 8px 8px 0;padding:7px 12px;border:1px solid #bdcbd0;border-radius:7px;background:#fff;color:#176477;font:inherit;cursor:pointer}

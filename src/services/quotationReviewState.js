@@ -41,11 +41,12 @@ export function activeWarnings(draft,supplierName=draft?.supplierName){
  if(!draft)return [];
  return (draft.warnings||[]).filter(w=>{
   if(w.code==='MISSING_TOTAL')return !draft.statedTotals?.[draft.defaultCurrency];
+  if(w.code==='FINANCIAL_REVIEW')return financialIssues(draft).length>0;
   if(w.code!=='MISSING_FIELD')return true;
   const label=(w.message||'').toLowerCase();
   if(w.sourceOrder!=null){
    const row=draft.lines?.find(r=>r.sourceOrder===w.sourceOrder);
-   if(!row)return true;
+   if(!row)return false;
    const fields=[['printed line total','statedLineTotal'],['unit price','unitPrice'],['quantity','quantity'],['description','description'],['currency','currency'],['unit','uom']];
    const field=fields.find(([name])=>label.startsWith(name));
    return field?!(row[field[1]]||(field[1]==='currency'&&draft.defaultCurrency)):true;
