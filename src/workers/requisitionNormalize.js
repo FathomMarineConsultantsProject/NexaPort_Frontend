@@ -7,8 +7,8 @@ const warning=(code,message,page=null)=>({code,message,page,resolved:false});
 export function extractRequisition(document){
   const blocks=document.blocks||[];
   const full=blocks.map(b=>b.text).join('\n');
-  const field=(pattern)=>clean(full.match(pattern)?.[1]||'')||null;
-  const details={clientReference:field(/Request For Quote No\.\s*\n?\s*([0-9]+-[0-9]+)/i),documentDate:field(/\b(\d{1,2} [A-Za-z]{3} 20\d{2})\b/),clientCompany:field(/\b(CSL Australia)\b/i),vesselName:field(/Vessel Name\s+([^\n]+)/i),imoNumber:field(/IMO Number\s+(\d{7})/i),flag:field(/Flag State\s+([^\n]+)/i),title:field(/Order Title\s+(.+?)\s+Priority\s+/i),priority:field(/\bPriority\s+(Low|Normal|Urgent)\b/i),deliveryPort:field(/Expected Port of Delivery\s+([^\n]+)/i),requiredDeliveryDate:field(/Date Delivery Required By\s+(\d{1,2} [A-Za-z]{3} 20\d{2})/i),deliveryInstructions:null};
+  const field=(pattern)=>clean(full.match(pattern)?.[1]||'').replace(/^[|:;\s]+/,'')||null;
+  const details={clientReference:field(/Request For Quote No\.\s*\n?\s*([0-9]+-[0-9]+)/i)||field(/(?:RFQ reference|Client RFQ No\.?)\s*[|:]?\s*([A-Z]{2,6}-\d+)/i),documentDate:field(/\b(\d{1,2} [A-Za-z]{3} 20\d{2})\b/),clientCompany:field(/\b(CSL Australia)\b/i)||field(/(?:Client company|Buyer)\s*[|:]?\s*([^\n|]+)/i),vesselName:field(/Vessel Name\s+([^\n]+)/i),imoNumber:field(/IMO Number\s+(\d{7})/i),flag:field(/Flag State\s+([^\n]+)/i),title:field(/Order Title\s+(.+?)\s+Priority\s+/i),priority:field(/\bPriority\s+(Low|Normal|Urgent)\b/i),deliveryPort:field(/Expected Port of Delivery\s+([^\n]+)/i),requiredDeliveryDate:field(/Date Delivery Required By\s+(\d{1,2} [A-Za-z]{3} 20\d{2})/i),deliveryInstructions:null};
   const warnings=[];
   if(details.documentDate&&details.requiredDeliveryDate&&Date.parse(details.requiredDeliveryDate)<Date.parse(details.documentDate))warnings.push(warning('DELIVERY_BEFORE_DOCUMENT','Required delivery date precedes document date'));
   const items=[];let component=null,current=null,sourceOrder=0,inNotes=false;

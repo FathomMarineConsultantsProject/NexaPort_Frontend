@@ -1,16 +1,17 @@
 export const money=x=>{const s=String(x??'');if(!/^\d+(?:\.\d{1,4})?$/.test(s))return null;const [a,b='']=s.split('.');return BigInt(a)*10000n+BigInt(b.padEnd(4,'0'))};
 export const fmt=x=>`${x/10000n}.${String(x%10000n).padStart(4,'0')}`;
-export const lineNeedsAttention=(r,defaultCurrency)=>{const p=money(r.unitPrice),q=money(r.quantity),stated=money(r.statedLineTotal),discount=money(r.lineDiscount)||0n;if((r.reviewStatus==='needs_review'||r.reviewConfirmed===false)||p===null||q===null||!r.uom||!(r.currency||defaultCurrency))return true;const calculated=(p*q+5000n)/10000n-discount,difference=stated===null?0n:(calculated>stated?calculated-stated:stated-calculated);return stated!==null&&difference>(q*50n+5000n)/10000n;};
+export const lineNeedsAttention=(r,defaultCurrency)=>{const p=money(r.unitPrice),q=money(r.quantity),stated=money(r.statedLineTotal),discount=money(r.lineDiscount)||0n,priced=r.unitPrice!=null&&r.unitPrice!==''||r.statedLineTotal!=null&&r.statedLineTotal!==''||r.lineDiscount!=null&&r.lineDiscount!=='';if((r.reviewStatus==='needs_review'||r.reviewConfirmed===false)||q===null||!r.uom||priced&&(p===null||!(r.currency||defaultCurrency)))return true;if(!priced)return false;const calculated=(p*q+5000n)/10000n-discount,difference=stated===null?0n:(calculated>stated?calculated-stated:stated-calculated);return stated!==null&&difference>(q*50n+5000n)/10000n;};
 export function rowValidationErrors(row, defaultCurrency) {
  const errors=[];
  const quantity=money(row.quantity), price=money(row.unitPrice), total=money(row.statedLineTotal);
  const discount=money(row.lineDiscount);
  if(!row.description?.trim())errors.push('Description is missing');
  if(!row.uom?.trim())errors.push('Unit is missing');
- if(!/^[A-Z]{3}$/.test(row.currency||defaultCurrency||''))errors.push('Enter a three-letter currency code');
+ const priced=row.unitPrice!=null&&row.unitPrice!==''||row.statedLineTotal!=null&&row.statedLineTotal!==''||row.lineDiscount!=null&&row.lineDiscount!=='';
+ if(priced&&!/^[A-Z]{3}$/.test(row.currency||defaultCurrency||''))errors.push('Enter a three-letter currency code');
  if(quantity===null||quantity<=0n||!/^\d+(?:\.\d{1,3})?$/.test(row.quantity||''))errors.push('Quantity must be positive with at most three decimal places');
- if(price===null)errors.push('Enter a valid unit price');
- if(total===null)errors.push('Enter the printed line total');
+ if(priced&&price===null)errors.push('Enter a valid unit price');
+ if(priced&&total===null)errors.push('Enter the printed line total');
  if(row.lineDiscount && discount===null)errors.push('Enter a valid discount');
  if(quantity!==null&&price!==null&&total!==null){
   const gross=(quantity*price+5000n)/10000n;

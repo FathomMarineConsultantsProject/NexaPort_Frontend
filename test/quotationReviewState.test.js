@@ -9,6 +9,14 @@ test('unchanged correct row can be confirmed without an edit',()=>{
  const r=row();assert.equal(canConfirmRow(r,'USD'),true);assert.equal(lineNeedsAttention(r,'USD'),true);
  r.reviewStatus='validated';r.reviewConfirmed=true;assert.equal(lineNeedsAttention(r,'USD'),false);
 });
+test('unpriced source item confirms without an invented price or currency',()=>{
+ const result=normalizeLocalQuotation({lines:[{lineNumber:1,description:'Marine valve',quantity:'2',unit:'PCS',unitPrice:null,lineTotal:null,sourcePage:1,sourceEvidence:'Valve 2 PCS; price on request'}],warnings:[],pageCount:1,statedTotals:{},currency:null,supplierName:'Test supplier',valid:false});
+ const product=result.lines[0];
+ assert.equal(product.unitPrice,null);assert.equal(product.statedLineTotal,null);
+ assert.equal(result.warnings.length,0);
+ assert.equal(canConfirmRow(product,null),true);
+ assert.equal(lineNeedsAttention({...product,reviewStatus:'validated',reviewConfirmed:true},null),false);
+});
 test('editing a confirmed row invalidates confirmation until corrected row is confirmed',()=>{
  const r={...row(),reviewStatus:'validated',reviewConfirmed:true};
  r.quantity='3';r.reviewStatus='corrected';r.reviewConfirmed=false;
