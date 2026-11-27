@@ -10,10 +10,12 @@ import {activeWarnings,canConfirmRow,rowValidationErrors,financialIssues,fmt,isF
 const errorText=e=>e.response?.data?.code==='EXTRACTOR_NOT_CONFIGURED'?'PDF extraction is unavailable on this backend deployment. Redeploy the backend with its configured extractor secret.':e.response?.data?.message||e.message||'Could not save quotation';
 const typeOf=file=>procurementFileTypes[procurementFileType(file)];
 async function extractQuotationFile(file,mimeType,requisitionId,onProgress){
- if(mimeType==='application/pdf'){
-  onProgress('Backend PDF extraction');
-  const result=await extractReceivedQuotation(requisitionId,file);
-  return normalizeLocalQuotation(result);
+ if(mimeType==='application/pdf'||file.size<=4*1024*1024){
+  onProgress('Backend document extraction');
+  try{
+   const result=await extractReceivedQuotation(requisitionId,file);
+   return normalizeLocalQuotation(result);
+  }catch(error){if(mimeType==='application/pdf')throw error;onProgress('Browser document extraction');}
  }
  const {promise}=startBrowserExtraction(file,procurementFileType(file),onProgress,'quotation');
  return promise;

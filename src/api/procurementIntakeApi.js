@@ -97,7 +97,7 @@ export const downloadSupplierRfq=async(id,documentId)=>(await axiosClient.get(`$
 
 export async function extractRequisitionFallback(id,file){
  try {
-  return (await axiosClient.post(`${base}/${id}/requisition-fallback`,file,{headers:{'Content-Type':'application/pdf'},timeout:50000})).data.data;
+  return (await axiosClient.post(`${base}/${id}/requisition-fallback`,file,{headers:{'Content-Type':file.type||'application/pdf'},timeout:50000})).data.data;
  } catch(error) {
   if(error.response?.status===404) throw new Error('This server does not yet support requisition fallback. Verify the source and add the items manually.');
   throw error;
