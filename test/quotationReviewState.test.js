@@ -43,3 +43,10 @@ test('correcting a missing field removes its warning but preserves source concer
  draft.lines[0].quantity='2';
  assert.deepEqual(activeWarnings(draft).map(w=>w.code),['FIELD_SOURCE_REVIEW']);
 });
+test('zero discount and missing unit do not create an arithmetic warning',()=>{
+ const valve={...row(),quantity:'1',unitPrice:'778',statedLineTotal:'778',lineDiscount:'0',uom:null};
+ const draft={lines:[valve],warnings:[{code:'MISSING_UOM',message:'Unit is missing',sourceOrder:1},{code:'MISSING_FIELD',message:'Unit is missing on supplier line 1',sourceOrder:1}],defaultCurrency:'USD',charges:[],statedTotals:{USD:'778'}};
+ assert.deepEqual(financialIssues(draft),[]);
+ assert.deepEqual(activeWarnings(draft).map(w=>w.code),['MISSING_UOM']);
+ valve.uom='Each';assert.deepEqual(activeWarnings(draft),[]);
+});

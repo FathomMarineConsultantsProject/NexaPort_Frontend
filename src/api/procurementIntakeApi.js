@@ -51,17 +51,17 @@ export const addDirectoryContact=async(id,body)=>(await axiosClient.post(`${base
 export const generateRfqForRecipient=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/generate`,body)).data.data;
 export const listReceivedQuotations=async(id)=>(await axiosClient.get(`${base}/${id}/received-quotations`)).data.data;
 export const convertQuotationPdf=async(id,draft)=>conversionBlob(axiosClient.post(`${base}/${id}/received-quotations/convert-pdf`,draft,{responseType:'blob',timeout:60000}));
-export async function extractReceivedQuotation(id,file){
+export async function extractReceivedQuotation(id,file,aiReview=false){
  const path=`${base}/${id}/received-quotations`;
  const hosted=import.meta.env.PROD||import.meta.env.VITE_API_MODE!=='local';
  if(hosted&&file.size>4*1024*1024){
   const stage=(await axiosClient.post(`${path}/extraction-upload`,{size:file.size,filename:file.name})).data.data;
   const uploaded=await fetch(stage.uploadUrl,{method:'PUT',headers:{'Content-Type':stage.contentType},body:file});
   if(!uploaded.ok)throw new Error(`Private document staging failed (${uploaded.status})`);
-  return (await axiosClient.post(`${path}/extract-staged`,{key:stage.key},{timeout:115000})).data.data;
+  return (await axiosClient.post(`${path}/extract-staged`,{key:stage.key,aiReview},{timeout:115000})).data.data;
  }
  const form=new FormData();form.append('file',file);
- return (await axiosClient.post(`${path}/extract`,form,{headers:{'Content-Type':undefined},timeout:115000})).data.data;
+ return (await axiosClient.post(`${path}/extract`,form,{headers:{'Content-Type':undefined,...(aiReview?{'X-Procurement-AI-Review':'1'}:{})},timeout:115000})).data.data;
 }
 export const getReceivedQuotation=async(id,quoteId)=>(await axiosClient.get(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
 export const deleteReceivedQuotation=async(id,quoteId)=>(await axiosClient.delete(`${base}/${id}/received-quotations/${quoteId}`)).data.data;

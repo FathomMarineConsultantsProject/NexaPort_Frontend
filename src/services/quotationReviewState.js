@@ -1,13 +1,14 @@
 export const money=x=>{const s=String(x??'');if(!/^\d+(?:\.\d{1,4})?$/.test(s))return null;const [a,b='']=s.split('.');return BigInt(a)*10000n+BigInt(b.padEnd(4,'0'))};
 export const fmt=x=>`${x/10000n}.${String(x%10000n).padStart(4,'0')}`;
-export const lineNeedsAttention=(r,defaultCurrency)=>{const p=money(r.unitPrice),q=money(r.quantity),stated=money(r.statedLineTotal),discount=money(r.lineDiscount)||0n,priced=r.unitPrice!=null&&r.unitPrice!==''||r.statedLineTotal!=null&&r.statedLineTotal!==''||r.lineDiscount!=null&&r.lineDiscount!=='';if((r.reviewStatus==='needs_review'||r.reviewConfirmed===false)||q===null||!r.uom||priced&&(p===null||!(r.currency||defaultCurrency)))return true;if(!priced)return false;const calculated=(p*q+5000n)/10000n-discount,difference=stated===null?0n:(calculated>stated?calculated-stated:stated-calculated);return stated!==null&&difference>(q*50n+5000n)/10000n;};
+const hasPricing=r=>Boolean(r.unitPrice||r.statedLineTotal||(r.lineDiscount&&money(r.lineDiscount)!==0n));
+export const lineNeedsAttention=(r,defaultCurrency)=>{const p=money(r.unitPrice),q=money(r.quantity),stated=money(r.statedLineTotal),discount=money(r.lineDiscount)||0n,priced=hasPricing(r);if((r.reviewStatus==='needs_review'||r.reviewConfirmed===false)||q===null||!r.uom||priced&&(p===null||!(r.currency||defaultCurrency)))return true;if(!priced)return false;const calculated=(p*q+5000n)/10000n-discount,difference=stated===null?0n:(calculated>stated?calculated-stated:stated-calculated);return stated!==null&&difference>(q*50n+5000n)/10000n;};
 export function rowValidationErrors(row, defaultCurrency) {
  const errors=[];
  const quantity=money(row.quantity), price=money(row.unitPrice), total=money(row.statedLineTotal);
  const discount=money(row.lineDiscount);
  if(!row.description?.trim())errors.push('Description is missing');
  if(!row.uom?.trim())errors.push('Unit is missing');
- const priced=row.unitPrice!=null&&row.unitPrice!==''||row.statedLineTotal!=null&&row.statedLineTotal!==''||row.lineDiscount!=null&&row.lineDiscount!=='';
+ const priced=hasPricing(row);
  if(priced&&!/^[A-Z]{3}$/.test(row.currency||defaultCurrency||''))errors.push('Enter a three-letter currency code');
  if(quantity===null||quantity<=0n||!/^\d+(?:\.\d{1,3})?$/.test(row.quantity||''))errors.push('Quantity must be positive with at most three decimal places');
  if(priced&&price===null)errors.push('Enter a valid unit price');
@@ -42,6 +43,7 @@ export function activeWarnings(draft,supplierName=draft?.supplierName){
  return (draft.warnings||[]).filter(w=>{
   if(w.code==='MISSING_TOTAL')return !draft.statedTotals?.[draft.defaultCurrency];
   if(w.code==='FINANCIAL_REVIEW')return financialIssues(draft).length>0;
+  if(w.code==='MISSING_UOM')return Boolean(draft.lines?.find(r=>r.sourceOrder===w.sourceOrder&&!r.uom?.trim()));
   if(w.code!=='MISSING_FIELD')return true;
   const label=(w.message||'').toLowerCase();
   if(w.sourceOrder!=null){
@@ -49,6 +51,7 @@ export function activeWarnings(draft,supplierName=draft?.supplierName){
    if(!row)return false;
    const fields=[['printed line total','statedLineTotal'],['unit price','unitPrice'],['quantity','quantity'],['description','description'],['currency','currency'],['unit','uom']];
    const field=fields.find(([name])=>label.startsWith(name));
+   if(field&&field[1]==='uom')return false;
    return field?!(row[field[1]]||(field[1]==='currency'&&draft.defaultCurrency)):true;
   }
   if(label.includes('supplier name'))return !supplierName?.trim();
