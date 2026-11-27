@@ -5,6 +5,8 @@ export const createIntake=async(title)=>(await axiosClient.post(base,{title})).d
 export const deleteIntake=async(id,expectedVersion)=>(await axiosClient.delete(`${base}/${id}`,{data:{expectedVersion}})).data.data;
 export const updateIntakeTitle=async(id,title,expectedVersion)=>(await axiosClient.patch(`${base}/${id}/title`,{title,expectedVersion})).data.data;
 export const getIntake=async(id)=>(await axiosClient.get(`${base}/${id}`)).data.data;
+const conversionBlob=async promise=>{try{return(await promise).data}catch(error){const data=error.response?.data;if(data instanceof Blob&&data.type.includes('json')){const response=JSON.parse(await data.text());throw new Error(response.message||'PDF conversion failed',{cause:error})}throw error}};
+export const convertRequisitionPdf=async(id,draft)=>conversionBlob(axiosClient.post(`${base}/${id}/convert-pdf`,draft,{responseType:'blob',timeout:60000}));
 export const getStageStates=async id=>(await axiosClient.get(`${base}/${id}/stages`)).data.data;
 export const addManualItem=async(id,body)=>(await axiosClient.post(`${base}/${id}/manual-items`,body)).data.data;
 export const updateManualItem=async(id,itemId,body)=>(await axiosClient.put(`${base}/${id}/manual-items/${itemId}`,body)).data.data;
@@ -48,17 +50,18 @@ export const downloadMyRfqLogo=async(id)=>(await axiosClient.get(`${base}/${id}/
 export const addDirectoryContact=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/directory`,body)).data.data;
 export const generateRfqForRecipient=async(id,body)=>(await axiosClient.post(`${base}/${id}/supplier-rfqs/generate`,body)).data.data;
 export const listReceivedQuotations=async(id)=>(await axiosClient.get(`${base}/${id}/received-quotations`)).data.data;
+export const convertQuotationPdf=async(id,draft)=>conversionBlob(axiosClient.post(`${base}/${id}/received-quotations/convert-pdf`,draft,{responseType:'blob',timeout:60000}));
 export async function extractReceivedQuotation(id,file){
  const path=`${base}/${id}/received-quotations`;
  const hosted=import.meta.env.PROD||import.meta.env.VITE_API_MODE!=='local';
  if(hosted&&file.size>4*1024*1024){
-  const stage=(await axiosClient.post(`${path}/extraction-upload`,{size:file.size})).data.data;
-  const uploaded=await fetch(stage.uploadUrl,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:file});
-  if(!uploaded.ok)throw new Error(`Private PDF staging failed (${uploaded.status})`);
-  return (await axiosClient.post(`${path}/extract-staged`,{key:stage.key},{timeout:60000})).data.data;
+  const stage=(await axiosClient.post(`${path}/extraction-upload`,{size:file.size,filename:file.name})).data.data;
+  const uploaded=await fetch(stage.uploadUrl,{method:'PUT',headers:{'Content-Type':stage.contentType},body:file});
+  if(!uploaded.ok)throw new Error(`Private document staging failed (${uploaded.status})`);
+  return (await axiosClient.post(`${path}/extract-staged`,{key:stage.key},{timeout:115000})).data.data;
  }
  const form=new FormData();form.append('file',file);
- return (await axiosClient.post(`${path}/extract`,form,{headers:{'Content-Type':undefined},timeout:60000})).data.data;
+ return (await axiosClient.post(`${path}/extract`,form,{headers:{'Content-Type':undefined},timeout:115000})).data.data;
 }
 export const getReceivedQuotation=async(id,quoteId)=>(await axiosClient.get(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
 export const deleteReceivedQuotation=async(id,quoteId)=>(await axiosClient.delete(`${base}/${id}/received-quotations/${quoteId}`)).data.data;
@@ -97,9 +100,16 @@ export const downloadSupplierRfq=async(id,documentId)=>(await axiosClient.get(`$
 
 export async function extractRequisitionFallback(id,file){
  try {
-  return (await axiosClient.post(`${base}/${id}/requisition-fallback`,file,{headers:{'Content-Type':file.type||'application/pdf'},timeout:50000})).data.data;
+  const hosted=import.meta.env.PROD||import.meta.env.VITE_API_MODE!=='local';
+  if(hosted&&file.size>4*1024*1024){
+   const stage=(await axiosClient.post(`${base}/${id}/requisition-extraction-upload`,{size:file.size,filename:file.name})).data.data;
+   const uploaded=await fetch(stage.uploadUrl,{method:'PUT',headers:{'Content-Type':stage.contentType},body:file});
+   if(!uploaded.ok)throw Error(`Private document staging failed (${uploaded.status})`);
+   return (await axiosClient.post(`${base}/${id}/requisition-extract-staged`,{key:stage.key},{timeout:115000})).data.data;
+  }
+  return (await axiosClient.post(`${base}/${id}/requisition-fallback`,file,{headers:{'Content-Type':file.type||'application/octet-stream','X-Procurement-Source-Type':file.name.split('.').pop().toLowerCase()},timeout:115000})).data.data;
  } catch(error) {
-  if(error.response?.status===404) throw new Error('This server does not yet support requisition fallback. Verify the source and add the items manually.');
+  if(error.response?.status===404) throw new Error('This server does not yet support requisition fallback. Verify the source and add the items manually.',{cause:error});
   throw error;
  }
 }

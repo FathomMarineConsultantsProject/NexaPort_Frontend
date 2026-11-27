@@ -1,20 +1,20 @@
-import axiosClient from '../api/axiosClient.js';
-
 export const procurementFileTypes = {
  pdf:'application/pdf',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
  csv:'text/csv',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+ doc:'application/msword',dot:'application/msword',docm:'application/vnd.ms-word.document.macroEnabled.12',dotx:'application/vnd.openxmlformats-officedocument.wordprocessingml.template',dotm:'application/vnd.ms-word.template.macroEnabled.12',
+ xls:'application/vnd.ms-excel',xlt:'application/vnd.ms-excel',xlsm:'application/vnd.ms-excel.sheet.macroEnabled.12',xlsb:'application/vnd.ms-excel.sheet.binary.macroEnabled.12',xltx:'application/vnd.openxmlformats-officedocument.spreadsheetml.template',xltm:'application/vnd.ms-excel.template.macroEnabled.12',
+ odt:'application/vnd.oasis.opendocument.text',ods:'application/vnd.oasis.opendocument.spreadsheet',rtf:'application/rtf',txt:'text/plain',tsv:'text/tab-separated-values',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',tif:'image/tiff',tiff:'image/tiff',
 };
-export const procurementFileType = file => /\.(pdf|xlsx|csv|docx)$/i.exec(file.name)?.[1].toLowerCase();
+export const procurementFileType = file => /\.([a-z0-9]+)$/i.exec(file.name)?.[1].toLowerCase();
+export const procurementAccept=Object.keys(procurementFileTypes).map(type=>`.${type}`).join(',');
 export async function checkProcurementFile(file,type) {
- const bytes=new Uint8Array(await file.slice(0,5).arrayBuffer());
- if(type==='csv'||type==='docx'){
-  let formats;
-  try { formats=(await axiosClient.get('/procurement/intake/source-formats')).data?.data?.formats; }
-  catch(error) { if(error.response?.status!==404&&error.response?.status!==400)throw error; }
-  if(!formats?.includes(type))throw Error('This server supports PDF and XLSX. CSV and DOCX require the procurement source format update.');
- }
- if(type==='csv')return;
- if(type==='pdf'?String.fromCharCode(...bytes)!=='%PDF-':bytes[0]!==80||bytes[1]!==75)throw Error('File content does not match its extension');
+ if(!procurementFileTypes[type])throw Error('This document format is not supported');
+ const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
+ const prefix=Array.from(bytes.slice(0,8),b=>b.toString(16).padStart(2,'0')).join('');
+ const zip=new Set(['xlsx','xlsm','xlsb','xltx','xltm','docx','docm','dotx','dotm','odt','ods']);
+ const ole=new Set(['xls','xlt','doc','dot']);
+ const image=new Set(['jpg','jpeg','png','tif','tiff']);
+ if(type==='pdf'&&String.fromCharCode(...bytes.slice(0,5))!=='%PDF-'||zip.has(type)&&prefix.slice(0,4)!=='504b'||ole.has(type)&&prefix!=='d0cf11e0a1b11ae1'||type==='rtf'&&String.fromCharCode(...bytes.slice(0,5))!=='{\\rtf'||image.has(type)&&!(type==='png'&&prefix==='89504e470d0a1a0a'||['jpg','jpeg'].includes(type)&&prefix.startsWith('ffd8ff')||['tif','tiff'].includes(type)&&['49492a00','4d4d002a'].includes(prefix.slice(0,8))))throw Error('File content does not match its extension');
 }
 
 function csvRows(text) {
