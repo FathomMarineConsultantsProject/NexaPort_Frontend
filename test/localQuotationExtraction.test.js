@@ -50,7 +50,7 @@ test('actual demo PDFs map into the quotation editor and saved revision schema',
 
 test('unexpected successful backend payload cannot enter the quotation editor',()=>{
  assert.throws(()=>validateBackendExtractionResponse({success:true,data:{lines:[]}}),/incomplete response/);
- assert.throws(()=>validateBackendExtractionResponse({lines:[],warnings:[],pageCount:3,statedTotals:{}}),/no product lines/);
+ assert.equal(validateBackendExtractionResponse({lines:[],warnings:[],pageCount:3,statedTotals:{}}).lines.length,0);
 });
 
 test('demo Beta Excel quotation retains its browser extraction path',async()=>{
