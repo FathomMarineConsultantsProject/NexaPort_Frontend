@@ -17,9 +17,17 @@ test('AI nulls and differing values cannot erase source backed offline fields',(
  assert.equal(result.vesselName,'Wunma');assert.equal(result.supplierName,'Known supplier');assert.equal(result.lines[0].description,'Valve');assert.equal(result.lines[0].quantity,'1');assert.equal(result.lines[0].uom,'EA');assert.equal(result.lines[0].reviewConfirmed,false);
 });
 test('AI financial recovery fills missing totals and keeps repeated source charges',()=>{
- const baseline={defaultCurrency:'USD',printedTotals:{subtotal:'100'},statedTotals:{},charges:[{kind:'freight',amount:'5',currency:'USD',sourceEvidence:'Freight A'}],lines:[]};
- const candidate={printedTotals:{subtotal:'999',total:'110'},statedTotals:{USD:'110'},charges:[{kind:'freight',amount:'5',currency:'USD',sourceEvidence:'Freight A'},{kind:'freight',amount:'5',currency:'USD',sourceEvidence:'Freight B'},{kind:'tax',amount:'5',currency:'USD'}],lines:[]};
+ const baseline={defaultCurrency:'USD',printedTotals:{subtotal:'100'},statedTotals:{},charges:[{kind:'freight',amount:'5',currency:'USD',sourcePage:1,sourceEvidence:'Freight A 5'}],lines:[]};
+ const candidate={printedTotals:{subtotal:'999',total:'110',gst:'12'},totalEvidence:{subtotal:'Subtotal 999',total:'Total USD 110'},statedTotals:{USD:'110'},charges:[{kind:'freight',amount:'5.00',currency:'USD',sourcePage:1,sourceEvidence:'Freight A 5'},{kind:'freight',amount:'5',currency:'USD',sourcePage:1,sourceEvidence:'Freight B 5'},{kind:'tax',amount:'5',currency:'USD'}],lines:[]};
  const merged=mergeQuotationReview(baseline,candidate);
  assert.equal(merged.printedTotals.subtotal,'100');assert.equal(merged.printedTotals.total,'110');assert.equal(merged.statedTotals.USD,'110');
- assert.equal(merged.charges.length,2);assert.equal(merged.charges[1].sourceEvidence,'Freight B');
+ assert.equal(merged.charges.length,2);assert.equal(merged.charges[1].sourceEvidence,'Freight B 5');
+ assert.equal(merged.printedTotals.gst,undefined);
+});
+
+test('a printed quotation-number label corrects an unverified value while retaining manual edits',()=>{
+ const candidate={supplierQuotationReference:'10029',referenceEvidence:{supplierQuotationReference:'Quotation No. 10029'},lines:[]};
+ const baseline={supplierQuotationReference:'23-11-26',lines:[]};
+ assert.equal(mergeQuotationReview(baseline,candidate).supplierQuotationReference,'10029');
+ assert.equal(mergeQuotationReview({...baseline,manualReference:true},candidate).supplierQuotationReference,'23-11-26');
 });
