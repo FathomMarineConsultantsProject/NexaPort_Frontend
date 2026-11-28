@@ -16,3 +16,10 @@ test('AI nulls and differing values cannot erase source backed offline fields',(
  const result=mergeQuotationReview(baseline,candidate);
  assert.equal(result.vesselName,'Wunma');assert.equal(result.supplierName,'Known supplier');assert.equal(result.lines[0].description,'Valve');assert.equal(result.lines[0].quantity,'1');assert.equal(result.lines[0].uom,'EA');assert.equal(result.lines[0].reviewConfirmed,false);
 });
+test('AI financial recovery fills missing totals and keeps repeated source charges',()=>{
+ const baseline={defaultCurrency:'USD',printedTotals:{subtotal:'100'},statedTotals:{},charges:[{kind:'freight',amount:'5',currency:'USD',sourceEvidence:'Freight A'}],lines:[]};
+ const candidate={printedTotals:{subtotal:'999',total:'110'},statedTotals:{USD:'110'},charges:[{kind:'freight',amount:'5',currency:'USD',sourceEvidence:'Freight A'},{kind:'freight',amount:'5',currency:'USD',sourceEvidence:'Freight B'},{kind:'tax',amount:'5',currency:'USD'}],lines:[]};
+ const merged=mergeQuotationReview(baseline,candidate);
+ assert.equal(merged.printedTotals.subtotal,'100');assert.equal(merged.printedTotals.total,'110');assert.equal(merged.statedTotals.USD,'110');
+ assert.equal(merged.charges.length,2);assert.equal(merged.charges[1].sourceEvidence,'Freight B');
+});

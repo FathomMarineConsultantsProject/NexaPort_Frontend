@@ -5,6 +5,14 @@ const rowFields=['description','impaCode','makerReference','quantity','uom','cur
 export function mergeQuotationReview(baseline,candidate){
  const merged={...baseline};
  for(const field of fields)if(!present(baseline[field])&&present(candidate[field]))merged[field]=candidate[field];
+ merged.printedTotals={...candidate.printedTotals,...baseline.printedTotals};
+ merged.statedTotals={...candidate.statedTotals,...baseline.statedTotals};
+ merged.charges=[...(baseline.charges||[])];
+ for(const charge of candidate.charges||[]){
+  if(!present(charge.amount)||!present(charge.sourceEvidence))continue;
+  const key=value=>[value.kind,value.amount,value.currency||'',value.sourceEvidence||''].join('|');
+  if(!merged.charges.some(existing=>key(existing)===key(charge)))merged.charges.push(charge);
+ }
  const original=new Map(baseline.lines.map(row=>[String(row.supplierLineNumber||row.sourceOrder),row]));
  merged.lines=candidate.lines.map(row=>{
   const previous=original.get(String(row.supplierLineNumber||row.sourceOrder));
